@@ -202,6 +202,8 @@ The neuron-explorer research log contains **no "evil" neuron**; its documented f
 - **In TinyStories-8M,** the sweep will look for a villain/mean/bad concept pull and report it only if it beats the controls (Evidence §4.1 shows why that bar matters).
 - **In GPT-2 (phase 4),** the same sweep runs on a model with a far richer moral vocabulary, which is the more likely home for a convincing "evil" neuron.
 
+**Outcome (2026-11-03, after the full sweep).** Two TinyStories neurons beat the null with villain-like pulls: L6·N179 (spider → “a big, mean-looking man… scared all the other people”, z 4.9, rank 3 of 8,192) and L7·N756 (“a naughty thief stole all of her money”, z 3.1, beats 99.2% of controls). A random control in layer 5 also writes “a big, mean wolf came”, which is shown as a caution card. The external source of the user's "evil" neuron is still unknown.
+
 ## 7. Failure modes and handling
 
 | Failure | Detection | Handling |
