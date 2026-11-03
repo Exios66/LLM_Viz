@@ -195,10 +195,11 @@ def main():
     lens_ids = aget("lens_ids")  # [L,N,2,K] new ids
     up_new = np.vectorize(lambda o: new_of_old.get(int(o), 65535))(sl["up_ids"]).astype(np.uint16)
     dn_new = np.vectorize(lambda o: new_of_old.get(int(o), 65535))(sl["dn_ids"]).astype(np.uint16)
+    lp_new = np.vectorize(lambda o: new_of_old.get(int(o), 65535))(sl["lp_ids"]).astype(np.uint16)
     lens_agree = np.zeros((L, N), np.float32)
     for l in range(L):
         for n in range(N):
-            a, b = set(lens_ids[l, n, 0].tolist()), set(up_new[l, n].tolist())
+            a, b = set(lens_ids[l, n, 0].tolist()), set(lp_new[l, n].tolist())
             lens_agree[l, n] = len(a & b) / len(a | b)
 
     corr = cof["corr"].astype(np.float32)
@@ -303,7 +304,7 @@ def main():
 
     def cell_of(prompt, dose_mult):
         for i, (p, s) in enumerate(cells):
-            if PROMPTS_ALL[p] == prompt and abs(s - dose_mult) < 1e-6:
+            if PROMPTS_ALL[int(p)] == prompt and abs(s - dose_mult) < 1e-6:
                 return i
         raise ValueError(f"no sweep cell for {prompt!r} × {dose_mult}")
 

@@ -185,8 +185,9 @@ export function MapView({ atlas }: { atlas: Atlas }) {
           t = Math.pow(Math.min(r, 1), 0.8);
           size = 5 + 16 * Math.min(r, 1.2);
         } else if (s.colorMode === "uniqueness" && zT) {
-          t = Math.pow(zT[g], 0.7);
-          size = 4 + 14 * t;
+          // keep the null band visible as a dim field so the bright outliers read against it
+          t = 0.14 + 0.86 * Math.pow(zT[g], 0.7);
+          size = 5 + 15 * zT[g];
         } else if (s.colorMode === "density") {
           t = Math.sqrt(atlas.density[g]);
         } else {

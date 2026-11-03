@@ -336,6 +336,7 @@ mark { background: rgb(255 226 154 / 0.18); color: var(--gold); border-radius: 2
 
 .app.page { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top" "main"; }
 .page-main { grid-area: main; overflow-y: auto; min-height: 0; outline: none; }
+.page-wrap > * { min-width: 0; }
 .page-wrap { max-width: 1120px; margin: 0 auto; padding: 32px 24px 64px; display: grid; gap: 40px; }
 .page-head { display: grid; gap: 10px; max-width: 760px; }
 .eyebrow { margin: 0; text-transform: uppercase; letter-spacing: 0.14em; font-size: 11.5px; color: var(--cyan); font-weight: 700; }
@@ -425,3 +426,7 @@ mark { background: rgb(255 226 154 / 0.18); color: var(--gold); border-radius: 2
   * { scroll-behavior: auto !important; }
 }
 .brand .warn { color: var(--gold); }
+
+/* grid children must be allowed to shrink below their content (long chips, charts) */
+.steer, .sweep-rolls, .insp-head, .edit-box, .steer-controls { grid-template-columns: minmax(0, 1fr); }
+.insp-body { overflow-x: hidden; }

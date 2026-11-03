@@ -7,7 +7,7 @@ test.describe("loading and navigation", () => {
     await expect(page.locator(".map canvas")).toBeVisible();
     await waitForSweep(page);
     await waitForModel(page);
-    await expect(page.getByRole("radio", { name: "Uniqueness" })).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("radio", { name: "Uniqueness", exact: true })).toHaveAttribute("aria-checked", "true");
     await expect(page.locator(".rows li").first()).toBeVisible();
     expect(await page.locator(".rows li").count()).toBeGreaterThan(50);
   });
@@ -99,8 +99,9 @@ test.describe("map", () => {
     await openAtlas(page);
     await waitForSweep(page);
     for (const name of ["Selectivity", "Firing rate", "Your text", "Uniqueness"]) {
-      await page.getByRole("radio", { name }).click();
-      await expect(page.getByRole("radio", { name })).toHaveAttribute("aria-checked", "true");
+      const radio = page.getByRole("radiogroup", { name: "Colour neurons by" }).getByRole("radio", { name, exact: true });
+      await radio.click();
+      await expect(radio).toHaveAttribute("aria-checked", "true");
     }
     await page.getByRole("radio", { name: "Co-firing" }).click();
     await page.waitForTimeout(1100);
@@ -189,7 +190,7 @@ test.describe("edits", () => {
   test("a steer edit in residual units and Clear all", async ({ page }) => {
     await openAtlas(page, "#/atlas/L5/N551");
     await waitForSweep(page);
-    await page.getByRole("radio", { name: "Steer" }).click();
+    await page.getByRole("radio", { name: "Steer", exact: true }).click();
     await page.getByRole("button", { name: "Apply edit" }).click();
     await expect(page.locator(".edit-chip")).toContainText("× resid");
     await page.goto("./#/atlas/L1/N1");
@@ -275,7 +276,7 @@ test.describe("probe", () => {
     await waitForModel(page);
     await page.locator("#probe-text").fill("Once upon a time, there was a");
     await expect(page.locator(".probe-status")).toContainText("tokens");
-    await page.getByRole("radio", { name: "Steer" }).click();
+    await page.getByRole("radio", { name: "Steer", exact: true }).click();
     await page.getByRole("button", { name: "Apply edit" }).click();
     await expect(page.locator(".probe")).toContainText(/KL|edited|with your edits/i);
   });

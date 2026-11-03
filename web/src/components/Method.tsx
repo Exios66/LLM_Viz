@@ -83,8 +83,9 @@ export function MethodPage() {
             neuron is “above the null” only if it beats all 256.
           </li>
           <li>
-            <strong>Steer lens.</strong> The measured change in next-token log-probability, averaged over four contexts, when the residual is pushed up or down
-            by the window. Unlike the logit lens it includes everything the later layers do with the push.
+            <strong>Steer lens.</strong> The measured change in next-token probability, averaged over four contexts, when the residual is pushed up or down
+            by the window. Unlike the logit lens it includes everything the later layers do with the push. It ranks tokens by change in probability,
+            not log-probability: a log-probability ranking is dominated by rare word fragments lifted from almost zero.
           </li>
         </ol>
       </section>
@@ -126,10 +127,11 @@ export function MethodPage() {
         <pre>
           <code>{`python -m venv .venv && . .venv/bin/activate
 pip install -r pipeline/requirements.txt
-python pipeline/build.py   --out web/public/data
-python pipeline/sweep.py   --cache pipeline/cache        # ~40 min on a laptop CPU
-python pipeline/analyze.py --cache pipeline/cache --data web/public/data
-cd web && npm ci && npm run verify && npm run dev`}</code>
+curl -LO https://huggingface.co/datasets/roneneldan/TinyStories/resolve/main/TinyStories-valid.txt
+python pipeline/build.py --corpus TinyStories-valid.txt --out web/public/data
+python pipeline/sweep.py --corpus TinyStories-valid.txt --cache pipeline/cache   # ~40 min, CPU
+cd pipeline && python analyze.py --cache cache --data ../web/public/data
+cd ../web && npm ci && npm run verify && npm run dev`}</code>
         </pre>
       </section>
 

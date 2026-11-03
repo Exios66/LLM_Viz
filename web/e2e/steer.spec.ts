@@ -12,6 +12,12 @@ test.describe("steering studio", () => {
     await expect(gen).toBeEnabled({ timeout: 60_000 });
     for (let i = 0; i < 4; i++) expect((await cols.nth(i).locator("p").innerText()).length).toBeGreaterThan(20);
     await expect(cols.nth(3).locator("h4")).toHaveText("Random direction, same push");
+    // nothing in the inspector is wider than the panel
+    const overflow = await inspector(page).locator(".insp-body").evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return [...el.querySelectorAll("*")].filter((c) => c.getBoundingClientRect().right > r.right + 1).map((c) => c.className).slice(0, 5);
+    });
+    expect(overflow).toEqual([]);
 
     // stop mid-generation
     await inspector(page).getByRole("button", { name: "New seed" }).click();
@@ -66,7 +72,8 @@ test.describe("findings", () => {
     await page.locator(".chart-grid figure").first().getByRole("button", { name: "Show table" }).click();
     await expect(page.locator(".chart-grid .chart-table table").first()).toBeVisible();
     // tooltips on hover
-    await page.locator(".chart-grid figure").nth(1).locator("svg rect").first().hover();
+    await page.locator(".chart-grid figure").nth(1).locator("svg rect").first().hover({ force: true });
+    await expect(page.locator(".chart-grid .chart-tip")).toContainText("Layer 0");
   });
 
   test("every card's numbers are sane", async ({ page }) => {
@@ -142,7 +149,7 @@ test.describe("failures", () => {
     await page.route(/sweep\.(bin|json)$/, (r) => r.fulfill({ status: 404, body: "" }));
     await openAtlas(page);
     await expect(page.locator(".brand .warn")).toContainText("Steering results unavailable");
-    await expect(page.getByRole("radio", { name: "Uniqueness" })).toHaveCount(0);
+    await expect(page.getByRole("radio", { name: "Uniqueness", exact: true })).toHaveCount(0);
     await expect(page.getByRole("radio", { name: "Selectivity" })).toHaveAttribute("aria-checked", "true");
     await page.locator(".rows li button").first().click();
     await expect(inspector(page)).toBeVisible();

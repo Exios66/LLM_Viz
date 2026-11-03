@@ -1,40 +1,80 @@
 # Neuron Atlas
 
-An interactive map of every MLP neuron in a small language model. You can browse the neurons, see what each one responds to, and edit them (ablate, scale, steer or clamp) while the model runs live in your browser. No server or GPU is needed.
+An interactive map of all 8,192 MLP neurons in a small language model, with a steering sweep of every one of them measured against random-direction controls. The model runs live in your browser. You can browse the neurons, see what each responds to, steer or ablate them, and replay every finding token for token. No server or GPU is needed.
 
-![Neuron Atlas: layer 1 neuron 35, which fires on "wish"](docs/screenshot.jpg)
+![Neuron Atlas: layer 4 neuron 803 in the steering studio](docs/screenshot.jpg)
 
-The idea follows [lyramakesmusic/neuron-explorer](https://github.com/lyramakesmusic/neuron-explorer), a steering-first explorer for Qwen3.5-4B that needs a GPU and a local server. Neuron Atlas uses the same workflow at portfolio scale: [TinyStories-8M](https://huggingface.co/roneneldan/TinyStories-8M) has 8 layers × 1,024 MLP neurons, small enough to run fully client-side.
+The method follows [lyramakesmusic/neuron-explorer](https://github.com/lyramakesmusic/neuron-explorer), a steering-first explorer for Qwen3.5-4B that needs a GPU and a local server. Neuron Atlas uses the same workflow at portfolio scale. [TinyStories-8M](https://huggingface.co/roneneldan/TinyStories-8M) has 8 layers × 1,024 MLP neurons, small enough to sweep exhaustively on a laptop CPU and to run fully client-side.
+
+## Findings
+
+Every neuron was pushed along its output direction on three story prompts and from scratch, at the largest push its layer tolerates. 256 random directions per layer were pushed the same way. A neuron counts as a find only when the words it writes beat what random pushes write. The full log, with charts and live replays, is on the site's **Findings** page.
+
+**Neurons**
+
+| Neuron | What a push writes |
+|---|---|
+| L6·N179 **The villain** | A scary spider, and at larger pushes “a big, mean-looking man… scared all the other people”. The nearest thing this model has to an “evil” neuron. |
+| L7·N756 **Something bad happens** | “Suddenly, a naughty thief stole all of her money!” Pushed the other way, the story stays sunny. |
+| L4·N803 **Run and hide** | The top-scoring neuron in the model: a threat appears, and the hero is scared, runs and hides. |
+| L5·N722 **The bully** | “A big, mean cat named Max. This cat liked to take other animals' toys.” |
+| L2·N109 **The moral** | “She felt sad and wished she had been more careful.” |
+| L0·N80, L4·N877 **Suddenly, a loud noise** | The same startle beat from two neurons four layers apart. The second one adds “It was a big, scary monster.” |
+
+**Observations neuron-explorer did not report**
+
+- **Counting words is not evidence.** By a naive “repeated word” test, 78% of random directions look themed, and so do 75% of neurons. Only 41 neurons (0.5%) beat all 256 random directions in their layer. In layer 5, none does: a random direction that writes a juicy apple and then “a big, mean wolf” outscores them all.
+- **In a story model, neurons steer plot beats.** The strongest neurons write narrative moves (threat and flight, misfortune, regret, resolution, startle) rather than topics. This is a reading of the rollouts, not a measured category.
+- **The middle layers are the fragile ones.** Text stays coherent under random pushes of 0.8× the residual norm at layers 0, 2 and 7, but only 0.4× at layers 4–5. The push size must be calibrated per layer.
+- **Writing similar directions does not mean firing together.** This answers an open question in neuron-explorer. Neighbours in an output-direction layout correlate no better than random pairs, while neighbours in a co-firing layout correlate at 0.06–0.12. The map can switch between the two layouts.
+- **The logit lens misleads below the top layer.** Its top tokens overlap the measured steering effect by under 5% in layers 0–6 and by 27% in layer 7.
+- **What a neuron writes is rarely what it reads.** Only 2 of the 41 above-null neurons write theme words that match the tokens they fire on.
 
 ## What you can do
 
-- **Map.** All 8,192 neurons as glowing points on 8 stacked layer sheets. On each sheet, neurons that write similar directions into the residual stream sit near each other. Colour them by selectivity, by firing rate, or by their activation on your own text. Click a layer label to isolate that layer.
-- **Inspect a neuron.** See what it fires on, its strongest contexts from 3,000 stories (each token shaded by activation), the activation histogram, and the logit lens: which next tokens its output pushes up or down. You also get its strongest upstream and downstream connections, which are drawn as a web on the map.
-- **Probe.** Type any text. Every token is run through the model, and clicking a token lights the map with each neuron's activation at that position. Alongside are the strongest neurons there and the next-token prediction.
-- **Edit.** Ablate, scale, steer (add a multiple of the neuron's peak) or clamp any neuron. Edits stack up in the header and apply to every probe and generation. The probe then shows predictions with and without your edits, plus the KL divergence between them. "Continue the text" writes side by side with the original model.
-- **Steer.** For one neuron, the Steer tab samples three continuations with the same seed: pushed down, unchanged and pushed up.
-- **Search** for neurons that *fire on* a word, or that *predict* a word through the logit lens.
-
-Neuron names you type and your edit list are kept in this browser's `localStorage`.
+- **Map.** All 8,192 neurons on 8 stacked layer sheets. Colour them by steering uniqueness, selectivity, firing rate, or activation on your own text. Arrange each sheet by output direction or by co-firing, and watch the points morph between the two.
+- **Inspect a neuron.** See its uniqueness against random directions, its theme words, its top contexts from 3,000 stories, and the steer lens (the measured next-token effect of a push) next to the logit lens. Its strongest connections are drawn on the map.
+- **Steering studio.** Push any neuron up and down beside a random direction of the same size, on any prompt. A phase plot places it against every neuron and control in its layer. The recorded sweep rollouts are shown with theme words highlighted.
+- **Findings.** 17 curated cards, each with a **Replay live** button that reruns the exact push in your browser, plus per-layer charts (each with a table view) and the cited Qwen reference cards.
+- **Probe and edit.** Type any text to see which neurons fire on each token. Ablate, scale, steer or clamp neurons. Your edits apply to every probe and generation, with KL against the unedited model.
+- **Links.** Every view has a URL: `#/atlas/L6/N179?tab=steer`, `#/findings/villain`, `#/method`.
 
 ## How it works
 
 ```
-pipeline/build.py  (PyTorch, run once)          web/  (React + Three.js, static)
-─────────────────────────────────────          ─────────────────────────────────
-TinyStories-8M ─┬─ prune vocab 50k → 15k ──▶ model.bin      ─▶ worker: GPT-Neo forward pass in TS,
-                │                             tokenizer.json      KV cache, per-neuron edit hooks
-                └─ run 3,000 stories ──────▶ atlas.bin      ─▶ map, inspector, search
-                   top contexts, stats,      corpus.bin
-                   logit lens, connections,
-                   sheet layout
+pipeline/build.py    TinyStories-8M ─┬─ prune vocab 50k → 15k ─▶ model.bin, tokenizer.json
+                                     └─ 3,000 stories ─────────▶ atlas.bin (contexts, lens, links, layout)
+pipeline/sweep.py    norms, per-layer calibration, 8,192 neurons + 2,048 random controls × 10 rollouts,
+                     steer lens, co-firing correlations                         (≈40 min, CPU)
+pipeline/analyze.py  theme scores vs controls, uniqueness, layer stats ─▶ sweep.bin, findings.json
+web/                 React + Three.js; the GPT-Neo forward pass in TypeScript in a Web Worker
 ```
 
-- **Runtime** (`web/src/lib/model.ts`). A from-scratch GPT-Neo forward pass in TypeScript: local/global attention, no attention scaling (as in GPT-Neo), and `gelu_new`. It runs in a Web Worker, so the UI stays responsive. Edits apply to the post-GELU activation of the chosen neurons at every position. `npm run verify` checks it against PyTorch: the tokenizer matches exactly, top-10 logprob error is 0.004, and a 24-token greedy continuation matches.
-- **Vocabulary pruning.** The pipeline keeps every token the corpus uses, the 256 byte tokens, and every BPE parent needed to reach them. It then drops merges whose result was pruned, so tokenization stays exact. This cuts the embedding from 50,257 rows to 15,025 and the model download to 20 MB (fp16).
-- **Connections** are direct-path "virtual weights": `W_in[b] · diag(γ_ln2) · W_out[a]`, scaled by the source neuron's peak activation. They ignore attention and the LayerNorm scale, so treat them as hints, not circuits.
-- **Logit lens** reads each neuron's output column through the final LayerNorm gain and the unembedding. It shows the direct effect only.
-- **Layout.** Per layer, neurons are sorted into a 32×32 grid by the first two principal components of their normalised output directions.
+- **Runtime** (`web/src/lib/model.ts`). A from-scratch GPT-Neo forward pass in TypeScript: local and global attention, no attention scaling, `gelu_new`, and a KV cache. Edits apply to post-GELU activations. Steering pushes add a multiple of the layer's median residual norm along a neuron's output direction.
+- **Steering units.** A push of 1.0 equals the layer's median residual-stream norm, the same unit for every neuron and random direction. Pushing by a neuron's own peak activation gave wildly unequal strengths.
+- **Scoring.** A theme score is the Poisson z of words a unit writes more often than the layer's random directions, summed over its top five. Controls are scored leave-one-out. Uniqueness is the z of that score against the 256 controls.
+- **Vocabulary pruning.** The pipeline keeps every token the corpus uses, the byte tokens, and the BPE parents needed to reach them, so tokenization stays exact. The model download shrinks to 20 MB.
+- **Data files** are validated on load. A truncated or mismatched download is rejected with a message instead of being misread.
+
+The **Method** page on the site has the details and limits.
+
+## Verification and tests
+
+```bash
+cd web
+npm run verify     # TS model vs PyTorch; every finding card and a random sample of the sweep replayed
+npm run test:e2e   # production build + Playwright (desktop and mobile)
+```
+
+- `verify` checks the tokenizer (exact), logits (max error 0.004), activations, and a greedy continuation against PyTorch. With the sweep data present, it replays all 16 neuron cards token for token and a random sample of 48 sweep rollouts across all layers (47 of 48 match exactly; batched float32 in PyTorch can flip a near-tied argmax).
+- The Playwright suite (42 tests) covers:
+  - loading, search, deep links (including invalid ones), back/forward and keyboard use
+  - edits that persist across reload, and corrupted or blocked `localStorage`
+  - empty, emoji and over-long probe text; steering generate/stop; findings replay matching the recorded text
+  - WebGL unavailable, and the WebGL context lost mid-session
+  - failed or truncated model, atlas and sweep downloads
+  - no horizontal overflow on a phone; no console errors anywhere
+- `npx tsx scripts/dump-rollouts.ts L4N803 L5c173` prints recorded rollouts (`c` marks a random control) for curating findings.
 
 ## Run it
 
@@ -42,7 +82,6 @@ TinyStories-8M ─┬─ prune vocab 50k → 15k ──▶ model.bin      ─▶
 cd web
 npm install
 npm run dev        # http://localhost:5173
-npm run verify     # check the TS model against the PyTorch reference
 npm run build      # static site in web/dist
 ```
 
@@ -52,22 +91,25 @@ The generated data in `web/public/data/` is committed, so you don't need Python 
 
 ```bash
 python -m venv .venv && . .venv/bin/activate
-pip install --index-url https://download.pytorch.org/whl/cpu torch
-pip install transformers numpy
+pip install -r pipeline/requirements.txt
 curl -LO https://huggingface.co/datasets/roneneldan/TinyStories/resolve/main/TinyStories-valid.txt
-cd pipeline && python build.py --corpus ../TinyStories-valid.txt --out ../web/public/data
+python pipeline/build.py   --corpus TinyStories-valid.txt --out web/public/data   # ~6 min
+python pipeline/sweep.py   --corpus TinyStories-valid.txt --cache pipeline/cache  # ~40 min
+cd pipeline && python analyze.py --cache cache --data ../web/public/data          # ~15 s
 ```
 
-This takes about 6 minutes on a 4-core CPU.
+Findings cards are curated in `pipeline/findings_curated.py`. `analyze.py` fills each card's text, z-score and rank from the sweep, so a card can only show what the sweep produced.
 
-## Putting it in a portfolio
+## Deploy to GitHub Pages (no Actions)
 
-- `vite.config.ts` uses a relative `base`, so `web/dist` works from any sub-path. Set `VITE_BASE=/your/path/` to pin an absolute one.
-- `npm run deploy` (from `web/`) verifies the model, builds the site, and pushes `web/dist` to the `gh-pages` branch. No GitHub Actions involved. One-time setup: Settings → Pages → Source "Deploy from a branch" → `gh-pages` / `(root)`. The site is then served at `https://<user>.github.io/<repo>/`.
-- The app is a set of React components (`MapView`, `Inspector`, `Probe`, `Sidebar`) over a small store (`src/store.ts`). You can lift the map or the probe into another React site.
+```bash
+cd web && npm run deploy
+```
+
+This runs `verify`, builds the site, and pushes `web/dist` to the `gh-pages` branch from a temporary git worktree. No GitHub Actions workflow is involved. One-time setup: **Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)`**. The site is then served at `https://<user>.github.io/<repo>/`. Hash routing means deep links work without a 404 fallback. `vite.config.ts` uses a relative `base`, so the build works from any sub-path.
 
 ## Credits
 
+- Method and reference findings: [neuron-explorer](https://github.com/lyramakesmusic/neuron-explorer) (MIT). The Qwen cards on the Findings page are quoted from its research log.
 - Model: [roneneldan/TinyStories-8M](https://huggingface.co/roneneldan/TinyStories-8M) (Eldan & Li, 2023). The model card states no license, so check it before any commercial use.
 - Corpus: [TinyStories](https://huggingface.co/datasets/roneneldan/TinyStories), CDLA-Sharing-1.0.
-- Inspiration: [neuron-explorer](https://github.com/lyramakesmusic/neuron-explorer) (MIT).

@@ -25,8 +25,9 @@ for (const r of ROUTES) {
   });
 }
 
-test("mobile: open a neuron from the list and replay a finding", async ({ page }) => {
+test("mobile: opening a neuron from a finding brings it into view", async ({ page }) => {
   await page.goto("./#/findings");
   await page.locator(".card:not(.ref-card) .card-actions a").first().click();
   await expect(page.locator("aside.inspector")).toBeVisible();
+  await expect(page.locator("aside.inspector h2")).toBeInViewport();
 });

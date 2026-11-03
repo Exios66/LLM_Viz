@@ -239,7 +239,7 @@ export class Sweep {
     return ids;
   }
 
-  /** Next-token Δlog-prob under a +window (up) and −window (down) push, averaged over 4 contexts. */
+  /** Next-token Δprobability under a +window (up) and −window (down) push, averaged over 4 contexts. */
   steerLens(r: NeuronRef) {
     const i = this.g(r);
     const pole = (ids: string, vals: string) => {

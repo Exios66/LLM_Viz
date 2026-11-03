@@ -10,7 +10,7 @@ Writes to --cache (not committed; analyze.py turns it into web data):
   norms.json        median residual norm leaving each layer
   calib.npz         per-layer coherence of random directions across doses
   sweep_raw.npz     greedy rollouts for every neuron + 256 random directions per layer
-  steerlens.npz     next-token Δlogprob under a ±w push, per neuron
+  steerlens.npz     next-token Δprob (and top Δlogprob ids) under a ±w push, per neuron
   cofire.npz        per-layer activation correlation on corpus tokens
 """
 
@@ -183,11 +183,13 @@ def main():
         dn_ids = np.zeros((L, N, K), dtype=np.int64)
         dn_val = np.zeros((L, N, K), dtype=np.float32)
         kl = np.zeros((L, N, 2), dtype=np.float32)
+        lp_ids = np.zeros((L, N, K), dtype=np.int64)  # top Δlog-prob under +w, for comparing with the logit lens
         ctx = [tok(c, return_tensors="pt").input_ids for c in LENS_CONTEXTS]
         base_lp = [torch.log_softmax(model(c).logits[0, -1], -1) for c in ctx]
         for l in range(L):
             for sgn_i, sgn in enumerate((1.0, -1.0)):
-                acc = torch.zeros(N, V)
+                acc = torch.zeros(N, V)  # Δprob: ranks tokens the push makes likely, not rare tokens it lifts from ~0
+                acc_lp = torch.zeros(N, V)
                 kls = torch.zeros(N)
                 for c, blp in zip(ctx, base_lp):
                     for b0 in range(0, N, args.batch):
@@ -197,18 +199,20 @@ def main():
                             lp = torch.log_softmax(model(c.repeat(len(vecs), 1)).logits[:, -1], -1)
                         finally:
                             steer.clear()
-                        acc[b0 : b0 + len(vecs)] += lp - blp
+                        acc[b0 : b0 + len(vecs)] += lp.exp() - blp.exp()
+                        acc_lp[b0 : b0 + len(vecs)] += lp - blp
                         kls[b0 : b0 + len(vecs)] += (lp.exp() * (lp - blp)).sum(-1)
                 acc /= len(ctx)
                 kl[l, :, sgn_i] = (kls / len(ctx)).numpy()
                 if sgn > 0:
                     t = acc.topk(K, -1)
                     up_ids[l], up_val[l] = t.indices.numpy(), t.values.numpy()
+                    lp_ids[l] = acc_lp.topk(K, -1).indices.numpy()
                 else:
                     t = acc.topk(K, -1)  # tokens a negative push raises
                     dn_ids[l], dn_val[l] = t.indices.numpy(), t.values.numpy()
             log(f"steer lens L{l}")
-        np.savez(out / "steerlens.npz", up_ids=up_ids, up_val=up_val, dn_ids=dn_ids, dn_val=dn_val, kl=kl)
+        np.savez(out / "steerlens.npz", up_ids=up_ids, up_val=up_val, dn_ids=dn_ids, dn_val=dn_val, kl=kl, lp_ids=lp_ids)
 
     # ---------------------------------------------------------------- co-firing
     if "cofire" in steps:

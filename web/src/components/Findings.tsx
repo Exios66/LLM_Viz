@@ -183,7 +183,7 @@ function Card({ c, atlas, active }: { c: FindingCard; atlas: Atlas; active: bool
         <span className="kind">{KIND_LABEL[c.kind]}</span>
         {c.kind === "control" ? (
           <span className="unit">
-            L{c.layer} · random direction {c.neuron + 1}
+            L{c.layer} · random direction #{c.neuron}
           </span>
         ) : (
           <a className="unit" href={`#/atlas/L${c.layer}/N${c.neuron}`}>

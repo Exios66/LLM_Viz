@@ -17,9 +17,14 @@ export function Inspector({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
   const names = useStore((s) => s.names);
   const key = nid(r);
   const g = atlas.g(r);
+  const ref = useRef<HTMLElement>(null);
+  // on narrow screens the inspector sits below the map: bring it into view when a neuron opens
+  useEffect(() => {
+    if (window.matchMedia?.("(max-width: 1100px)").matches) ref.current?.scrollIntoView({ block: "start" });
+  }, []);
 
   return (
-    <aside className="inspector" aria-label={`Neuron ${key}`}>
+    <aside ref={ref} className="inspector" aria-label={`Neuron ${key}`}>
       <header className="insp-head">
         <div className="insp-id">
           <h2>
@@ -182,7 +187,7 @@ function Profile({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; r: Ne
               value={lensKind}
               onChange={setLensKind}
               options={[
-                { v: "steer", label: "Steer lens", title: "Measured: Δlog-prob of the next token under a push, through the whole model" },
+                { v: "steer", label: "Steer lens", title: "Measured: change in next-token probability under a push, through the whole model" },
                 { v: "logit", label: "Logit lens", title: "Direct path only: output weights read through the unembedding" },
               ]}
             />
@@ -193,7 +198,7 @@ function Profile({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; r: Ne
         <LensBars items={neg} atlas={atlas} max={lmax} color={ROSE} />
         <p className="note">
           {kind === "steer"
-            ? `Average change in next-token log-probability over 4 story contexts when the residual stream is pushed ±${sweep!.window(r.layer).toFixed(2)}× its norm along this neuron's output. KL: ${sl!.klUp.toFixed(2)} up, ${sl!.klDown.toFixed(2)} down.`
+            ? `Average change in next-token probability over 4 story contexts when the residual stream is pushed ±${sweep!.window(r.layer).toFixed(2)}× its norm along this neuron's output. KL: ${sl!.klUp.toFixed(2)} up, ${sl!.klDown.toFixed(2)} down.`
             : "Logit lens: the neuron's output weights read straight through the unembedding. It shows the direct effect only, not what later layers do with it."}
         </p>
       </section>

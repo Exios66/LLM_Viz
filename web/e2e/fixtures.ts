@@ -32,7 +32,7 @@ export async function waitForModel(page: Page) {
 }
 
 export async function waitForSweep(page: Page) {
-  await expect(page.getByRole("radio", { name: "Uniqueness" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Uniqueness", exact: true })).toBeVisible();
 }
 
 export const inspector = (page: Page) => page.locator("aside.inspector");
