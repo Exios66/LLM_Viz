@@ -1,30 +1,44 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Atlas, nid } from "./lib/atlas";
 import { Runtime } from "./lib/runtime";
 import { Sweep } from "./lib/sweep";
-import { formatRoute, parseRoute } from "./lib/route";
-import { getState, setState, subscribe, useStore, type State } from "./store";
-import { MapView } from "./components/MapView";
+import { RecordedModel } from "./lib/recorded";
+import { loadResearch } from "./lib/research";
+import { askedForNeuron, formatRoute, parseRoute, type Limits } from "./lib/route";
+import { applyTheme, getState, setState, subscribe, useStore, type State } from "./store";
 import { Inspector } from "./components/Inspector";
 import { Probe } from "./components/Probe";
 import { Sidebar } from "./components/Sidebar";
 import { Header } from "./components/Header";
-import { FindingsPage } from "./components/Findings";
-import { MethodPage } from "./components/Method";
+import { HomePage } from "./components/Home";
+import { Footer } from "./components/Footer";
+import { ModelInspector } from "./components/ModelInspector";
+import { ModelSidebar } from "./components/ModelSidebar";
+import { Overlays } from "./components/Overlays";
 import { showToken } from "./components/bits";
 
-const DATA = new URL(`${import.meta.env.BASE_URL}data`, window.location.href).href.replace(/\/$/, "");
+// Heavy or rarely used views load on demand, so Home paints without three.js or the findings bundle.
+const MapView = lazy(() => import("./components/MapView").then((m) => ({ default: m.MapView })));
+const FindingsPage = lazy(() => import("./components/Findings").then((m) => ({ default: m.FindingsPage })));
+const MethodPage = lazy(() => import("./components/Method").then((m) => ({ default: m.MethodPage })));
+const ResearchPage = lazy(() => import("./components/Research").then((m) => ({ default: m.ResearchPage })));
+
+export const DATA = new URL(`${import.meta.env.BASE_URL}data`, window.location.href).href.replace(/\/$/, "");
 
 let booted = false;
 function boot() {
   if (booted) return;
   booted = true;
+  applyTheme(getState().theme);
   Atlas.load(DATA, (f) => setState({ atlasProgress: f }))
     .then((a) => setState({ atlas: a }))
     .catch((e) => setState({ atlasError: String(e?.message ?? e) }));
   Sweep.load(DATA)
     .then((sw) => setState({ sweep: sw }))
     .catch((e) => setState({ sweepError: String(e?.message ?? e), colorMode: "selectivity" }));
+  RecordedModel.registry(DATA)
+    .then((models) => setState({ models }))
+    .catch(() => setState({ models: [] })); // recorded models are optional
   const rt = new Runtime();
   rt.onCrash = (msg) => setState({ modelError: msg, modelProgress: 0 });
   setState({ runtime: rt });
@@ -33,37 +47,84 @@ function boot() {
     .catch((e) => setState({ modelError: String(e?.message ?? e) }));
 }
 
-/** Keep the URL hash and the store in step, in both directions. */
-function useRouting(atlas: Atlas | null) {
+/** Load research.json the first time a view needs it. */
+export function ensureResearch() {
+  const s = getState();
+  if (s.research || s.researchError === "loading") return;
+  setState({ researchError: "loading" });
+  loadResearch(DATA)
+    .then((r) => setState({ research: r, researchError: null }))
+    .catch((e) => setState({ researchError: String(e?.message ?? e) }));
+}
+
+/** Load a recorded model pack when its route is opened. */
+function useRecorded() {
+  const model = useStore((s) => s.model);
+  const models = useStore((s) => s.models);
   useEffect(() => {
-    if (!atlas) return;
-    const limits = { layers: atlas.L, neurons: atlas.N };
+    if (!model) return;
+    const cur = getState().recorded;
+    if (cur?.entry.slug === model) return;
+    const entry = models.find((m) => m.slug === model);
+    if (!entry) {
+      if (models.length) setState({ recordedError: `There is no recorded model called “${model}”.`, recorded: null });
+      return;
+    }
+    let cancelled = false;
+    setState({ recorded: null, recordedError: null, recordedProgress: 0 });
+    RecordedModel.load(DATA, entry, (f) => !cancelled && setState({ recordedProgress: f }))
+      .then((m) => !cancelled && setState({ recorded: m, colorMode: m.hunt ? "hunt" : m.signals.d_evil ? "evil" : "selectivity" }))
+      .catch((e) => !cancelled && setState({ recordedError: String(e?.message ?? e) }));
+    return () => {
+      cancelled = true;
+    };
+  }, [model, models]);
+}
+
+/** Keep the URL hash and the store in step, in both directions. */
+function useRouting() {
+  const atlas = useStore((s) => s.atlas);
+  const recorded = useStore((s) => s.recorded);
+  useEffect(() => {
+    const limits: Limits = atlas ? { layers: atlas.L, neurons: atlas.N } : { layers: Infinity, neurons: Infinity };
+    const modelLimits = (slug: string): Limits | undefined => {
+      const s = getState();
+      if (s.recorded?.entry.slug === slug) return { layers: s.recorded.L, neurons: s.recorded.N };
+      const e = s.models.find((m) => m.slug === slug);
+      return e ? { layers: e.layers, neurons: e.neurons } : { layers: Infinity, neurons: Infinity };
+    };
     const apply = () => {
       const hash = window.location.hash;
-      const r = parseRoute(hash, limits);
-      const asked = /^#\/?atlas\/[^/?]+\/[^/?]+/i.test(hash);
+      const r = parseRoute(hash, limits, modelLimits);
       const s = getState();
+      const same = r.focus && s.focus && r.focus.layer === s.focus.layer && r.focus.neuron === s.focus.neuron && r.model === s.model;
+      const shape = r.model ? modelLimits(r.model) : limits;
       setState({
         view: r.view,
-        focus: r.focus && s.focus && r.focus.layer === s.focus.layer && r.focus.neuron === s.focus.neuron ? s.focus : r.focus,
+        model: r.model,
+        focus: same ? s.focus : r.focus,
         tab: r.tab ?? (r.focus ? s.tab : "profile"),
         card: r.card,
-        notice: asked && !r.focus ? `There is no neuron at “${decodeURIComponent(hash.slice(1))}”. This model has layers 0–${atlas.L - 1} and neurons 0–${atlas.N - 1}.` : null,
+        notice:
+          askedForNeuron(hash) && !r.focus && shape && Number.isFinite(shape.layers)
+            ? `There is no neuron at “${decodeURIComponent(hash.slice(1))}”. This model has layers 0–${shape.layers - 1} and neurons 0–${shape.neurons - 1}.`
+            : null,
       });
-      const canon = formatRoute({ view: r.view, focus: r.focus, tab: r.tab, card: r.card });
-      if (canon !== hash && !(canon === "#/atlas" && hash === "")) history.replaceState(null, "", canon);
+      const canon = formatRoute(r);
+      const shapesKnown = Number.isFinite(limits.layers) && (!r.model || !!getState().recorded);
+      if (shapesKnown && canon !== hash && !(canon === "#/" && hash === "")) history.replaceState(null, "", canon);
     };
     apply();
     window.addEventListener("hashchange", apply);
     let last: State = getState();
     const unsub = subscribe(() => {
       const s = getState();
-      if (s.view !== last.view || s.focus !== last.focus || s.tab !== last.tab || s.card !== last.card) {
-        const next = formatRoute({ view: s.view, focus: s.focus, tab: s.tab, card: s.card });
-        const cur = window.location.hash || "#/atlas";
+      if (s.view !== last.view || s.focus !== last.focus || s.tab !== last.tab || s.card !== last.card || s.model !== last.model) {
+        const next = formatRoute({ view: s.view, model: s.model, focus: s.focus, tab: s.tab, card: s.card });
+        const cur = window.location.hash || "#/";
         if (next !== cur) {
           // a new neuron or page is a history entry; switching tabs is not
-          const sameTarget = s.view === last.view && s.focus === last.focus && s.card === last.card;
+          const sameTarget = s.view === last.view && s.focus === last.focus && s.card === last.card && s.model === last.model;
           if (sameTarget) history.replaceState(null, "", next);
           else history.pushState(null, "", next);
         }
@@ -74,35 +135,31 @@ function useRouting(atlas: Atlas | null) {
       window.removeEventListener("hashchange", apply);
       unsub();
     };
-  }, [atlas]);
+  }, [atlas, recorded]);
+}
+
+function PageLoading() {
+  return (
+    <div className="page-wrap" role="status">
+      <div className="skeleton skel-title" />
+      <div className="skeleton skel-line" />
+      <div className="skeleton skel-line short" />
+    </div>
+  );
 }
 
 export function App() {
-  const atlas = useStore((s) => s.atlas);
-  const progress = useStore((s) => s.atlasProgress);
-  const err = useStore((s) => s.atlasError);
   const view = useStore((s) => s.view);
+  const model = useStore((s) => s.model);
 
   useEffect(boot, []);
-  useRouting(atlas);
+  useRouting();
+  useRecorded();
 
-  if (!atlas) {
-    return (
-      <div className="boot" role="status">
-        <h1>Neuron Atlas</h1>
-        {err ? (
-          <>
-            <p className="err">The atlas failed to load: {err}</p>
-            <p>
-              <button onClick={() => window.location.reload()}>Reload</button>
-            </p>
-          </>
-        ) : (
-          <p>Loading the atlas: {Math.round(progress * 100)}%</p>
-        )}
-      </div>
-    );
-  }
+  useEffect(() => {
+    const titles: Record<string, string> = { home: "Neuron Atlas", findings: "Findings", research: "Research", method: "Method", atlas: "Atlas" };
+    document.title = view === "home" ? "Neuron Atlas — steering every neuron of a language model" : `${titles[view]} · Neuron Atlas`;
+  }, [view]);
 
   return (
     <>
@@ -110,71 +167,180 @@ export function App() {
         Skip to content
       </a>
       {view === "atlas" ? (
-        <AtlasView atlas={atlas} />
+        model ? <RecordedAtlasView /> : <AtlasView />
       ) : (
         <div className="app page">
-          <Header atlas={atlas} />
+          <Header />
           <main id="main" className="page-main" tabIndex={-1}>
-            {view === "findings" ? <FindingsPage atlas={atlas} /> : <MethodPage />}
+            {view === "home" ? (
+              <HomePage />
+            ) : (
+              <Suspense fallback={<PageLoading />}>
+                {view === "findings" ? <FindingsGate /> : view === "research" ? <ResearchPage /> : <MethodPage />}
+              </Suspense>
+            )}
+            <Footer />
           </main>
         </div>
       )}
+      <Overlays />
     </>
   );
 }
 
-function AtlasView({ atlas }: { atlas: Atlas }) {
-  const focus = useStore((s) => s.focus);
-  const webglError = useStore((s) => s.webglError);
-  const notice = useStore((s) => s.notice);
-  const [mapKey, setMapKey] = useState(0);
+function FindingsGate() {
+  const atlas = useStore((s) => s.atlas);
+  const err = useStore((s) => s.atlasError);
+  if (err) return <div className="page-wrap"><p className="err" role="alert">The atlas failed to load: {err}</p></div>;
+  if (!atlas) return <PageLoading />;
+  return <FindingsPage atlas={atlas} />;
+}
+
+function useEscapeCloses() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || !getState().focus) return;
+      if (e.key !== "Escape") return;
+      const s = getState();
+      if (s.help || s.tour !== null) return; // overlays handle their own Escape
+      if (!s.focus) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
-      setState({ focus: null, tab: "profile" });
+      setState({ focus: null, tab: "profile", compare: null });
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+}
+
+function MapStage({ children, map }: { children?: React.ReactNode; map: React.ReactNode }) {
+  const webglError = useStore((s) => s.webglError);
+  const notice = useStore((s) => s.notice);
+  const [mapKey, setMapKey] = useState(0);
+  return (
+    <div className="map-wrap darkfield">
+      {webglError ? (
+        <div className="map-fallback" role="alert">
+          <h2>The 3D map is unavailable</h2>
+          <p>{webglError}</p>
+          <p>Everything else still works: find neurons in the list, open them, and read their results.</p>
+          <button
+            onClick={() => {
+              setState({ webglError: null });
+              setMapKey((k) => k + 1);
+            }}
+          >
+            Try the map again
+          </button>
+        </div>
+      ) : (
+        <Suspense fallback={<div className="map-loading" role="status">Drawing the map…</div>}>
+          <div key={mapKey} className="map-host">{map}</div>
+        </Suspense>
+      )}
+      {children}
+      {notice && (
+        <div className="notice" role="status">
+          <span>{notice}</span>
+          <button className="icon" aria-label="Dismiss" onClick={() => setState({ notice: null })}>
+            ×
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AtlasView() {
+  const atlas = useStore((s) => s.atlas);
+  const progress = useStore((s) => s.atlasProgress);
+  const err = useStore((s) => s.atlasError);
+  const focus = useStore((s) => s.focus);
+  const webglError = useStore((s) => s.webglError);
+  useEscapeCloses();
+  if (!atlas) {
+    return (
+      <div className="app page">
+        <Header />
+        <main id="main" className="page-main" tabIndex={-1}>
+          <div className="boot" role="status">
+            {err ? (
+              <>
+                <p className="err">The atlas failed to load: {err}</p>
+                <p><button onClick={() => window.location.reload()}>Reload</button></p>
+              </>
+            ) : (
+              <p>Loading the atlas: {Math.round(progress * 100)}%</p>
+            )}
+          </div>
+        </main>
+      </div>
+    );
+  }
   return (
     <div className={`app${focus ? " has-focus" : ""}`}>
-      <Header atlas={atlas} />
+      <Header />
       <Sidebar atlas={atlas} />
       <main id="main" className="stage" tabIndex={-1}>
-        <div className="map-wrap">
-          {webglError ? (
-            <div className="map-fallback" role="alert">
-              <h2>The 3D map is unavailable</h2>
-              <p>{webglError}</p>
-              <p>Everything else still works: find neurons in the list, open them, probe text and steer the model.</p>
-              <button
-                onClick={() => {
-                  setState({ webglError: null });
-                  setMapKey((k) => k + 1);
-                }}
-              >
-                Try the map again
-              </button>
-            </div>
-          ) : (
-            <MapView key={mapKey} atlas={atlas} />
-          )}
+        <MapStage map={<MapView space={atlas} />}>
           <HoverCard atlas={atlas} />
           {!focus && !webglError && <Intro />}
-          {notice && (
-            <div className="notice" role="status">
-              <span>{notice}</span>
-              <button className="icon" aria-label="Dismiss" onClick={() => setState({ notice: null })}>
-                ×
-              </button>
-            </div>
-          )}
-        </div>
+        </MapStage>
         <Probe atlas={atlas} />
       </main>
       {focus && <Inspector key={nid(focus)} atlas={atlas} r={focus} />}
+    </div>
+  );
+}
+
+function RecordedAtlasView() {
+  const recorded = useStore((s) => s.recorded);
+  const err = useStore((s) => s.recordedError);
+  const progress = useStore((s) => s.recordedProgress);
+  const focus = useStore((s) => s.focus);
+  const hover = useStore((s) => s.hover);
+  useEscapeCloses();
+  if (!recorded) {
+    return (
+      <div className="app page">
+        <Header />
+        <main id="main" className="page-main" tabIndex={-1}>
+          <div className="boot" role={err ? "alert" : "status"}>
+            {err ? (
+              <>
+                <p className="err">{err}</p>
+                <p><a href="#/atlas">Open the live TinyStories atlas</a></p>
+              </>
+            ) : (
+              <p>Loading the recorded model: {Math.round(progress * 100)}%</p>
+            )}
+          </div>
+        </main>
+      </div>
+    );
+  }
+  return (
+    <div className={`app recorded${focus ? " has-focus" : ""}`}>
+      <Header />
+      <ModelSidebar m={recorded} />
+      <main id="main" className="stage stage-recorded" tabIndex={-1}>
+        <MapStage map={<MapView space={recorded} recorded={recorded} />}>
+          {hover && (
+            <div className="hover-card" aria-hidden="true">
+              <strong>{nid(hover)}</strong>
+              <span>{recorded.label(hover)}</span>
+            </div>
+          )}
+          {!focus && (
+            <div className="intro">
+              <p>
+                {recorded.entry.label}: {recorded.L} layers × {recorded.N.toLocaleString()} neurons, {(recorded.L * recorded.N).toLocaleString()} in all.
+              </p>
+              <p>This model is recorded, not live: its statistics and steering results were computed offline by the pipeline and are shown as recorded.</p>
+            </div>
+          )}
+        </MapStage>
+      </main>
+      {focus && <ModelInspector key={`${recorded.entry.slug}:${nid(focus)}`} m={recorded} r={focus} />}
     </div>
   );
 }
@@ -193,7 +359,7 @@ function HoverCard({ atlas }: { atlas: Atlas }) {
       {st && Number.isFinite(st.z) && (
         <span className="lens-inline">
           steering beats {Math.round(st.pct * 100)}% of random directions
-          {st.themes.length > 0 && <> · pulls toward <em>{st.themes.slice(0, 3).join(", ")}</em></>}
+          {st.themes.length > 0 && <>, pulls toward <em>{st.themes.slice(0, 3).join(", ")}</em></>}
         </span>
       )}
       <span className="lens-inline">

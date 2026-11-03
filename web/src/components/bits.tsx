@@ -79,3 +79,9 @@ export function Seg<T extends string | number>({ value, options, onChange, label
     </div>
   );
 }
+
+/** Mark the words of a theme or lexicon inside a text (case-insensitive, whole words). */
+export function highlight(text: string, themes: string[]) {
+  const set = new Set(themes.map((t) => t.toLowerCase()));
+  return text.split(/(\b[a-zA-Z]+\b)/).map((part, i) => (set.has(part.toLowerCase()) ? <mark key={i}>{part}</mark> : <span key={i}>{part}</span>));
+}

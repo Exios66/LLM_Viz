@@ -5,9 +5,12 @@ import type { Atlas, NeuronRef } from "./lib/atlas";
 import type { Edit } from "./lib/model";
 import type { Analysis, Runtime } from "./lib/runtime";
 import type { Sweep } from "./lib/sweep";
+import type { ModelEntry, RecordedModel } from "./lib/recorded";
+import type { ResearchData } from "./lib/research";
 import type { Tab, View } from "./lib/route";
 
-export type ColorMode = "uniqueness" | "selectivity" | "density" | "probe";
+export type ColorMode = "uniqueness" | "selectivity" | "density" | "probe" | "evil" | "alien" | "hunt";
+export type Theme = "system" | "light" | "dark";
 export type LayoutMode = "writes" | "cofire";
 
 /** A steering run requested from elsewhere (a finding's Replay button). */
@@ -45,10 +48,24 @@ export interface State {
   steerRequest: SteerRequest | null;
   webglError: string | null;
   notice: string | null;
+  theme: Theme;
+  /** Recorded models (ADR-005). `model` is the slug in view, null = live TinyStories. */
+  models: ModelEntry[];
+  model: string | null;
+  recorded: RecordedModel | null;
+  recordedProgress: number;
+  recordedError: string | null;
+  research: ResearchData | null;
+  researchError: string | null;
+  compare: NeuronRef | null;
+  tour: number | null;
+  help: boolean;
 }
 
 const NAMES_KEY = "neuron-atlas:names";
 const EDITS_KEY = "neuron-atlas:edits:v2";
+export const THEME_KEY = "neuron-atlas:theme";
+export const TOUR_KEY = "neuron-atlas:tour-done";
 
 function readLocal<T>(key: string, fallback: T): T {
   try {
@@ -127,6 +144,24 @@ let state: State = {
   steerRequest: null,
   webglError: null,
   notice: null,
+  theme: ((): Theme => {
+    try {
+      const t = localStorage.getItem(THEME_KEY);
+      return t === "light" || t === "dark" ? t : "system";
+    } catch {
+      return "system";
+    }
+  })(),
+  models: [],
+  model: null,
+  recorded: null,
+  recordedProgress: 0,
+  recordedError: null,
+  research: null,
+  researchError: null,
+  compare: null,
+  tour: null,
+  help: false,
 };
 
 const listeners = new Set<() => void>();
@@ -140,6 +175,7 @@ export function setState(patch: Partial<State> | ((s: State) => Partial<State>))
   state = { ...state, ...p };
   if ("names" in p) writeLocal(NAMES_KEY, state.names);
   if ("edits" in p) writeLocal(EDITS_KEY, state.edits);
+  if ("theme" in p) applyTheme(state.theme);
   listeners.forEach((l) => l());
 }
 
@@ -173,6 +209,30 @@ export function toggleEdit(r: NeuronRef) {
   }));
 }
 
+export function applyTheme(t: Theme) {
+  const root = document.documentElement;
+  if (t === "system") delete root.dataset.theme;
+  else root.dataset.theme = t;
+  try {
+    if (t === "system") localStorage.removeItem(THEME_KEY);
+    else localStorage.setItem(THEME_KEY, t);
+  } catch {
+    /* storage blocked: the theme still applies for this visit */
+  }
+}
+
 export function focusNeuron(r: NeuronRef | null, tab?: Tab) {
   setState((s) => ({ focus: r ? { layer: r.layer, neuron: r.neuron } : null, view: "atlas", tab: tab ?? (r ? s.tab : "profile") }));
+}
+
+/** Open a neuron of a recorded model (slug) or of the live model (null). */
+export function openModel(slug: string | null, r: NeuronRef | null = null, tab?: Tab) {
+  setState((s) => {
+    const switching = s.model !== slug;
+    return {
+      view: "atlas", model: slug, focus: r ? { layer: r.layer, neuron: r.neuron } : null,
+      tab: tab ?? (r ? (switching ? (slug ? "profile" : "profile") : s.tab) : "profile"),
+      ...(switching ? { hover: null, isolateLayer: null, compare: null, colorMode: slug ? "evil" : s.sweep ? "uniqueness" : "selectivity" } : {}),
+    } as Partial<State>;
+  });
 }

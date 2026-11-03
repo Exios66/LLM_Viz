@@ -2,11 +2,14 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { ramp } from "../lib/colors";
-import type { Atlas, NeuronRef } from "../lib/atlas";
+import type { NeuronRef } from "../lib/atlas";
+import type { Space } from "../lib/space";
+import type { RecordedModel } from "../lib/recorded";
 import { editKey, focusNeuron, getState, setState, subscribe, type State } from "../store";
 
-const SPACING = 0.42;
 const SHEET = 1.0;
+/** Total stack height stays near 3 units whatever the depth, so 8 and 24 layers frame alike. */
+const spacingFor = (L: number) => Math.min(0.42, 3.0 / Math.max(1, L - 1));
 
 const vert = /* glsl */ `
   attribute vec3 color;
@@ -37,10 +40,22 @@ const frag = /* glsl */ `
 `;
 
 export function layerY(l: number, L: number) {
-  return (l - (L - 1) / 2) * SPACING;
+  return (l - (L - 1) / 2) * spacingFor(L);
 }
 
-export function MapView({ atlas }: { atlas: Atlas }) {
+const CONCEPT_RGB: Record<string, [number, number, number]> = {
+  evil: [0.93, 0.44, 0.53],
+  alien: [0.37, 0.82, 0.87],
+  other: [0.95, 0.72, 0.29],
+};
+
+/**
+ * The 3D neuron stack. `space` is the live atlas or a recorded model; `recorded` is set for recorded models and
+ * enables their colour modes (concept contrast, hunt results). Live-only features (probe colouring, steering
+ * uniqueness, co-firing layout, connection web) come from the store's sweep/analysis and apply only when live.
+ */
+export function MapView({ space, recorded = null }: { space: Space; recorded?: RecordedModel | null }) {
+  const atlas = space;
   const wrap = useRef<HTMLDivElement>(null);
   const labels = useRef<HTMLDivElement>(null);
 
@@ -85,7 +100,7 @@ export function MapView({ atlas }: { atlas: Atlas }) {
     pos.set(writesPos);
     let fromPos = writesPos, toPos = writesPos, morphT = 1, morphStart = 0;
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    const targetFor = (s: State) => (s.layoutMode === "cofire" && s.sweep && s.sweep.cofire.length === total * 2 ? layoutPos(s.sweep.cofire) : writesPos);
+    const targetFor = (s: State) => (live && s.layoutMode === "cofire" && s.sweep && s.sweep.cofire.length === total * 2 ? layoutPos(s.sweep.cofire) : writesPos);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     const colors = new Float32Array(total * 3);
@@ -106,7 +121,9 @@ export function MapView({ atlas }: { atlas: Atlas }) {
     scene.add(points);
 
     // faint sheet outlines
-    const sheetMat = new THREE.LineBasicMaterial({ color: 0x39407a, transparent: true, opacity: 0.55 });
+    const sheetMat = new THREE.LineBasicMaterial({ color: 0x39437a, transparent: true, opacity: 0.55 });
+    const live = !recorded;
+    const sizeScale = Math.sqrt(1024 / N) * (L > 12 ? 1.25 : 1); // keep sheets equally dense to the eye
     const sheets: THREE.LineLoop[] = [];
     for (let l = 0; l < L; l++) {
       const s = SHEET * 1.08;
@@ -132,6 +149,7 @@ export function MapView({ atlas }: { atlas: Atlas }) {
       const b = document.createElement("button");
       b.className = "layer-label";
       b.textContent = `layer ${l}`;
+      if (L > 12 && l % 4 !== 0 && l !== L - 1) b.classList.add("minor");
       b.title = `Show only layer ${l} (click again to show all)`;
       b.onclick = () => setState((s) => ({ isolateLayer: s.isolateLayer === l ? null : l }));
       labels.current!.appendChild(b);
@@ -143,7 +161,7 @@ export function MapView({ atlas }: { atlas: Atlas }) {
     // uniqueness: z against random directions, mapped so the null band stays dim
     let zT: Float32Array | null = null;
     const computeZ = (s: State) => {
-      if (!s.sweep) return null;
+      if (!live || !s.sweep) return null;
       const z = s.sweep.zArray();
       const sorted = Float32Array.from(z).filter(Number.isFinite).sort();
       const hi = Math.max(sorted[Math.floor(sorted.length * 0.995)] ?? 1, 3);
@@ -152,7 +170,25 @@ export function MapView({ atlas }: { atlas: Atlas }) {
       for (let g = 0; g < total; g++) out[g] = Number.isFinite(z[g]) ? Math.min(1, Math.max(0, (z[g] - lo) / (hi - lo))) : 0;
       return out;
     };
+    // recorded models: concept contrast (Cohen's d) mapped so d ≤ 0.5 stays dim, and hunt finalists by concept
+    const signalT = (name: string) => {
+      const d = recorded?.signals[name];
+      if (!d) return null;
+      const sorted = Float32Array.from(d).sort();
+      const hi = Math.max(sorted[Math.floor(sorted.length * 0.999)] ?? 1, 1);
+      const out = new Float32Array(total);
+      for (let g = 0; g < total; g++) out[g] = Math.min(1, Math.max(0, (d[g] - 0.5) / (hi - 0.5)));
+      return out;
+    };
+    const evilT = signalT("d_evil"), alienT = signalT("d_alien");
+    const huntConcept = new Map<number, string>();
+    const huntScreened = new Set<number>();
+    if (recorded?.hunt) {
+      for (const f of recorded.hunt.finalists) huntConcept.set(recorded.g(f), f.concept);
+      for (const u of recorded.hunt.scatter.units) huntScreened.add(u[0] * N + u[1]);
+    }
     const computeProbe = (s: State) => {
+      if (!live) return null;
       const a = s.analysis;
       if (!a || !a.tokens.length) return null;
       const T = a.tokens.length;
@@ -173,14 +209,29 @@ export function MapView({ atlas }: { atlas: Atlas }) {
       const focusG = s.focus ? atlas.g(s.focus) : -1;
       const hoverG = s.hover ? atlas.g(s.hover) : -1;
       const linked = new Set<number>();
-      if (s.focus && s.showWeb) {
+      if (s.focus && s.showWeb && live) {
         for (const k of [...atlas.links(s.focus, "up"), ...atlas.links(s.focus, "down")]) linked.add(atlas.g(k));
       }
+      const compareG = s.compare ? atlas.g(s.compare) : -1;
       for (let g = 0; g < total; g++) {
         const l = Math.floor(g / N);
         let t: number;
         let size = 7;
-        if (s.colorMode === "probe" && probeRel) {
+        let rgb: [number, number, number] | null = null;
+        if (!live && (s.colorMode === "evil" || s.colorMode === "alien") && (s.colorMode === "evil" ? evilT : alienT)) {
+          const tt = (s.colorMode === "evil" ? evilT : alienT)![g];
+          t = 0.1 + 0.9 * Math.pow(tt, 0.8);
+          size = 4 + 14 * tt;
+          const c = CONCEPT_RGB[s.colorMode];
+          rgb = [c[0] * t, c[1] * t, c[2] * t];
+        } else if (!live && s.colorMode === "hunt") {
+          const c = huntConcept.get(g);
+          if (c) {
+            t = 1; size = 18; rgb = CONCEPT_RGB[c];
+          } else {
+            t = huntScreened.has(g) ? 0.32 : 0.08; size = huntScreened.has(g) ? 7 : 4;
+          }
+        } else if (s.colorMode === "probe" && probeRel) {
           const r = Math.max(0, probeRel[g]);
           t = Math.pow(Math.min(r, 1), 0.8);
           size = 5 + 16 * Math.min(r, 1.2);
@@ -194,7 +245,8 @@ export function MapView({ atlas }: { atlas: Atlas }) {
           t = Math.max(0, (atlas.share[g] - 0.1) / 0.9);
           size = 5 + 9 * t;
         }
-        let [r, gg, b] = ramp(t);
+        let [r, gg, b] = rgb ?? ramp(t);
+        size *= sizeScale;
         let a = 0.25 + 0.75 * t;
         if (edited.has(`${l}:${g % N}`)) {
           [r, gg, b] = [0.73, 0.65, 1];
@@ -209,9 +261,14 @@ export function MapView({ atlas }: { atlas: Atlas }) {
           size = Math.max(size * 1.6, 20);
           a = 1;
         }
+        if (g === compareG) {
+          [r, gg, b] = [0.72, 0.64, 1];
+          size = 26 * Math.max(0.7, sizeScale);
+          a = 1;
+        }
         if (g === focusG) {
           [r, gg, b] = [1, 0.95, 0.85];
-          size = 30;
+          size = 30 * Math.max(0.7, sizeScale);
           a = 1;
         }
         if (s.isolateLayer !== null && l !== s.isolateLayer) a *= 0.08;
@@ -232,7 +289,7 @@ export function MapView({ atlas }: { atlas: Atlas }) {
       // web
       const segs: number[] = [];
       const cols: number[] = [];
-      if (s.focus && s.showWeb) {
+      if (s.focus && s.showWeb && live) {
         const links = [...atlas.links(s.focus, "up"), ...atlas.links(s.focus, "down")];
         const wmax = Math.max(...links.map((k) => Math.abs(k.w)), 1e-6);
         for (const k of links) {
@@ -274,7 +331,7 @@ export function MapView({ atlas }: { atlas: Atlas }) {
       if (s.sweep !== last.sweep || 
         s.analysis !== last.analysis || s.probePos !== last.probePos || s.focus !== last.focus ||
         s.hover !== last.hover || s.edits !== last.edits || s.colorMode !== last.colorMode ||
-        s.showWeb !== last.showWeb || s.isolateLayer !== last.isolateLayer
+        s.showWeb !== last.showWeb || s.isolateLayer !== last.isolateLayer || s.compare !== last.compare
       ) paint();
       last = s;
     });
@@ -286,7 +343,7 @@ export function MapView({ atlas }: { atlas: Atlas }) {
       const r = renderer.domElement.getBoundingClientRect();
       mouse.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
       ray.setFromCamera(mouse, camera);
-      ray.params.Points = { threshold: 0.022 * camera.position.distanceTo(controls.target) / 3 };
+      ray.params.Points = { threshold: (0.022 * camera.position.distanceTo(controls.target)) / 3 * Math.max(0.55, sizeScale) };
       const iso = getState().isolateLayer;
       const hits = ray.intersectObject(points).filter((h) => iso === null || Math.floor(h.index! / N) === iso);
       if (!hits.length) return null;
@@ -354,7 +411,9 @@ export function MapView({ atlas }: { atlas: Atlas }) {
       controls.update();
       renderer.render(scene, camera);
       const w = host.clientWidth, h = host.clientHeight;
+      const iso = getState().isolateLayer;
       for (let l = 0; l < L; l++) {
+        labelEls[l].hidden = L > 12 && labelEls[l].classList.contains("minor") && iso !== l;
         v.set(-SHEET * 1.1, layerY(l, L), SHEET * 1.1).project(camera);
         labelEls[l].style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * h}px) translate(-100%, -50%)`;
       }
@@ -374,7 +433,7 @@ export function MapView({ atlas }: { atlas: Atlas }) {
       el.remove();
       labelEls.forEach((b) => b.remove());
     };
-  }, [atlas]);
+  }, [atlas, recorded]);
 
   return (
     <div className="map" ref={wrap}>

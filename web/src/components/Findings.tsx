@@ -4,8 +4,9 @@
 import { useEffect, useMemo } from "react";
 import type { Atlas } from "../lib/atlas";
 import type { FindingCard, Findings, Sweep } from "../lib/sweep";
-import { focusNeuron, setState, useStore } from "../store";
+import { openModel, setState, useStore } from "../store";
 import { DoseHeatmap, LayerBars, LayerDots } from "./charts";
+import { highlight } from "./bits";
 
 const KIND_LABEL: Record<FindingCard["kind"], string> = {
   concept: "Concept pull",
@@ -17,10 +18,6 @@ const KIND_LABEL: Record<FindingCard["kind"], string> = {
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
-export function highlight(text: string, themes: string[]) {
-  const set = new Set(themes.map((t) => t.toLowerCase()));
-  return text.split(/(\b[a-zA-Z]+\b)/).map((part, i) => (set.has(part.toLowerCase()) ? <mark key={i}>{part}</mark> : <span key={i}>{part}</span>));
-}
 
 export function FindingsPage({ atlas }: { atlas: Atlas }) {
   const sweep = useStore((s) => s.sweep);
@@ -173,7 +170,7 @@ function Headline({ f }: { f: Findings }) {
 function Card({ c, atlas, active }: { c: FindingCard; atlas: Atlas; active: boolean }) {
   const ready = useStore((s) => s.modelProgress >= 1);
   const replay = () => {
-    focusNeuron({ layer: c.layer, neuron: c.neuron }, "steer");
+    openModel(null, { layer: c.layer, neuron: c.neuron }, "steer");
     setState({ steerRequest: { layer: c.layer, neuron: c.neuron, prompt: c.prompt, dose: c.dose, nonce: Date.now() } });
   };
   const label = atlas.label({ layer: c.layer, neuron: c.neuron });

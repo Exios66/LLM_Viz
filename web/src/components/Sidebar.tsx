@@ -71,7 +71,7 @@ export function Sidebar({ atlas }: { atlas: Atlas }) {
             value={rank}
             onChange={setRank}
             options={[
-              { v: "unique", label: "Steering uniqueness", title: "How distinctive the text becomes when the neuron is pushed" },
+              { v: "unique", label: "Steering", title: "How distinctive the text becomes when the neuron is pushed" },
               { v: "selective", label: "Selectivity", title: "How concentrated its top contexts are on one token" },
             ]}
           />
