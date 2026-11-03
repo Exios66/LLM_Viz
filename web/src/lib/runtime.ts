@@ -5,6 +5,7 @@ import type { Edit, ModelMeta } from "./model";
 import type { Pred, Req, Res } from "./worker";
 
 export type Analysis = Extract<Res, { kind: "analysis" }>;
+export type Ablation = Extract<Res, { kind: "ablation" }>;
 export type { Pred };
 
 type Pending = { resolve: (r: Res) => void; reject: (e: Error) => void; onEvent?: (r: Res) => void };
@@ -85,6 +86,27 @@ export class Runtime {
   async analyze(text: string, edits: Edit[], maxTokens = 128): Promise<Analysis> {
     await this.ensure();
     return (await this.call({ kind: "analyze", text, edits, maxTokens } as Omit<Req, "id">).done) as Analysis;
+  }
+
+  /** Score held-out texts with and without the edits (ADR-003 job). Cancellable; jobs queue in the worker. */
+  ablate(texts: string[], edits: Edit[], maxTokens: number, onProgress: (done: number, total: number) => void) {
+    let id = -1;
+    let cancelled = false;
+    const done = this.ensure().then(() => {
+      if (cancelled) throw new Error("cancelled");
+      const c = this.call({ kind: "ablate", texts, edits, maxTokens } as Omit<Req, "id">, (e) => {
+        if (e.kind === "progress") onProgress(e.loaded, e.total);
+      });
+      id = c.id;
+      return c.done as Promise<Ablation>;
+    });
+    return {
+      cancel: () => {
+        cancelled = true;
+        if (id >= 0) this.worker?.postMessage({ kind: "cancel", id } as Req);
+      },
+      done,
+    };
   }
 
   generate(

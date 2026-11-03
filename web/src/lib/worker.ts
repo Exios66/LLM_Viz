@@ -18,6 +18,7 @@ export type Req =
       topP: number;
       seed: number;
     }
+  | { kind: "ablate"; id: number; texts: string[]; edits: Edit[]; maxTokens: number }
   | { kind: "cancel"; id: number };
 
 export interface Pred {
@@ -39,6 +40,17 @@ export type Res =
     }
   | { kind: "token"; id: number; variant: number; token: number }
   | { kind: "done"; id: number; promptTokens: number[] }
+  | {
+      kind: "ablation";
+      id: number;
+      tokens: number; // positions scored
+      dNll: number; // mean change in loss (nats/token), positive = the edit hurt
+      kl: number; // mean KL(base || edited) per position
+      perText: { dNll: number; kl: number }[];
+      strip: { tokens: number[]; delta: number[] }; // first text: per-token change in log-prob of the true token
+      hurt: [number, number][]; // token id, mean Δ (most hurt)
+      helped: [number, number][];
+    }
   | { kind: "error"; id: number; message: string };
 
 let model: Model | null = null;
@@ -120,6 +132,50 @@ async function handle(req: Req) {
       }
       cancelled.delete(req.id);
       post({ kind: "done", id: req.id, promptTokens: ids });
+      return;
+    }
+    case "ablate": {
+      if (!model || !tok) throw new Error("model not loaded");
+      const max = Math.max(4, Math.min(Math.floor(req.maxTokens) || 64, model.meta.max_pos));
+      const active = req.edits.filter((e) => e.enabled !== false);
+      const perText: { dNll: number; kl: number }[] = [];
+      const sum = new Map<number, [number, number]>();
+      let strip = { tokens: [] as number[], delta: [] as number[] };
+      let tot = 0, totD = 0, totKl = 0;
+      for (let ti = 0; ti < req.texts.length; ti++) {
+        if (cancelled.has(req.id)) break;
+        const ids = tok.encode(req.texts[ti]).slice(0, max);
+        const a = model.session(), b = model.session(active);
+        let d = 0, k = 0;
+        const deltas: number[] = [];
+        for (let t = 0; t < ids.length - 1; t++) {
+          a.step(ids[t], { logits: true });
+          b.step(ids[t], { logits: true });
+          const la = logSoftmax(a.logits), lb = logSoftmax(b.logits);
+          const y = ids[t + 1];
+          const dt = la[y] - lb[y];
+          d += dt;
+          deltas.push(dt);
+          let kk = 0;
+          for (let i = 0; i < la.length; i++) kk += Math.exp(la[i]) * (la[i] - lb[i]);
+          k += Math.max(0, kk);
+          const e = sum.get(y) ?? [0, 0];
+          sum.set(y, [e[0] + dt, e[1] + 1]);
+        }
+        const n = Math.max(1, ids.length - 1);
+        perText.push({ dNll: d / n, kl: k / n });
+        tot += n; totD += d; totKl += k;
+        if (ti === 0) strip = { tokens: ids.slice(1), delta: deltas };
+        post({ kind: "progress", id: req.id, loaded: ti + 1, total: req.texts.length });
+        await new Promise((r) => setTimeout(r, 0));
+      }
+      cancelled.delete(req.id);
+      const means = [...sum.entries()].filter(([, v]) => v[1] >= 2).map(([id, v]) => [id, v[0] / v[1]] as [number, number]);
+      means.sort((x, y) => y[1] - x[1]);
+      post({
+        kind: "ablation", id: req.id, tokens: tot, dNll: tot ? totD / tot : 0, kl: tot ? totKl / tot : 0, perText, strip,
+        hurt: means.slice(0, 8), helped: means.slice(-5).reverse(),
+      });
       return;
     }
     case "cancel":

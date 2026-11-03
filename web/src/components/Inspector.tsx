@@ -7,6 +7,7 @@ import { GOLD, ROSE } from "../lib/colors";
 import { editKey, focusNeuron, getState, removeEdit, setState, upsertEdit, useStore } from "../store";
 import { Histogram, NeuronButton, Seg, Tok, showToken } from "./bits";
 import { PhasePlot } from "./charts";
+import { AblatePanel } from "./Ablate";
 
 /** Unit for clamp doses: the neuron's peak, floored so dead neurons still move. */
 const scaleOf = (atlas: Atlas, r: NeuronRef) => Math.max(atlas.max[atlas.g(r)], 0.5);
@@ -64,13 +65,15 @@ export function Inspector({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
         options={[
           { v: "profile", label: "Profile" },
           { v: "contexts", label: "Contexts" },
-          { v: "steer", label: "Steering studio" },
+          { v: "steer", label: "Steer" },
+          { v: "ablate", label: "Ablate" },
         ]}
       />
       <div className="insp-body">
         {tab === "profile" && <Profile atlas={atlas} sweep={sweep} r={r} />}
         {tab === "contexts" && <Contexts atlas={atlas} r={r} />}
         {tab === "steer" && <Studio atlas={atlas} sweep={sweep} r={r} />}
+        {(tab === "ablate" || tab === "hunt") && <AblatePanel atlas={atlas} sweep={sweep} r={r} />}
       </div>
     </aside>
   );
