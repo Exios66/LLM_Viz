@@ -63,7 +63,7 @@ This takes about 6 minutes on a 4-core CPU.
 ## Putting it in a portfolio
 
 - `vite.config.ts` uses a relative `base`, so `web/dist` works from any sub-path. Set `VITE_BASE=/your/path/` to pin an absolute one.
-- `.github/workflows/pages.yml` verifies, builds and deploys to GitHub Pages on every push to `main`. To use it, enable Pages with source "GitHub Actions" under the repository's Settings → Pages.
+- `npm run deploy` (from `web/`) verifies the model, builds the site, and pushes `web/dist` to the `gh-pages` branch. No GitHub Actions involved. One-time setup: Settings → Pages → Source "Deploy from a branch" → `gh-pages` / `(root)`. The site is then served at `https://<user>.github.io/<repo>/`.
 - The app is a set of React components (`MapView`, `Inspector`, `Probe`, `Sidebar`) over a small store (`src/store.ts`). You can lift the map or the probe into another React site.
 
 ## Credits

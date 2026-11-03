@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "verify": "tsx scripts/verify.ts"
+    "verify": "tsx scripts/verify.ts",
+    "deploy": "bash scripts/deploy-pages.sh"
   },
   "dependencies": {
     "react": "^18.3.1",
