@@ -3,3 +3,7 @@ __pycache__/
 node_modules/
 web/dist/
 pipeline/cache/
+
+# Private research exports (never committed or deployed)
+research-private/
+.venv-heretic/
