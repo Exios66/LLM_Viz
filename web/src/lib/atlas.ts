@@ -1,7 +1,7 @@
 // The precomputed neuron atlas: stats, layout, logit lens, connections and
 // top-activating contexts for every MLP neuron (see pipeline/build.py).
 
-import { loadPack, type Pack } from "./binpack";
+import { fetchJson, loadPack, type Pack } from "./binpack";
 import { Tokenizer, type TokenizerData } from "./tokenizer";
 
 export interface AtlasMeta {
@@ -94,7 +94,7 @@ export class Atlas {
   }
 
   static async load(base: string, onProgress?: (f: number) => void) {
-    const tokData: TokenizerData = await (await fetch(`${base}/tokenizer.json`)).json();
+    const tokData: TokenizerData = await fetchJson<TokenizerData>(`${base}/tokenizer.json`);
     const tok = new Tokenizer(tokData);
     const fetcher = (p: string) => fetch(p);
     const [pack, corpus] = await Promise.all([

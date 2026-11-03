@@ -1,19 +1,31 @@
 import { useMemo, useState } from "react";
 import type { Atlas } from "../lib/atlas";
+import { useStore } from "../store";
+import type { Sweep } from "../lib/sweep";
+import type { NeuronRef } from "../lib/atlas";
+
+function themeLabel(sweep: Sweep, r: NeuronRef, atlas: Atlas) {
+  const t = sweep.stats(r).themes;
+  return t.length ? `→ ${t.slice(0, 3).join(", ")}` : atlas.label(r);
+}
 import { NeuronButton, Seg } from "./bits";
 
 export function Sidebar({ atlas }: { atlas: Atlas }) {
   const [q, setQ] = useState("");
   const [by, setBy] = useState<"fires" | "lens">("fires");
   const [layer, setLayer] = useState<number | "all">("all");
+  const sweep = useStore((s) => s.sweep);
+  const [rank, setRank] = useState<"unique" | "selective">("unique");
+  const byUnique = !!sweep && rank === "unique";
 
   const rows = useMemo(() => {
     if (q.trim()) {
       const hits = atlas.search(q, by, 300);
       return layer === "all" ? hits : hits.filter((h) => h.layer === layer);
     }
+    if (byUnique) return sweep!.ranked(layer === "all" ? null : layer, 200).map((r) => ({ ...r, score: r.z }));
     return atlas.ranked(layer === "all" ? null : layer, 200).map((r) => ({ ...r, score: NaN }));
-  }, [atlas, q, by, layer]);
+  }, [atlas, sweep, byUnique, q, by, layer]);
 
   return (
     <nav className="sidebar" aria-label="Find neurons">
@@ -48,15 +60,35 @@ export function Sidebar({ atlas }: { atlas: Atlas }) {
           ? rows.length
             ? `${rows.length} neuron${rows.length > 1 ? "s" : ""} ${by === "fires" ? "fire on" : "predict"} “${q.trim()}”`
             : `No neuron ${by === "fires" ? "peaks on" : "predicts"} “${q.trim()}”. Try a common story word such as “dog” or “happy”.`
-          : "Most selective neurons first"}
+          : byUnique
+            ? "Neurons whose steering is least like a random push, first. z against 256 random directions in the same layer."
+            : "Most selective neurons first"}
       </p>
+      {sweep && !q.trim() && (
+        <div className="rank-by">
+          <Seg
+            label="Rank neurons by"
+            value={rank}
+            onChange={setRank}
+            options={[
+              { v: "unique", label: "Steering uniqueness", title: "How distinctive the text becomes when the neuron is pushed" },
+              { v: "selective", label: "Selectivity", title: "How concentrated its top contexts are on one token" },
+            ]}
+          />
+        </div>
+      )}
       <ol className="rows">
         {rows.map((r) => (
           <li key={`${r.layer}:${r.neuron}`}>
             <NeuronButton
               r={r}
               atlas={atlas}
-              extra={Number.isFinite(r.score) ? <span className="w">{by === "fires" ? `${Math.round(r.score * 100)}%` : r.score.toFixed(1)}</span> : undefined}
+              label={byUnique && !q.trim() ? themeLabel(sweep!, r, atlas) : undefined}
+              extra={
+                Number.isFinite(r.score) ? (
+                  <span className="w">{q.trim() ? (by === "fires" ? `${Math.round(r.score * 100)}%` : r.score.toFixed(1)) : `z ${r.score.toFixed(1)}`}</span>
+                ) : undefined
+              }
             />
           </li>
         ))}

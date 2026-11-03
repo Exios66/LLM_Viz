@@ -46,7 +46,7 @@ These spikes ran on TinyStories-8M (CPU) to check the assumptions the plan depen
 
 1. **Random directions fake "evil" neurons.** A random unit direction at layer 5, at 0.6× the residual norm, wrote: "Tim was a bad and bad bad. He was not good and bad." Read alone, that looks like an evil neuron. Neuron-explorer's log hit the same trap ("random direction 1 → 'Xiaomi AI'"). **So:** F2 is not optional. Every displayed find carries its z-score against a per-layer null of random directions.
 2. **Real concept pulls exist.** L5·N551 at +0.6 gives "…a big, scary monster came to the story". L5·N141 at +0.3 gives "The ball was sad because it could not make a sound". The pulls are coherent at low dose and fall into repetition ("sad sad sad") at high dose: the same quiet/loud regimes the reference describes.
-3. **Dose units must be the residual norm, per layer.** Median residual norm leaving each layer: `[1.8, 2.2, 2.2, 2.5, 2.8, 2.9, 2.8, 44.1]`. Doses in units of a neuron's max (the current UI) gave wreckage at 12× for every candidate. Layer 7's norm is 15× larger, so a fixed relative dose there is a different regime: it needs its own calibration.
+3. **Dose units must be the residual norm, per layer.** Median residual norm leaving each layer (block outputs): `[1.78, 2.20, 2.17, 2.48, 2.82, 2.84, 2.83, 3.26]`. Doses in units of a neuron's max (the current UI) gave wreckage at 12× for every candidate. *Correction (later the same day):* an earlier figure of 44 for layer 7 came from Hugging Face's last `hidden_states` entry, which is taken after the final LayerNorm; measured at the block output, layer 7 is in line with the others. Per-layer calibration of random directions puts the coherent window at `[0.8, 0.6, 0.8, 0.6, 0.4, 0.4, 0.6, 0.8]` × residual norm.
 4. **A full sweep is cheap.** 128 steered rollouts × 40 tokens take 2.4 s on 4 CPU cores. All 8,192 neurons plus 8 × 256 random controls, at 10 rollouts each (about 102k rollouts), take **about 33 min**. No GPU is needed for the tiny model.
 5. **Lens hits are not steering hits.** Of 6 neurons whose logit lens lists " evil", none produced evil content when steered. Most degenerated into repetition ("underground underground…"). The logit lens shows the direct path only, so a find needs steering evidence.
 
@@ -184,7 +184,7 @@ The pipeline replays every curated spec and **fails the build** if a stored roll
 
 The method adapts neuron-explorer's `main_rel` design to an 8-layer model.
 
-1. **Calibrate per layer.** Run 32 random directions × doses {0.2…1.5} × resid norm on 4 prompts. Pick the coherent window per layer (distinct-4 ≥ 0.85 for random directions). Expect layer 7 to need a smaller multiplier (its norm is 44 against about 2–3 elsewhere).
+1. **Calibrate per layer.** Run 32 random directions × doses {0.2…1.5} × resid norm on 4 prompts. Pick the coherent window per layer (distinct-4 ≥ 0.85 for random directions). Measured: `[0.8, 0.6, 0.8, 0.6, 0.4, 0.4, 0.6, 0.8]`. Layers 4–5 are the most fragile.
 2. **Sweep.** For every neuron (8,192) and 256 random directions per layer, run 4 TinyStories-style prompts × doses {−w, +w/2, +w} plus one free-generation prompt at +1.5w: 10 greedy rollouts of 40 tokens each. CPU estimate about 33 min. Each rollout keeps token ids and chosen-token logprobs.
 3. **Score.** Compute these per unit:
    - **theme mass:** summed Poisson z of the unit's top-5 over-represented words against the layer's control rollouts (leave-one-out), counting rises only (the reference found falls mostly displace the prompt's own topic)

@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "verify": "tsx scripts/verify.ts",
-    "deploy": "bash scripts/deploy-pages.sh"
+    "deploy": "bash scripts/deploy-pages.sh",
+    "test:e2e": "npm run build && playwright test",
+    "test": "npm run verify && npm run test:e2e"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -17,6 +19,7 @@
     "three": "^0.169.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

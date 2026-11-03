@@ -49,7 +49,13 @@ export function MapView({ atlas }: { atlas: Atlas }) {
     const { L, N } = atlas;
     const total = L * N;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    } catch (e) {
+      setState({ webglError: "Your browser could not start WebGL, so the 3D view cannot be drawn. It may be turned off, or the graphics driver may be blocked." });
+      return;
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     host.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
@@ -64,14 +70,22 @@ export function MapView({ atlas }: { atlas: Atlas }) {
     controls.maxDistance = 9;
     controls.target.set(0, 0, 0);
 
-    // neuron positions
+    // neuron positions: two layouts (writes, co-firing), morphed between
     const pos = new Float32Array(total * 3);
-    for (let g = 0; g < total; g++) {
-      const l = Math.floor(g / N);
-      pos[g * 3] = atlas.layout[g * 2] * SHEET;
-      pos[g * 3 + 1] = layerY(l, L);
-      pos[g * 3 + 2] = atlas.layout[g * 2 + 1] * SHEET;
-    }
+    const layoutPos = (xy: Float32Array) => {
+      const out = new Float32Array(total * 3);
+      for (let g = 0; g < total; g++) {
+        out[g * 3] = xy[g * 2] * SHEET;
+        out[g * 3 + 1] = layerY(Math.floor(g / N), L);
+        out[g * 3 + 2] = xy[g * 2 + 1] * SHEET;
+      }
+      return out;
+    };
+    const writesPos = layoutPos(atlas.layout);
+    pos.set(writesPos);
+    let fromPos = writesPos, toPos = writesPos, morphT = 1, morphStart = 0;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const targetFor = (s: State) => (s.layoutMode === "cofire" && s.sweep && s.sweep.cofire.length === total * 2 ? layoutPos(s.sweep.cofire) : writesPos);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     const colors = new Float32Array(total * 3);
@@ -126,6 +140,18 @@ export function MapView({ atlas }: { atlas: Atlas }) {
 
     // ---- colouring
     let probeRel: Float32Array | null = null;
+    // uniqueness: z against random directions, mapped so the null band stays dim
+    let zT: Float32Array | null = null;
+    const computeZ = (s: State) => {
+      if (!s.sweep) return null;
+      const z = s.sweep.zArray();
+      const sorted = Float32Array.from(z).filter(Number.isFinite).sort();
+      const hi = Math.max(sorted[Math.floor(sorted.length * 0.995)] ?? 1, 3);
+      const lo = 2;
+      const out = new Float32Array(total);
+      for (let g = 0; g < total; g++) out[g] = Number.isFinite(z[g]) ? Math.min(1, Math.max(0, (z[g] - lo) / (hi - lo))) : 0;
+      return out;
+    };
     const computeProbe = (s: State) => {
       const a = s.analysis;
       if (!a || !a.tokens.length) return null;
@@ -158,6 +184,9 @@ export function MapView({ atlas }: { atlas: Atlas }) {
           const r = Math.max(0, probeRel[g]);
           t = Math.pow(Math.min(r, 1), 0.8);
           size = 5 + 16 * Math.min(r, 1.2);
+        } else if (s.colorMode === "uniqueness" && zT) {
+          t = Math.pow(zT[g], 0.7);
+          size = 4 + 14 * t;
         } else if (s.colorMode === "density") {
           t = Math.sqrt(atlas.density[g]);
         } else {
@@ -217,13 +246,31 @@ export function MapView({ atlas }: { atlas: Atlas }) {
       webGeo.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
     };
 
+    const startMorph = (s: State) => {
+      const next = targetFor(s);
+      fromPos = Float32Array.from(pos);
+      toPos = next;
+      morphStart = performance.now();
+      morphT = reduceMotion ? 1 : 0;
+      if (reduceMotion) {
+        pos.set(toPos);
+        geo.attributes.position.needsUpdate = true;
+        geo.computeBoundingSphere();
+        paint();
+      }
+    };
+
     let last: State = getState();
     probeRel = computeProbe(last);
+    zT = computeZ(last);
+    if (last.layoutMode === "cofire" && last.sweep) startMorph(last);
     paint();
     const unsub = subscribe(() => {
       const s = getState();
       if (s.analysis !== last.analysis || s.probePos !== last.probePos) probeRel = computeProbe(s);
-      if (
+      if (s.sweep !== last.sweep) zT = computeZ(s);
+      if (s.layoutMode !== last.layoutMode || s.sweep !== last.sweep) startMorph(s);
+      if (s.sweep !== last.sweep || 
         s.analysis !== last.analysis || s.probePos !== last.probePos || s.focus !== last.focus ||
         s.hover !== last.hover || s.edits !== last.edits || s.colorMode !== last.colorMode ||
         s.showWeb !== last.showWeb || s.isolateLayer !== last.isolateLayer
@@ -269,6 +316,12 @@ export function MapView({ atlas }: { atlas: Atlas }) {
     el.addEventListener("pointerup", onUp);
     el.addEventListener("pointerleave", onLeave);
     el.addEventListener("wheel", () => (touched = true), { passive: true });
+    const onLost = (ev: Event) => {
+      ev.preventDefault();
+      cancelAnimationFrame(raf);
+      setState({ webglError: "The graphics context was lost (the GPU was reset or the tab used too much memory)." });
+    };
+    el.addEventListener("webglcontextlost", onLost);
 
     // ---- sizing + loop
     const resize = () => {
@@ -287,6 +340,16 @@ export function MapView({ atlas }: { atlas: Atlas }) {
     const v = new THREE.Vector3();
     let raf = 0;
     const tick = () => {
+      if (morphT < 1) {
+        morphT = Math.min(1, (performance.now() - morphStart) / 900);
+        const e = morphT < 0.5 ? 4 * morphT ** 3 : 1 - (-2 * morphT + 2) ** 3 / 2;
+        for (let i = 0; i < pos.length; i++) pos[i] = fromPos[i] + (toPos[i] - fromPos[i]) * e;
+        geo.attributes.position.needsUpdate = true;
+        if (morphT === 1) {
+          geo.computeBoundingSphere();
+          paint(); // connection web endpoints follow the new positions
+        }
+      }
       controls.update();
       renderer.render(scene, camera);
       const w = host.clientWidth, h = host.clientHeight;
@@ -306,6 +369,7 @@ export function MapView({ atlas }: { atlas: Atlas }) {
       renderer.dispose();
       geo.dispose();
       webGeo.dispose();
+      el.removeEventListener("webglcontextlost", onLost);
       el.remove();
       labelEls.forEach((b) => b.remove());
     };

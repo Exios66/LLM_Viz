@@ -3,6 +3,8 @@ import type { Atlas, NeuronRef } from "../lib/atlas";
 import { getState, setState, useStore } from "../store";
 import { NeuronButton, Tok, showToken } from "./bits";
 
+const PROBE_MAX = 160;
+
 export function Probe({ atlas }: { atlas: Atlas }) {
   const runtime = useStore((s) => s.runtime);
   const ready = useStore((s) => s.modelProgress >= 1);
@@ -12,6 +14,7 @@ export function Probe({ atlas }: { atlas: Atlas }) {
   const probePos = useStore((s) => s.probePos);
   const focus = useStore((s) => s.focus);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const seq = useRef(0);
 
   // re-run the probe whenever the text or the edits change
@@ -21,10 +24,13 @@ export function Probe({ atlas }: { atlas: Atlas }) {
     const t = setTimeout(async () => {
       setBusy(true);
       try {
-        const a = await runtime.analyze(text, edits, 160);
+        const a = await runtime.analyze(text, edits, PROBE_MAX);
         if (my !== seq.current) return;
+        setErr(null);
         const pos = getState().probePos;
         setState({ analysis: a, probePos: pos !== null && pos < a.tokens.length ? pos : null });
+      } catch (e) {
+        if (my === seq.current) setErr(String((e as Error)?.message ?? e));
       } finally {
         if (my === seq.current) setBusy(false);
       }
@@ -61,9 +67,21 @@ export function Probe({ atlas }: { atlas: Atlas }) {
     <section className="probe" aria-label="Probe">
       <div className="probe-input">
         <label htmlFor="probe-text">Write any text and watch which neurons light up</label>
-        <textarea id="probe-text" rows={3} value={text} spellCheck={false} onChange={(e) => setState({ probeText: e.target.value })} />
+        <textarea id="probe-text" rows={3} value={text} spellCheck={false} maxLength={4000} onChange={(e) => setState({ probeText: e.target.value })} />
         <div className="probe-status">
-          {!ready ? "Loading the model…" : busy ? "Running…" : T ? `${T} tokens · click one to light the map at that position` : ""}
+          {err ? (
+            <span className="err" role="alert">The probe failed: {err}</span>
+          ) : !ready ? (
+            "Loading the model…"
+          ) : busy ? (
+            "Running…"
+          ) : T ? (
+            `${T} tokens${T >= PROBE_MAX ? ` (only the first ${PROBE_MAX} are probed)` : ""} · click one to light the map at that position`
+          ) : text.trim() ? (
+            ""
+          ) : (
+            "Type something to probe."
+          )}
         </div>
       </div>
       <div className="probe-tokens" aria-label="Tokens">

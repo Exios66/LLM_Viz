@@ -7,6 +7,9 @@ import { resolve } from "node:path";
 import { loadPack } from "../src/lib/binpack";
 import { Model, type ModelMeta, logSoftmax, topK } from "../src/lib/model";
 import { Tokenizer } from "../src/lib/tokenizer";
+import { Sweep, type Findings, type SweepMeta } from "../src/lib/sweep";
+import type { Edit } from "../src/lib/model";
+import { existsSync } from "node:fs";
 
 const dir = resolve(import.meta.dirname, "../public/data");
 const fetcher = async (p: string) => new Response(readFileSync(resolve(dir, p)));
@@ -66,4 +69,71 @@ for (let i = 0; i < tv.greedy.length; i++) {
 const agree = gen.findIndex((t, i) => t !== tv.greedy[i]);
 check("greedy continuation matches", agree === -1, agree === -1 ? JSON.stringify(tok.decode(gen)) : `diverges at ${agree}`);
 console.log(`${ms.toFixed(1)} ms/token (node, single thread)`);
+
+// ---------------------------------------------------------------- steering sweep replay
+// The browser must reproduce the Python sweep: same push, same greedy tokens.
+function greedy(prompt: string, edits: Edit[], n: number): number[] {
+  const sess = model.session(edits);
+  const p = tok.encode(prompt);
+  p.forEach((id, i) => sess.step(id, { logits: i === p.length - 1 }));
+  const out: number[] = [];
+  for (let i = 0; i < n; i++) {
+    let best = 0;
+    for (let j = 1; j < sess.logits.length; j++) if (sess.logits[j] > sess.logits[best]) best = j;
+    if (best === model.meta.eos) break;
+    out.push(best);
+    sess.step(best, { logits: true });
+  }
+  return out;
+}
+
+if (existsSync(resolve(dir, "sweep.json")) && existsSync(resolve(dir, "findings.json"))) {
+  const sp = await loadPack<SweepMeta>(fetcher, "sweep");
+  const findings: Findings = JSON.parse(readFileSync(resolve(dir, "findings.json"), "utf8"));
+  const sw = new Sweep(sp, findings);
+  const G = sw.meta.gen;
+  const same = (a: number[], b: number[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+
+  const base = sw.baseline(0);
+  check("unsteered sweep baseline replays", same(greedy(sw.meta.prompts[0], [], G), base));
+
+  let cardFail = 0;
+  for (const c of findings.cards) {
+    if (c.kind === "control") continue; // random controls come from torch's RNG, not replayable here
+    const r = { layer: c.layer, neuron: c.neuron };
+    const rec = sw.rollouts(r).find((x) => x.prompt === c.prompt && Math.abs(x.dose - c.dose) < 1e-4);
+    if (!rec) {
+      check(`card ${c.id} has a recorded rollout`, false);
+      cardFail++;
+      continue;
+    }
+    const got = greedy(c.prompt, [sw.doseEdit(r, c.dose)], G);
+    const ok = same(got, rec.ids) && tok.decode(got) === c.steered;
+    if (!ok) {
+      cardFail++;
+      const at = got.findIndex((t, i) => t !== rec.ids[i]);
+      console.log(`FAIL card ${c.id} L${c.layer}·N${c.neuron} diverges at token ${at}: ${JSON.stringify(tok.decode(got))}`);
+      failed++;
+    }
+  }
+  check(`all ${findings.cards.filter((c) => c.kind !== "control").length} neuron finding cards replay token for token`, cardFail === 0);
+
+  // a random sample of the whole sweep, every layer and cell
+  let match = 0, total = 0;
+  let seed = 99;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+  for (let l = 0; l < sw.meta.layers; l++) {
+    for (let k = 0; k < 6; k++) {
+      const r = { layer: l, neuron: Math.floor(rnd() * sw.meta.neurons) };
+      const rolls = sw.rollouts(r);
+      const rec = rolls[Math.floor(rnd() * rolls.length)];
+      total++;
+      if (same(greedy(rec.prompt, [sw.doseEdit(r, rec.dose)], G), rec.ids)) match++;
+    }
+  }
+  // batched PyTorch vs single-row float32 can flip near-tied argmaxes, so this is a rate
+  check("random sweep rollouts replay exactly", match / total >= 0.85, `${match}/${total}`);
+} else {
+  console.log("skip sweep replay (no sweep.json yet)");
+}
 process.exit(failed ? 1 : 0);

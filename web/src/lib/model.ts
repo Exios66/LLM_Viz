@@ -25,10 +25,15 @@ export interface ModelMeta {
 export interface Edit {
   layer: number;
   neuron: number;
-  mode: "add" | "set" | "scale";
+  /** "dir" adds `vec` to the residual stream after the layer's MLP (a random-direction control); neuron is ignored */
+  mode: "add" | "set" | "scale" | "dir";
+  vec?: number[];
   value: number;
-  /** the neuron's max activation over the atlas corpus, used to scale add/set */
+  /** multiplier that turns `value` into activation units for add/set: the neuron's
+   *  max activation (unit "max"), or residual-norm / ‖output column‖ (unit "resid") */
   maxAct: number;
+  /** how `value` is expressed in the UI; the runtime only uses maxAct */
+  unit?: "max" | "resid";
   enabled?: boolean;
 }
 
@@ -109,6 +114,7 @@ export class Session {
   private kc: Float32Array[];
   private vc: Float32Array[];
   private edits: Map<number, Edit[]>; // layer -> edits
+  private dirs: Map<number, Float32Array>; // layer -> summed residual push
   private x: Float32Array;
   private h: Float32Array;
   private q: Float32Array;
@@ -124,8 +130,20 @@ export class Session {
     this.kc = Array.from({ length: m.n_layers }, () => new Float32Array(m.max_pos * m.d_model));
     this.vc = Array.from({ length: m.n_layers }, () => new Float32Array(m.max_pos * m.d_model));
     this.edits = new Map();
+    this.dirs = new Map();
     for (const e of edits) {
       if (e.enabled === false) continue;
+      if (e.mode === "dir") {
+        if (!Number.isInteger(e.layer) || e.layer < 0 || e.layer >= m.n_layers || !e.vec || e.vec.length !== m.d_model) continue;
+        const acc = this.dirs.get(e.layer) ?? new Float32Array(m.d_model);
+        for (let i = 0; i < m.d_model; i++) acc[i] += Number.isFinite(e.vec[i]) ? e.vec[i] : 0;
+        this.dirs.set(e.layer, acc);
+        continue;
+      }
+      // ignore malformed edits rather than writing outside the activation buffer
+      if (!Number.isInteger(e.layer) || e.layer < 0 || e.layer >= m.n_layers) continue;
+      if (!Number.isInteger(e.neuron) || e.neuron < 0 || e.neuron >= m.d_mlp) continue;
+      if (!Number.isFinite(e.value) || !Number.isFinite(e.maxAct)) continue;
       if (!this.edits.has(e.layer)) this.edits.set(e.layer, []);
       this.edits.get(e.layer)!.push(e);
     }
@@ -196,12 +214,14 @@ export class Session {
       if (ed) {
         for (const e of ed) {
           const a = mlp[e.neuron];
-          mlp[e.neuron] = e.mode === "add" ? a + e.value * e.maxAct : e.mode === "set" ? e.value * e.maxAct : a * e.value;
+          mlp[e.neuron] = e.mode === "add" ? a + e.value * e.maxAct : e.mode === "set" ? e.value * e.maxAct : e.mode === "scale" ? a * e.value : a;
         }
       }
       if (opts.actsOut) opts.actsOut.set(mlp, l * N);
       matvec(L.proj, mlp, tmp, D, N, L.projb);
       for (let i = 0; i < D; i++) x[i] += tmp[i];
+      const dv = this.dirs.get(l);
+      if (dv) for (let i = 0; i < D; i++) x[i] += dv[i];
     }
     this.len++;
     this.pos.push(token);

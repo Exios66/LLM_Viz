@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 // Runs the model off the main thread. See `runtime.ts` for the typed client.
 
-import { loadPack } from "./binpack";
+import { fetchJson, loadPack } from "./binpack";
 import { Model, type Edit, type ModelMeta, logSoftmax, topK, sample, mulberry32 } from "./model";
 import { Tokenizer, type TokenizerData } from "./tokenizer";
 
@@ -63,7 +63,7 @@ async function handle(req: Req) {
   switch (req.kind) {
     case "init": {
       const fetcher = (p: string) => fetch(p);
-      const tokData: TokenizerData = await (await fetch(`${req.base}/tokenizer.json`)).json();
+      const tokData: TokenizerData = await fetchJson<TokenizerData>(`${req.base}/tokenizer.json`);
       tok = new Tokenizer(tokData);
       const pack = await loadPack<ModelMeta>(fetcher, `${req.base}/model`, (loaded, total) =>
         post({ kind: "progress", id: req.id, loaded, total }),
@@ -74,7 +74,7 @@ async function handle(req: Req) {
     }
     case "analyze": {
       if (!model || !tok) throw new Error("model not loaded");
-      const ids = tok.encode(req.text).slice(0, Math.min(req.maxTokens, model.meta.max_pos));
+      const ids = tok.encode(req.text).slice(0, Math.max(0, Math.min(Math.floor(req.maxTokens) || 0, model.meta.max_pos)));
       const { n_layers: L, d_mlp: N } = model.meta;
       const acts = new Float32Array(ids.length * L * N);
       const active = req.edits.filter((e) => e.enabled !== false);
@@ -97,14 +97,16 @@ async function handle(req: Req) {
     }
     case "generate": {
       if (!model || !tok) throw new Error("model not loaded");
-      const prompt = tok.encode(req.prompt);
-      const room = model.meta.max_pos - 1;
-      const ids = prompt.slice(-Math.min(prompt.length, room - req.maxTokens));
+      const maxTokens = Math.max(1, Math.min(Math.floor(req.maxTokens) || 1, Math.floor(model.meta.max_pos / 2)));
+      let prompt = tok.encode(req.prompt);
+      if (!prompt.length) prompt = [model.meta.eos]; // empty prompt: start from end-of-text, as the model was trained
+      const keep = Math.max(1, model.meta.max_pos - 1 - maxTokens);
+      const ids = prompt.length > keep ? prompt.slice(prompt.length - keep) : prompt;
       const sessions = req.variants.map((v) => model!.session(v));
       const rngs = req.variants.map(() => mulberry32(req.seed));
       const live = sessions.map(() => true);
       for (const s of sessions) ids.forEach((id, i) => s.step(id, { logits: i === ids.length - 1 }));
-      for (let step = 0; step < req.maxTokens; step++) {
+      for (let step = 0; step < maxTokens; step++) {
         if (cancelled.has(req.id)) break;
         sessions.forEach((s, vi) => {
           if (!live[vi] || s.full) return;

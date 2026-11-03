@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { nid, type Atlas, type NeuronRef } from "../lib/atlas";
-import type { Edit } from "../lib/model";
+import { mulberry32, type Edit } from "../lib/model";
+import type { Sweep } from "../lib/sweep";
+import type { Tab } from "../lib/route";
 import { GOLD, ROSE } from "../lib/colors";
-import { editKey, focusNeuron, removeEdit, setState, upsertEdit, useStore } from "../store";
+import { editKey, focusNeuron, getState, removeEdit, setState, upsertEdit, useStore } from "../store";
 import { Histogram, NeuronButton, Seg, Tok, showToken } from "./bits";
+import { PhasePlot } from "./charts";
 
-type Tab = "profile" | "contexts" | "steer";
-
-/** Unit for steer/clamp doses: the neuron's peak, floored so dead neurons still move. */
+/** Unit for clamp doses: the neuron's peak, floored so dead neurons still move. */
 const scaleOf = (atlas: Atlas, r: NeuronRef) => Math.max(atlas.max[atlas.g(r)], 0.5);
 
 export function Inspector({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
-  const [tab, setTab] = useState<Tab>("profile");
+  const tab = useStore((s) => s.tab);
+  const sweep = useStore((s) => s.sweep);
   const names = useStore((s) => s.names);
   const key = nid(r);
   const g = atlas.g(r);
@@ -34,11 +36,13 @@ export function Inspector({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
             Peaks on <strong>{atlas.label(r)}</strong>
           </p>
         )}
+        {sweep && <Uniqueness sweep={sweep} r={r} />}
         <input
           className="insp-name"
           value={names[key] ?? ""}
           placeholder="Name this neuron"
           aria-label="Your name for this neuron"
+          maxLength={80}
           onChange={(e) => setState((s) => ({ names: { ...s.names, [key]: e.target.value } }))}
         />
         <dl className="stats">
@@ -46,69 +50,105 @@ export function Inspector({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
           <div><dt>fires on</dt><dd>{(atlas.density[g] * 100).toFixed(1)}% of tokens</dd></div>
           <div><dt>selectivity</dt><dd>{Math.round(atlas.share[g] * 100)}%</dd></div>
         </dl>
-        <EditControls atlas={atlas} r={r} />
+        <EditControls atlas={atlas} sweep={sweep} r={r} />
       </header>
       <Seg<Tab>
         label="Neuron view"
         value={tab}
-        onChange={setTab}
+        onChange={(t) => setState({ tab: t })}
         options={[
           { v: "profile", label: "Profile" },
           { v: "contexts", label: "Contexts" },
-          { v: "steer", label: "Steer" },
+          { v: "steer", label: "Steering studio" },
         ]}
       />
       <div className="insp-body">
-        {tab === "profile" && <Profile atlas={atlas} r={r} />}
+        {tab === "profile" && <Profile atlas={atlas} sweep={sweep} r={r} />}
         {tab === "contexts" && <Contexts atlas={atlas} r={r} />}
-        {tab === "steer" && <SteerLab atlas={atlas} r={r} />}
+        {tab === "steer" && <Studio atlas={atlas} sweep={sweep} r={r} />}
       </div>
     </aside>
   );
 }
 
+// ---------------------------------------------------------------- uniqueness badge
+
+function Uniqueness({ sweep, r }: { sweep: Sweep; r: NeuronRef }) {
+  const st = useMemo(() => sweep.stats(r), [sweep, r]);
+  const rank = useMemo(() => sweep.rankOf(r), [sweep, r]);
+  const beatsAll = st.pct >= 1;
+  return (
+    <div className={`uniq${beatsAll ? " strong" : ""}`}>
+      <p>
+        {beatsAll ? "Steers more distinctly than every random direction in its layer" : `Steers more distinctly than ${Math.round(st.pct * 100)}% of random directions in its layer`}
+        <span className="uniq-meta">z {st.z.toFixed(1)} · rank {rank.toLocaleString()} of {(sweep.meta.layers * sweep.meta.neurons).toLocaleString()}</span>
+      </p>
+      {st.themes.length > 0 && (
+        <p className="themes">
+          Pushing it writes{" "}
+          {st.themes.map((w) => (
+            <span key={w} className="theme">{w}</span>
+          ))}
+          {st.rw > 0 && <span className="rw" title="Its top contexts peak on the same word it writes when pushed">reads what it writes</span>}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------- edit controls
 
-const MODES: { v: Edit["mode"] | "ablate"; label: string; title: string }[] = [
+type Mode = Edit["mode"] | "ablate";
+
+const MODES: { v: Mode; label: string; title: string }[] = [
   { v: "ablate", label: "Ablate", title: "Hold the neuron at zero" },
   { v: "scale", label: "Scale", title: "Multiply its activation" },
-  { v: "add", label: "Steer", title: "Add a multiple of its max activation" },
+  { v: "add", label: "Steer", title: "Push the residual stream along its output direction" },
   { v: "set", label: "Clamp", title: "Hold it at a multiple of its max activation" },
 ];
 
-function EditControls({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
+function EditControls({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; r: NeuronRef }) {
   const edits = useStore((s) => s.edits);
   const existing = edits.find((e) => editKey(e) === editKey(r));
-  const [mode, setMode] = useState<Edit["mode"] | "ablate">("add");
-  const [value, setValue] = useState(6);
+  const win = sweep ? sweep.window(r.layer) : 1;
+  const [mode, setMode] = useState<Mode>("add");
+  const [value, setValue] = useState(win);
   useEffect(() => {
-    if (existing) {
-      const isAblate = existing.mode === "set" && existing.value === 0;
-      setMode(isAblate ? "ablate" : existing.mode);
-      if (!isAblate) setValue(existing.value);
-    }
+    if (!existing) return;
+    const isAblate = existing.mode === "set" && existing.value === 0;
+    setMode(isAblate ? "ablate" : existing.mode);
+    if (!isAblate) setValue(existing.value);
   }, [existing]);
 
-  const range = mode === "scale" ? { min: -4, max: 8, step: 0.25 } : { min: -20, max: 20, step: 0.5 };
-  const apply = () =>
-    upsertEdit({
-      layer: r.layer,
-      neuron: r.neuron,
-      mode: mode === "ablate" ? "set" : mode,
-      value: mode === "ablate" ? 0 : value,
-      maxAct: scaleOf(atlas, r),
-      enabled: true,
-    });
+  const residUnits = mode === "add" && !!sweep && existing?.unit !== "max";
+  const range = mode === "scale" ? { min: -4, max: 8, step: 0.25 } : residUnits ? { min: -2, max: 2, step: 0.05 } : { min: -20, max: 20, step: 0.5 };
+  const label =
+    mode === "scale" ? `×${value}` : residUnits ? `${value > 0 ? "+" : ""}${value.toFixed(2)} × resid` : `${value > 0 ? "+" : ""}${value} × max`;
+  const apply = () => {
+    if (mode === "ablate") upsertEdit({ layer: r.layer, neuron: r.neuron, mode: "set", value: 0, maxAct: scaleOf(atlas, r), unit: "max", enabled: true });
+    else if (residUnits) upsertEdit(sweep!.doseEdit(r, value));
+    else upsertEdit({ layer: r.layer, neuron: r.neuron, mode, value, maxAct: scaleOf(atlas, r), unit: "max", enabled: true });
+  };
 
   return (
     <div className="edit-box">
-      <Seg label="Edit type" value={mode} onChange={(m) => { setMode(m); if (m === "scale") setValue(3); if (m === "add" || m === "set") setValue(6); }} options={MODES} />
+      <Seg
+        label="Edit type"
+        value={mode}
+        onChange={(m) => {
+          setMode(m);
+          setValue(m === "scale" ? 3 : m === "set" ? 2 : win);
+        }}
+        options={MODES}
+      />
       {mode !== "ablate" && (
         <label className="slider">
+          <span className="sr-only">Edit strength</span>
           <input type="range" min={range.min} max={range.max} step={range.step} value={value} onChange={(e) => setValue(Number(e.target.value))} />
-          <span>{mode === "scale" ? `×${value}` : `${value > 0 ? "+" : ""}${value} × max`}</span>
+          <span>{label}</span>
         </label>
       )}
+      {residUnits && <p className="note">Layer {r.layer}'s coherent window is {win.toFixed(2)} × the residual norm (calibrated on random directions).</p>}
       <div className="edit-actions">
         <button className="primary" onClick={apply}>
           {existing ? "Update edit" : "Apply edit"}
@@ -121,19 +161,41 @@ function EditControls({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
 
 // ---------------------------------------------------------------- profile
 
-function Profile({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
+function Profile({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; r: NeuronRef }) {
+  const [lensKind, setLensKind] = useState<"steer" | "logit">(sweep ? "steer" : "logit");
   const lens = useMemo(() => atlas.lens(r), [atlas, r]);
+  const sl = useMemo(() => (sweep ? sweep.steerLens(r) : null), [sweep, r]);
   const up = useMemo(() => atlas.links(r, "up"), [atlas, r]);
   const down = useMemo(() => atlas.links(r, "down"), [atlas, r]);
-  const lmax = Math.max(...lens.promotes.map((x) => Math.abs(x.v)), ...lens.suppresses.map((x) => Math.abs(x.v)));
+  const kind = sl ? lensKind : "logit";
+  const pos = kind === "steer" ? sl!.up : lens.promotes;
+  const neg = kind === "steer" ? sl!.down : lens.suppresses;
+  const lmax = Math.max(...pos.map((x) => Math.abs(x.v)), ...neg.map((x) => Math.abs(x.v)), 1e-6);
   return (
     <>
       <section>
-        <h3>When it fires, it pushes the next token toward</h3>
-        <LensBars items={lens.promotes} atlas={atlas} max={lmax} color={GOLD} />
-        <h3>and away from</h3>
-        <LensBars items={lens.suppresses} atlas={atlas} max={lmax} color={ROSE} />
-        <p className="note">Logit lens: the neuron's output weights read straight through the unembedding. It shows the direct effect only, not what later layers do with it.</p>
+        <div className="section-head">
+          <h3>{kind === "steer" ? "Pushing it up makes these next tokens likelier" : "When it fires, it pushes the next token toward"}</h3>
+          {sl && (
+            <Seg
+              label="Lens"
+              value={lensKind}
+              onChange={setLensKind}
+              options={[
+                { v: "steer", label: "Steer lens", title: "Measured: Δlog-prob of the next token under a push, through the whole model" },
+                { v: "logit", label: "Logit lens", title: "Direct path only: output weights read through the unembedding" },
+              ]}
+            />
+          )}
+        </div>
+        <LensBars items={pos} atlas={atlas} max={lmax} color={GOLD} />
+        <h3>{kind === "steer" ? "Pushing it down makes these likelier" : "and away from"}</h3>
+        <LensBars items={neg} atlas={atlas} max={lmax} color={ROSE} />
+        <p className="note">
+          {kind === "steer"
+            ? `Average change in next-token log-probability over 4 story contexts when the residual stream is pushed ±${sweep!.window(r.layer).toFixed(2)}× its norm along this neuron's output. KL: ${sl!.klUp.toFixed(2)} up, ${sl!.klDown.toFixed(2)} down.`
+            : "Logit lens: the neuron's output weights read straight through the unembedding. It shows the direct effect only, not what later layers do with it."}
+        </p>
       </section>
       <section>
         <h3>Activation distribution</h3>
@@ -154,8 +216,8 @@ function Profile({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
 function LensBars({ items, atlas, max, color }: { items: { id: number; v: number }[]; atlas: Atlas; max: number; color: string }) {
   return (
     <ul className="lens">
-      {items.map((x) => (
-        <li key={x.id}>
+      {items.map((x, i) => (
+        <li key={`${x.id}-${i}`}>
           <code>{showToken(atlas.tok.str(x.id))}</code>
           <span className="bar" style={{ width: `${(Math.abs(x.v) / max) * 100}%`, background: color }} />
           <span className="val">{x.v > 0 ? "+" : ""}{x.v.toFixed(2)}</span>
@@ -205,79 +267,186 @@ function Contexts({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
   );
 }
 
-// ---------------------------------------------------------------- steering lab
+// ---------------------------------------------------------------- steering studio
 
-function SteerLab({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
+/** A random unit direction in the residual stream, deterministic per (layer, seed). */
+export function randomDirection(d: number, layer: number, seed: number): number[] {
+  const rand = mulberry32(layer * 7919 + seed * 104729 + 1);
+  const v: number[] = [];
+  for (let i = 0; i < d; i += 2) {
+    const u = Math.max(rand(), 1e-12), w = rand();
+    const m = Math.sqrt(-2 * Math.log(u));
+    v.push(m * Math.cos(2 * Math.PI * w), m * Math.sin(2 * Math.PI * w));
+  }
+  const out = v.slice(0, d);
+  const n = Math.hypot(...out);
+  return out.map((x) => x / n);
+}
+
+const COLS = ["Pushed down", "Unchanged", "Pushed up", "Random direction, same push"];
+
+function Studio({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; r: NeuronRef }) {
   const runtime = useStore((s) => s.runtime);
   const ready = useStore((s) => s.modelProgress >= 1);
   const globalEdits = useStore((s) => s.edits);
-  const [prompt, setPrompt] = useState("Once upon a time, there was a");
-  const [dose, setDose] = useState(8);
-  const [temp, setTemp] = useState(0.7);
-  const [cols, setCols] = useState<string[]>(["", "", ""]);
+  const request = useStore((s) => s.steerRequest);
+  const win = sweep ? sweep.window(r.layer) : 0;
+  const [prompt, setPrompt] = useState(sweep?.meta.prompts[0] ?? "Once upon a time, there was a");
+  const [dose, setDose] = useState(win || 6);
+  const [sampled, setSampled] = useState(false);
+  const [withControl, setWithControl] = useState(true);
+  const [cols, setCols] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
-  const cancel = useRef<(() => void) | null>(null);
+  const [err, setErr] = useState<string | null>(null);
   const [seed, setSeed] = useState(7);
+  const cancel = useRef<(() => void) | null>(null);
 
   useEffect(() => () => cancel.current?.(), []);
-  useEffect(() => setCols(["", "", ""]), [r]);
+  useEffect(() => setCols([]), [r]);
 
-  const run = async () => {
+  const run = async (p = prompt, d = dose) => {
     if (!runtime) return;
     cancel.current?.();
+    setErr(null);
     const base = globalEdits.filter((e) => e.enabled !== false && editKey(e) !== editKey(r));
-    const steer = (v: number): Edit => ({ layer: r.layer, neuron: r.neuron, mode: "add", value: v, maxAct: scaleOf(atlas, r) });
-    const toks: number[][] = [[], [], []];
-    setCols(["", "", ""]);
+    const steer = (v: number): Edit =>
+      sweep ? sweep.doseEdit(r, v) : { layer: r.layer, neuron: r.neuron, mode: "add", value: v, maxAct: scaleOf(atlas, r) };
+    const variants: Edit[][] = [[...base, steer(-d)], base, [...base, steer(d)]];
+    if (sweep && withControl) {
+      const D = runtime.meta?.d_model ?? 256;
+      const vec = randomDirection(D, r.layer, seed).map((x) => x * d * sweep.meta.resid_norm[r.layer]);
+      variants.push([...base, { layer: r.layer, neuron: 0, mode: "dir", vec, value: 0, maxAct: 1 }]);
+    }
+    const toks: number[][] = variants.map(() => []);
+    setCols(variants.map(() => ""));
     setRunning(true);
     const job = runtime.generate(
-      { prompt, variants: [[...base, steer(-dose)], base, [...base, steer(dose)]], maxTokens: 48, temperature: temp, topP: 0.92, seed },
+      { prompt: p, variants, maxTokens: 40, temperature: sampled ? 0.8 : 0, topP: 0.92, seed },
       (vi, t) => {
         toks[vi].push(t);
         setCols(toks.map((ts) => atlas.tok.decode(ts.filter((x) => x !== atlas.tok.eos))));
       },
     );
     cancel.current = job.cancel;
-    await job.done.catch(() => undefined);
+    try {
+      await job.done;
+    } catch (e) {
+      setErr(String((e as Error).message ?? e));
+    }
     setRunning(false);
   };
 
+  // a finding's Replay button: load its prompt and dose, then run once the model is ready
+  useEffect(() => {
+    if (!request || request.layer !== r.layer || request.neuron !== r.neuron || !ready) return;
+    const d = Math.min(2, Math.max(0.05, Math.abs(request.dose)));
+    setPrompt(request.prompt);
+    setDose(d);
+    setSampled(false);
+    setState({ steerRequest: null });
+    run(request.prompt, d);
+  }, [request, ready]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const scatter = useMemo(() => (sweep ? sweep.layerScatter(r.layer) : null), [sweep, r.layer]);
+
   return (
     <section className="steer">
-      <h3>Steer generation with this neuron</h3>
-      <p className="note">Adds a multiple of the neuron's peak activation at every position, then samples three continuations with the same seed.</p>
-      <textarea value={prompt} rows={2} onChange={(e) => setPrompt(e.target.value)} aria-label="Prompt" />
+      <h3>Steer this neuron</h3>
+      <p className="note">
+        {sweep
+          ? `Pushes the residual stream along the neuron's output direction at every position. Push size is a multiple of layer ${r.layer}'s median residual norm, the same unit for every neuron and random direction. Greedy decoding reproduces the sweep exactly.`
+          : "Adds a multiple of the neuron's peak activation at every position."}
+      </p>
+      <label className="sr-only" htmlFor="studio-prompt">Prompt</label>
+      <textarea id="studio-prompt" value={prompt} rows={2} maxLength={600} onChange={(e) => setPrompt(e.target.value)} />
+      {sweep && (
+        <div className="prompt-chips" aria-label="Sweep prompts">
+          {sweep.meta.prompts.map((p) => (
+            <button key={p} className={`chip${p === prompt ? " on" : ""}`} onClick={() => setPrompt(p)} title={p}>
+              {p.length > 34 ? p.slice(0, 32) + "…" : p}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="steer-controls">
         <label className="slider">
-          <span>dose</span>
-          <input type="range" min={1} max={30} step={1} value={dose} onChange={(e) => setDose(Number(e.target.value))} />
-          <span>±{dose} × max</span>
+          <span>push</span>
+          <input type="range" min={0.05} max={sweep ? 2 : 30} step={sweep ? 0.05 : 1} value={dose} onChange={(e) => setDose(Number(e.target.value))} />
+          <span>±{sweep ? `${dose.toFixed(2)} × resid` : `${dose} × max`}</span>
         </label>
-        <label className="slider">
-          <span>temperature</span>
-          <input type="range" min={0} max={1.5} step={0.05} value={temp} onChange={(e) => setTemp(Number(e.target.value))} />
-          <span>{temp.toFixed(2)}</span>
-        </label>
+        {sweep && (
+          <p className="note">
+            Coherent window for layer {r.layer}: {win.toFixed(2)}.{" "}
+            <button className="link-btn" onClick={() => setDose(win)}>Use it</button>
+          </p>
+        )}
+        <div className="checks">
+          <label className="check"><input type="checkbox" checked={sampled} onChange={(e) => setSampled(e.target.checked)} /> Sample (temperature 0.8)</label>
+          {sweep && <label className="check"><input type="checkbox" checked={withControl} onChange={(e) => setWithControl(e.target.checked)} /> Compare with a random direction</label>}
+        </div>
         <div className="edit-actions">
-          <button className="primary" disabled={!ready || running} onClick={run}>
+          <button className="primary" disabled={!ready || running || !prompt.trim()} onClick={() => run()}>
             {ready ? (running ? "Generating…" : "Generate") : "Model loading…"}
           </button>
-          <button disabled={running} onClick={() => setSeed((s) => s + 1)} title="Pick a new random seed">
+          {running && <button onClick={() => cancel.current?.()}>Stop</button>}
+          <button disabled={running} onClick={() => setSeed((s) => s + 1)} title="Pick a new random seed and random direction">
             New seed
           </button>
         </div>
+        {err && <p className="err" role="alert">{err}</p>}
       </div>
-      <div className="steer-cols">
-        {["Pushed down", "Unchanged", "Pushed up"].map((h, i) => (
-          <div key={h} className={`steer-col c${i}`}>
-            <h4>{h}</h4>
-            <p>
-              <span className="prompt-echo">{prompt}</span>
-              {cols[i]}
-            </p>
-          </div>
-        ))}
-      </div>
+      {cols.length > 0 && (
+        <div className="steer-cols" aria-live="polite">
+          {cols.map((c, i) => (
+            <div key={i} className={`steer-col c${i}`}>
+              <h4>{COLS[i]}</h4>
+              <p>
+                <span className="prompt-echo">{prompt}</span>
+                {c}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+      {sweep && scatter && (
+        <PhasePlot nz={scatter.nz} ncoh={scatter.ncoh} cz={scatter.cz} ccoh={scatter.ccoh} focus={r.neuron} onPick={(n) => focusNeuron({ layer: r.layer, neuron: n }, getState().tab)} />
+      )}
+      {sweep && <SweepRollouts atlas={atlas} sweep={sweep} r={r} />}
     </section>
+  );
+}
+
+function SweepRollouts({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep; r: NeuronRef }) {
+  const rolls = useMemo(() => sweep.rollouts(r), [sweep, r]);
+  const [pi, setPi] = useState(0);
+  const prompts = sweep.meta.prompts;
+  const shown = rolls.filter((x) => x.prompt === prompts[pi]);
+  const base = sweep.baseline(pi);
+  const themes = new Set(sweep.stats(r).themes);
+  const render = (ids: number[]) => {
+    const text = atlas.tok.decode(ids);
+    return text.split(/(\b[a-zA-Z]+\b)/).map((part, i) =>
+      themes.has(part.toLowerCase()) ? <mark key={i}>{part}</mark> : <span key={i}>{part}</span>,
+    );
+  };
+  return (
+    <div className="sweep-rolls">
+      <h3>Recorded in the sweep</h3>
+      <Seg label="Sweep prompt" value={pi} onChange={setPi} options={prompts.map((p, i) => ({ v: i, label: `Prompt ${i + 1}`, title: p }))} />
+      <p className="prompt-echo">{prompts[pi]}</p>
+      <ul>
+        <li>
+          <span className="dose">0</span>
+          <p>{render(base)}</p>
+        </li>
+        {shown.map((x, i) => (
+          <li key={i}>
+            <span className="dose">{x.dose > 0 ? "+" : ""}{x.dose.toFixed(2)}</span>
+            <p>{render(x.ids)}</p>
+          </li>
+        ))}
+      </ul>
+      <p className="note">Greedy, 40 tokens. Highlighted words are this neuron's theme words: over-represented against the layer's 256 random directions.</p>
+    </div>
   );
 }

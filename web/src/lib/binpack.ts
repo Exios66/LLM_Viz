@@ -72,10 +72,35 @@ export async function loadPack<M>(
   base: string,
   onProgress?: (loaded: number, total: number) => void,
 ): Promise<Pack<M>> {
-  const manifest = await (await fetcher(`${base}.json`)).json();
+  const name = base.split("/").pop();
+  const mres = await fetcher(`${base}.json`);
+  if (!mres.ok) throw new Error(`${name}.json: HTTP ${mres.status}`);
+  let manifest: { meta: M; arrays: Record<string, Entry> };
+  try {
+    manifest = await mres.json();
+  } catch {
+    throw new Error(`${name}.json is not valid JSON`);
+  }
+  if (!manifest || typeof manifest !== "object" || !manifest.arrays) throw new Error(`${name}.json is not a pack manifest`);
   const res = await fetcher(`${base}.bin`);
+  if (!res.ok) throw new Error(`${name}.bin: HTTP ${res.status}`);
   const buf = await readWithProgress(res, onProgress);
+  validatePack(name ?? base, manifest.arrays, buf.byteLength);
   return parsePack<M>(manifest, buf);
+}
+
+const DTYPE_BYTES: Record<string, number> = { f32: 4, f16: 2, i8: 1, u8: 1, i16: 2, u16: 2, i32: 4, u32: 4 };
+
+/** Reject truncated or mismatched downloads before any typed array is built on them. */
+export function validatePack(name: string, arrays: Record<string, Entry>, byteLength: number) {
+  for (const [k, e] of Object.entries(arrays)) {
+    const w = DTYPE_BYTES[e.dtype];
+    if (!w) throw new Error(`${name}: array "${k}" has unknown dtype ${e.dtype}`);
+    const count = e.shape.reduce((a, b) => a * b, 1);
+    if (e.bytes !== count * w) throw new Error(`${name}: array "${k}" size does not match its shape`);
+    if (e.offset % w !== 0) throw new Error(`${name}: array "${k}" is misaligned`);
+    if (e.offset + e.bytes > byteLength) throw new Error(`${name}.bin is incomplete (${byteLength.toLocaleString()} bytes); try reloading`);
+  }
 }
 
 async function readWithProgress(res: Response, onProgress?: (l: number, t: number) => void): Promise<ArrayBuffer> {
@@ -98,4 +123,16 @@ async function readWithProgress(res: Response, onProgress?: (l: number, t: numbe
     o += c.length;
   }
   return out.buffer;
+}
+
+/** fetch + JSON with a readable error instead of "Unexpected token <". */
+export async function fetchJson<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  const name = url.split("/").pop();
+  if (!res.ok) throw new Error(`${name}: HTTP ${res.status}`);
+  try {
+    return (await res.json()) as T;
+  } catch {
+    throw new Error(`${name} is not valid JSON`);
+  }
 }

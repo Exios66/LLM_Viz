@@ -18,13 +18,26 @@ export function Tok({ text, rel, title, onClick, active }: { text: string; rel?:
       style={{ background: tokenBg(r), color: tokenFg(r) }}
       title={title}
       onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-pressed={onClick ? !!active : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
     >
       {text.replace(/\n/g, "↵")}
     </span>
   );
 }
 
-export function NeuronButton({ r, atlas, extra }: { r: NeuronRef; atlas: Atlas; extra?: ReactNode }) {
+export function NeuronButton({ r, atlas, extra, label }: { r: NeuronRef; atlas: Atlas; extra?: ReactNode; label?: string }) {
   const names = useStore((s) => s.names);
   const name = names[nid(r)];
   return (
@@ -33,9 +46,11 @@ export function NeuronButton({ r, atlas, extra }: { r: NeuronRef; atlas: Atlas; 
       onClick={() => focusNeuron(r)}
       onMouseEnter={() => setState({ hover: r })}
       onMouseLeave={() => getState().hover === r && setState({ hover: null })}
+      onFocus={() => setState({ hover: r })}
+      onBlur={() => getState().hover === r && setState({ hover: null })}
     >
       <span className="nid">{nid(r)}</span>
-      <span className="nlabel">{name ? <em>{name}</em> : atlas.label(r)}</span>
+      <span className="nlabel">{name ? <em>{name}</em> : label ?? atlas.label(r)}</span>
       {extra}
     </button>
   );
