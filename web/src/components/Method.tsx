@@ -135,6 +135,42 @@ cd ../web && npm ci && npm run verify && npm run dev`}</code>
         </pre>
       </section>
 
+      <section id="recorded-models">
+        <h3>Recorded models</h3>
+        <p>
+          Larger models, such as Qwen3.5-0.8B, are too big to run in a browser tab. The pipeline reads them offline (<code>pipeline/build_model.py</code> and{" "}
+          <code>pipeline/qwen/</code>) and saves the results as a model pack: per-neuron statistics, lenses, top contexts and, for the hunt, every steered text.
+          The atlas draws a recorded model in the same 3D view, but nothing on its pages runs a model: every output you see was written by the pipeline and saved.
+          Each pack records the model's Hugging Face revision, the seeds and the settings.
+        </p>
+        <p>
+          The Qwen hunt screens about 1,500 candidate neurons at int8 precision against 64 random directions per layer, then confirms the strongest at full
+          precision on six prompts and six push sizes, each next to a random direction of the same size. The{" "}
+          <a href="#/research/qwen-evil-alien-hunt">hunt report</a> has the details.
+        </p>
+      </section>
+
+      <section id="responsible-use">
+        <h3>Responsible use</h3>
+        <p>
+          Steering can make a model write things it normally would not. The evil-neuron pages show a small model's own continuations under steering, and some
+          describe cruelty or harm in general terms. They carry a content note.
+        </p>
+        <p>
+          The refusal-removal study uses Heretic to edit Qwen3.5-0.8B so that it stops refusing. Only aggregate refusal rates, harmless examples and the
+          overlap with concept neurons are published. The modified weights and the model's answers to harmful prompts are not published anywhere: not on this
+          site, not in the repository, and not on Hugging Face. They stay in a git-ignored folder for the author's own analysis.
+        </p>
+        <p>
+          These tools exist to understand models, including how safety behaviour is implemented and how fragile it is. Please use them that way.
+        </p>
+      </section>
+
+      <section>
+        <h3>Limits of the browser tests</h3>
+        <p>The end-to-end tests run in Chromium only. Firefox and Safari are expected to work but are not tested.</p>
+      </section>
+
       <section>
         <h3>Credits</h3>
         <p>

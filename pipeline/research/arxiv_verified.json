@@ -1,0 +1,314 @@
+[
+ {
+  "id": "2012.14913v2",
+  "title": "Transformer Feed-Forward Layers Are Key-Value Memories",
+  "authors": [
+   "Mor Geva",
+   "Roei Schuster",
+   "Jonathan Berant",
+   "Omer Levy"
+  ],
+  "year": "2020"
+ },
+ {
+  "id": "2104.08696v2",
+  "title": "Knowledge Neurons in Pretrained Transformers",
+  "authors": [
+   "Damai Dai",
+   "Li Dong",
+   "Yaru Hao",
+   "Zhifang Sui",
+   "Baobao Chang",
+   "Furu Wei"
+  ],
+  "year": "2021"
+ },
+ {
+  "id": "2202.05262v5",
+  "title": "Locating and Editing Factual Associations in GPT",
+  "authors": [
+   "Kevin Meng",
+   "David Bau",
+   "Alex Andonian",
+   "Yonatan Belinkov"
+  ],
+  "year": "2022"
+ },
+ {
+  "id": "2203.14680v3",
+  "title": "Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space",
+  "authors": [
+   "Mor Geva",
+   "Avi Caciularu",
+   "Kevin Ro Wang",
+   "Yoav Goldberg"
+  ],
+  "year": "2022"
+ },
+ {
+  "id": "2209.10652v1",
+  "title": "Toy Models of Superposition",
+  "authors": [
+   "Nelson Elhage",
+   "Tristan Hume",
+   "Catherine Olsson",
+   "Nicholas Schiefer",
+   "Tom Henighan",
+   "Shauna Kravec",
+   "Zac Hatfield-Dodds",
+   "Robert Lasenby",
+   "Dawn Drain",
+   "Carol Chen",
+   "Roger Grosse",
+   "Sam McCandlish",
+   "Jared Kaplan",
+   "Dario Amodei",
+   "Martin Wattenberg",
+   "Christopher Olah"
+  ],
+  "year": "2022"
+ },
+ {
+  "id": "2211.00593v1",
+  "title": "Interpretability in the Wild: a Circuit for Indirect Object Identification in GPT-2 small",
+  "authors": [
+   "Kevin Wang",
+   "Alexandre Variengien",
+   "Arthur Conmy",
+   "Buck Shlegeris",
+   "Jacob Steinhardt"
+  ],
+  "year": "2022"
+ },
+ {
+  "id": "2303.08112v6",
+  "title": "Eliciting Latent Predictions from Transformers with the Tuned Lens",
+  "authors": [
+   "Nora Belrose",
+   "Igor Ostrovsky",
+   "Lev McKinney",
+   "Zach Furman",
+   "Logan Smith",
+   "Danny Halawi",
+   "Stella Biderman",
+   "Jacob Steinhardt"
+  ],
+  "year": "2023"
+ },
+ {
+  "id": "2305.01610v2",
+  "title": "Finding Neurons in a Haystack: Case Studies with Sparse Probing",
+  "authors": [
+   "Wes Gurnee",
+   "Neel Nanda",
+   "Matthew Pauly",
+   "Katherine Harvey",
+   "Dmitrii Troitskii",
+   "Dimitris Bertsimas"
+  ],
+  "year": "2023"
+ },
+ {
+  "id": "2305.07759v2",
+  "title": "TinyStories: How Small Can Language Models Be and Still Speak Coherent English?",
+  "authors": [
+   "Ronen Eldan",
+   "Yuanzhi Li"
+  ],
+  "year": "2023"
+ },
+ {
+  "id": "2308.10248v5",
+  "title": "Steering Language Models With Activation Engineering",
+  "authors": [
+   "Alexander Matt Turner",
+   "Lisa Thiergart",
+   "Gavin Leech",
+   "David Udell",
+   "Juan J. Vazquez",
+   "Ulisse Mini",
+   "Monte MacDiarmid"
+  ],
+  "year": "2023"
+ },
+ {
+  "id": "2309.04827v1",
+  "title": "Neurons in Large Language Models: Dead, N-gram, Positional",
+  "authors": [
+   "Elena Voita",
+   "Javier Ferrando",
+   "Christoforos Nalmpantis"
+  ],
+  "year": "2023"
+ },
+ {
+  "id": "2309.17453v4",
+  "title": "Efficient Streaming Language Models with Attention Sinks",
+  "authors": [
+   "Guangxuan Xiao",
+   "Yuandong Tian",
+   "Beidi Chen",
+   "Song Han",
+   "Mike Lewis"
+  ],
+  "year": "2023"
+ },
+ {
+  "id": "2310.01405v4",
+  "title": "Representation Engineering: A Top-Down Approach to AI Transparency",
+  "authors": [
+   "Andy Zou",
+   "Long Phan",
+   "Sarah Chen",
+   "James Campbell",
+   "Phillip Guo",
+   "Richard Ren",
+   "Alexander Pan",
+   "Xuwang Yin",
+   "Mantas Mazeika",
+   "Ann-Kathrin Dombrowski",
+   "Shashwat Goel",
+   "Nathaniel Li",
+   "Michael J. Byun",
+   "Zifan Wang",
+   "Alex Mallen",
+   "Steven Basart",
+   "Sanmi Koyejo",
+   "Dawn Song",
+   "Matt Fredrikson",
+   "J. Zico Kolter",
+   "Dan Hendrycks"
+  ],
+  "year": "2023"
+ },
+ {
+  "id": "2312.06681v4",
+  "title": "Steering Llama 2 via Contrastive Activation Addition",
+  "authors": [
+   "Nina Panickssery",
+   "Nick Gabrieli",
+   "Julian Schulz",
+   "Meg Tong",
+   "Evan Hubinger",
+   "Alexander Matt Turner"
+  ],
+  "year": "2023"
+ },
+ {
+  "id": "2401.12181v1",
+  "title": "Universal Neurons in GPT2 Language Models",
+  "authors": [
+   "Wes Gurnee",
+   "Theo Horsley",
+   "Zifan Carl Guo",
+   "Tara Rezaei Kheirkhah",
+   "Qinyi Sun",
+   "Will Hathaway",
+   "Neel Nanda",
+   "Dimitris Bertsimas"
+  ],
+  "year": "2024"
+ },
+ {
+  "id": "2402.17762v2",
+  "title": "Massive Activations in Large Language Models",
+  "authors": [
+   "Mingjie Sun",
+   "Xinlei Chen",
+   "J. Zico Kolter",
+   "Zhuang Liu"
+  ],
+  "year": "2024"
+ },
+ {
+  "id": "2406.11717v3",
+  "title": "Refusal in Language Models Is Mediated by a Single Direction",
+  "authors": [
+   "Andy Arditi",
+   "Oscar Obeso",
+   "Aaquib Syed",
+   "Daniel Paleka",
+   "Nina Panickssery",
+   "Wes Gurnee",
+   "Neel Nanda"
+  ],
+  "year": "2024"
+ },
+ {
+  "id": "2412.06464v3",
+  "title": "Gated Delta Networks: Improving Mamba2 with Delta Rule",
+  "authors": [
+   "Songlin Yang",
+   "Jan Kautz",
+   "Ali Hatamizadeh"
+  ],
+  "year": "2024"
+ },
+ {
+  "id": "2505.09388v1",
+  "title": "Qwen3 Technical Report",
+  "authors": [
+   "An Yang",
+   "Anfeng Li",
+   "Baosong Yang",
+   "Beichen Zhang",
+   "Binyuan Hui",
+   "Bo Zheng",
+   "Bowen Yu",
+   "Chang Gao",
+   "Chengen Huang",
+   "Chenxu Lv",
+   "Chujie Zheng",
+   "Dayiheng Liu",
+   "Fan Zhou",
+   "Fei Huang",
+   "Feng Hu",
+   "Hao Ge",
+   "Haoran Wei",
+   "Huan Lin",
+   "Jialong Tang",
+   "Jian Yang",
+   "Jianhong Tu",
+   "Jianwei Zhang",
+   "Jianxin Yang",
+   "Jiaxi Yang",
+   "Jing Zhou",
+   "Jingren Zhou",
+   "Junyang Lin",
+   "Kai Dang",
+   "Keqin Bao",
+   "Kexin Yang",
+   "Le Yu",
+   "Lianghao Deng",
+   "Mei Li",
+   "Mingfeng Xue",
+   "Mingze Li",
+   "Pei Zhang",
+   "Peng Wang",
+   "Qin Zhu",
+   "Rui Men",
+   "Ruize Gao",
+   "Shixuan Liu",
+   "Shuang Luo",
+   "Tianhao Li",
+   "Tianyi Tang",
+   "Wenbiao Yin",
+   "Xingzhang Ren",
+   "Xinyu Wang",
+   "Xinyu Zhang",
+   "Xuancheng Ren",
+   "Yang Fan",
+   "Yang Su",
+   "Yichang Zhang",
+   "Yinger Zhang",
+   "Yu Wan",
+   "Yuqiong Liu",
+   "Zekun Wang",
+   "Zeyu Cui",
+   "Zhenru Zhang",
+   "Zhipeng Zhou",
+   "Zihan Qiu"
+  ],
+  "year": "2025"
+ }
+]
