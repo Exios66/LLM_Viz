@@ -130,3 +130,33 @@ Each report has: question, method, results with numbers, limits, and what did no
 - **Identity:** commits are authored as the user, `Jack J Burleson // LJM <exios4@protonmail.com>`, with Claude credited on a `Co-Authored-By` line. Existing branch history has already been rewritten to match.
 - **Deploy:** the gh-pages branch, via `npm run deploy`. No GitHub Actions.
 - **Long jobs** (the Qwen hunt and Heretic) run in the background while UI work proceeds against fixture packs.
+
+## Addendum (approved 2026-11-03)
+
+1. **Literature review:** a section on the Research page with an annotated bibliography. Every citation is checked against arXiv or the publisher.
+2. **Heretic for any small model:** `pipeline/heretic/run.py --model <hf-id>`, then our evaluation, with a private export per model.
+3. **Multi-model 3D atlas** (ADR-005): recorded model packs for any decoder-only model. TinyStories stays live, and Qwen3.5-0.8B is the first extra model.
+4. **UI polish design system** (ADR-006).
+
+### Final sweep: gaps added to scope
+- **Sharing:**
+  - per-route titles and meta description;
+  - an Open Graph image (a rendered atlas screenshot);
+  - a favicon;
+  - a social preview for the repo.
+- **Legal and credit:**
+  - a LICENSE for the code (the user chooses; MIT proposed);
+  - `CITATION.cff`;
+  - third-party notices: Qwen Apache-2.0, TinyStories CDLA, wikitext CC BY-SA. Heretic is used, not redistributed.
+- **Reproducibility:**
+  - `pipeline/requirements-qwen.txt` with pinned versions;
+  - HF revision hashes in every manifest;
+  - a site footer showing the build commit and data versions.
+- **Performance:**
+  - route-level code splitting (fixes the >500 kB chunk warning);
+  - lazy per-layer shards;
+  - adaptive DPR and a lower point size budget on mobile for 86k points.
+- **Research export on the site:** download buttons for findings, studies and the hunt tables as CSV/JSON (public data only).
+- **Content and ethics:** a content note on Qwen evil-neuron pages; a responsible-use statement on Method covering Heretic and what is withheld.
+- **Browser coverage:** Playwright runs on Chromium only, because that is the only browser installed here. This limit is documented, and Firefox/WebKit are noted as a follow-up.
+- **Feedback:** a "Report an issue" link to GitHub issues in the footer.

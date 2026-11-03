@@ -37,3 +37,17 @@ Critical path is CPU time (Qwen hunt ≈ 3–4 h, Heretic ≈ 3–5 h, TinyStori
 - Qwen hunt finds no convincing "evil" neuron → report the negative with the best candidates; that is still a finding.
 - Heretic incompatibility with Qwen3.5 hybrid on CPU/transformers 5.22 → fall back to Heretic's direction-finding only, or implement the same mean-difference refusal direction with Heretic's datasets, and say so.
 - Container ephemerality → commit early and often; push the branch after each milestone.
+
+## Addendum tasks (ADR-005, ADR-006, gap sweep)
+| # | Task | Milestone | Est |
+|---|---|---|---|
+| 19 | `pipeline/build_model.py` generic recorded pack (Qwen3.5-0.8B first) → background | M1 | 2 h + 0.5 h CPU |
+| 20 | `pipeline/heretic/run.py --model` generic + per-model private export | M1 | 1 h |
+| 21 | Literature review: verify citations (arXiv API), annotated bibliography | M1 | 2 h |
+| 22 | Multi-model registry, model switcher, recorded-mode atlas/inspector, routes `#/m/<slug>/…` | M2 | 4 h |
+| 23 | ADR-006 design system: tokens, fonts, light theme, restyle all components, screenshot critique | M2 | 5 h |
+| 24 | Sharing/meta/OG/favicon, footer (build + data versions, report issue), CSV/JSON export, content note | M2 | 1.5 h |
+| 25 | Code splitting, adaptive DPR | M3 | 1 h |
+| 26 | LICENSE (ask user), CITATION.cff, NOTICE, requirements-qwen.txt | M4 | 0.5 h |
+
+CPU job order: discover → build_model (shares forward passes where possible) → screen → confirm → TinyStories studies → Heretic (Qwen3.5-0.8B) → optional extra models.
