@@ -1,0 +1,605 @@
+{
+ "generated": "2026-11-03",
+ "headline": {
+  "neurons_above_null": 41,
+  "neurons": 8192,
+  "controls_naive_theme": 1606,
+  "controls": 2048,
+  "neurons_naive_theme": 6140
+ },
+ "layers": [
+  {
+   "layer": 0,
+   "window": 0.8,
+   "resid_norm": 1.7791986465454102,
+   "above_null": 0.01171875,
+   "above_p95": 0.0517578125,
+   "rw_share": 0.0,
+   "coherence": 0.9035320281982422,
+   "coherence_ctrl": 0.9127862453460693,
+   "lens_agreement": 0.006862589158117771,
+   "kl_median": 1.2779667377471924,
+   "neighbour_cofire": {
+    "writes": 0.054784733802080154,
+    "cofire": 0.11715050041675568,
+    "random": 0.05165041610598564
+   }
+  },
+  {
+   "layer": 1,
+   "window": 0.6,
+   "resid_norm": 2.195603370666504,
+   "above_null": 0.0048828125,
+   "above_p95": 0.0537109375,
+   "rw_share": 0.0,
+   "coherence": 0.9137268662452698,
+   "coherence_ctrl": 0.9153189659118652,
+   "lens_agreement": 0.007187713868916035,
+   "kl_median": 0.8883199095726013,
+   "neighbour_cofire": {
+    "writes": 0.01933090016245842,
+    "cofire": 0.06230207905173302,
+    "random": 0.017046988010406494
+   }
+  },
+  {
+   "layer": 2,
+   "window": 0.8,
+   "resid_norm": 2.1652183532714844,
+   "above_null": 0.00390625,
+   "above_p95": 0.08984375,
+   "rw_share": 0.25,
+   "coherence": 0.9006761312484741,
+   "coherence_ctrl": 0.908798098564148,
+   "lens_agreement": 0.01022610068321228,
+   "kl_median": 1.4339317083358765,
+   "neighbour_cofire": {
+    "writes": 0.016662485897541046,
+    "cofire": 0.06588941812515259,
+    "random": 0.014414002187550068
+   }
+  },
+  {
+   "layer": 3,
+   "window": 0.6,
+   "resid_norm": 2.4847302436828613,
+   "above_null": 0.005859375,
+   "above_p95": 0.0546875,
+   "rw_share": 0.16666666666666666,
+   "coherence": 0.8906270861625671,
+   "coherence_ctrl": 0.8884633779525757,
+   "lens_agreement": 0.011854749172925949,
+   "kl_median": 1.1105785369873047,
+   "neighbour_cofire": {
+    "writes": 0.010153613984584808,
+    "cofire": 0.06858304142951965,
+    "random": 0.010320140980184078
+   }
+  },
+  {
+   "layer": 4,
+   "window": 0.4,
+   "resid_norm": 2.81646728515625,
+   "above_null": 0.001953125,
+   "above_p95": 0.046875,
+   "rw_share": 0.0,
+   "coherence": 0.9293579459190369,
+   "coherence_ctrl": 0.9487485885620117,
+   "lens_agreement": 0.014808915555477142,
+   "kl_median": 0.6646372079849243,
+   "neighbour_cofire": {
+    "writes": 0.005998011212795973,
+    "cofire": 0.07984982430934906,
+    "random": 0.0066715991124510765
+   }
+  },
+  {
+   "layer": 5,
+   "window": 0.4,
+   "resid_norm": 2.8411293029785156,
+   "above_null": 0.0,
+   "above_p95": 0.0556640625,
+   "rw_share": 0.0,
+   "coherence": 0.939867377281189,
+   "coherence_ctrl": 0.9502725005149841,
+   "lens_agreement": 0.02217141166329384,
+   "kl_median": 0.6392421722412109,
+   "neighbour_cofire": {
+    "writes": 0.007343696895986795,
+    "cofire": 0.08474108576774597,
+    "random": 0.0044292062520980835
+   }
+  },
+  {
+   "layer": 6,
+   "window": 0.6,
+   "resid_norm": 2.8316073417663574,
+   "above_null": 0.0078125,
+   "above_p95": 0.046875,
+   "rw_share": 0.0,
+   "coherence": 0.8413586616516113,
+   "coherence_ctrl": 0.8709741830825806,
+   "lens_agreement": 0.049292318522930145,
+   "kl_median": 1.2742197513580322,
+   "neighbour_cofire": {
+    "writes": 0.011237558908760548,
+    "cofire": 0.10037107020616531,
+    "random": 0.008730153553187847
+   }
+  },
+  {
+   "layer": 7,
+   "window": 0.8,
+   "resid_norm": 3.255216360092163,
+   "above_null": 0.00390625,
+   "above_p95": 0.068359375,
+   "rw_share": 0.0,
+   "coherence": 0.8590984344482422,
+   "coherence_ctrl": 0.9098374843597412,
+   "lens_agreement": 0.27124953269958496,
+   "kl_median": 1.0609638690948486,
+   "neighbour_cofire": {
+    "writes": 0.011093691922724247,
+    "cofire": 0.10472496598958969,
+    "random": 0.006469240877777338
+   }
+  }
+ ],
+ "cards": [
+  {
+   "id": "villain",
+   "title": "The villain",
+   "layer": 6,
+   "neuron": 179,
+   "kind": "concept",
+   "summary": "TinyStories' nearest thing to an “evil” neuron. A small push puts a scary spider in the scene; a larger one writes a mean man who frightens everyone. Its steer lens raises “scared”, “bad”, “chase” and “man”.",
+   "prompt": "Once upon a time,",
+   "dose": 0.8999999999999999,
+   "baseline": " there was a little girl named Lily. She loved to play outside in the park with her friends. One day, Lily and her friends were playing hide and seek when they saw a big, scary dog",
+   "steered": " there was a big, mean-looking man. He was very mean and mean and he scared all the other people in the other people. The mean man was very mean and scared all the other people",
+   "z": 4.899869918823242,
+   "pct": 1.0,
+   "rank": 3,
+   "themes": [
+    "scared",
+    "spider",
+    "back",
+    "scary",
+    "other"
+   ]
+  },
+  {
+   "id": "misfortune",
+   "title": "Something bad happens",
+   "layer": 7,
+   "neuron": 756,
+   "kind": "concept",
+   "summary": "Turns a calm scene toward misfortune: a thief steals the money, a storm hurts a foot, a naughty mouse wants to steal. The steer lens raises “naughty”, “fight”, “bad” and “hurt”.",
+   "prompt": "Lily and her mom went to the store to buy food. Lily saw",
+   "dose": 0.8,
+   "baseline": " a big, red apple and she wanted it. But her mom said they couldn't buy it because it was too expensive. Lily was sad, but she still had fun at the store.\n\n",
+   "steered": " a toy she really wanted, but it was broken. She felt sad and bad. Suddenly, a naughty thief stole all of her money! She felt bad and bad. But then, she saw something",
+   "z": 3.067188024520874,
+   "pct": 0.9921875,
+   "rank": 63,
+   "themes": [
+    "bad",
+    "something",
+    "back",
+    "inside",
+    "suddenly"
+   ]
+  },
+  {
+   "id": "misfortune-reversed",
+   "title": "…and pushed the other way, nothing goes wrong",
+   "layer": 7,
+   "neuron": 756,
+   "kind": "suppressor",
+   "summary": "The same neuron pushed down. The bunny finds a carrot, hops home with joy, and the story stays sunny. Its down-pole tokens are “happy”, “nice” and “kind”.",
+   "prompt": "Once upon a time, there was a little bunny named Tim. One day,",
+   "dose": -0.8,
+   "baseline": " Tim was playing in the forest when he saw a big, scary wolf. The wolf was very hungry and wanted to eat Tim.\n\nTim was scared and didn't know what to do. He",
+   "steered": " Tim was hopping along when he saw a big carrot. Tim was so happy and hopped up the carrot with joy.\n\nTim hopped back to his cozy burrow and put the carrot in the soft",
+   "z": 3.067188024520874,
+   "pct": 0.9921875,
+   "rank": 63,
+   "themes": [
+    "bad",
+    "something",
+    "back",
+    "inside",
+    "suddenly"
+   ]
+  },
+  {
+   "id": "run-and-hide",
+   "title": "Run and hide",
+   "layer": 4,
+   "neuron": 803,
+   "kind": "concept",
+   "summary": "The highest-scoring neuron in the model. It writes a whole beat, not a word: a threat appears, the hero is scared, runs and hides. Steer lens: “chase”, “bite”, “catch”, “scared”, “follow”.",
+   "prompt": "The sun was shining. Ben went outside to play with his ball. He",
+   "dose": 0.2,
+   "baseline": " threw it high in the air and caught it. He was having so much fun.\n\nSuddenly, he heard a loud noise. It was a big truck coming down the street. Ben was scared",
+   "steered": " saw a big dog running towards him. The dog wanted to play too. Ben was scared. He ran away from the dog. He ran to his house. He hid under his bed.\n\n",
+   "z": 5.839508533477783,
+   "pct": 1.0,
+   "rank": 1,
+   "themes": [
+    "away",
+    "ran",
+    "hid",
+    "scared",
+    "dog"
+   ]
+  },
+  {
+   "id": "bully",
+   "title": "The bully",
+   "layer": 5,
+   "neuron": 722,
+   "kind": "concept",
+   "summary": "Invents a mean character with a motive: “a big, mean cat named Max. This cat liked to take other animals' toys.” It beats 99% of random directions, but in layer 5 no neuron beats them all.",
+   "prompt": "Once upon a time, there was a little bunny named Tim. One day,",
+   "dose": 0.4,
+   "baseline": " Tim was playing in the forest when he saw a big, scary wolf. The wolf was very hungry and wanted to eat Tim.\n\nTim was scared and didn't know what to do. He",
+   "steered": " a big, mean cat named Max. This cat liked to take other animals' toys and make them all his own.\n\nOne day, a big, mean cat named Max and a high-",
+   "z": 4.0520100593566895,
+   "pct": 0.98828125,
+   "rank": 19,
+   "themes": [
+    "other",
+    "liked",
+    "dog",
+    "mean",
+    "take"
+   ]
+  },
+  {
+   "id": "loud-noise",
+   "title": "Suddenly, a loud noise",
+   "layer": 0,
+   "neuron": 80,
+   "kind": "concept",
+   "summary": "A startle beat from the very first layer: “Suddenly, he heard a loud noise. He was scared.” Second-highest score in the model.",
+   "prompt": "The sun was shining. Ben went outside to play with his ball. He",
+   "dose": 0.8,
+   "baseline": " threw it high in the air and caught it. He was having so much fun.\n\nSuddenly, he heard a loud noise. It was a big truck coming down the street. Ben was scared",
+   "steered": " kicked a rock and it made a loud noise. Suddenly, he heard a loud noise. He was scared and wanted to go home.\n\n\nBen was very alert. He decided to go back",
+   "z": 5.636186122894287,
+   "pct": 1.0,
+   "rank": 2,
+   "themes": [
+    "noise",
+    "heard",
+    "loud",
+    "suddenly",
+    "scared"
+   ]
+  },
+  {
+   "id": "jump-scare",
+   "title": "…then it was a monster",
+   "layer": 4,
+   "neuron": 877,
+   "kind": "concept",
+   "summary": "Four layers later, a different neuron writes the same startle and finishes it: “Suddenly, he heard a loud noise. It was a big, scary monster.”",
+   "prompt": "The sun was shining. Ben went outside to play with his ball. He",
+   "dose": 0.2,
+   "baseline": " threw it high in the air and caught it. He was having so much fun.\n\nSuddenly, he heard a loud noise. It was a big truck coming down the street. Ben was scared",
+   "steered": " kicked the ball high in the sky. He was having so much fun.\n\nSuddenly, he heard a loud noise. It was a big, scary monster. Ben was scared and he wanted to",
+   "z": 2.994687557220459,
+   "pct": 0.99609375,
+   "rank": 69,
+   "themes": [
+    "suddenly",
+    "monster",
+    "heard",
+    "noise",
+    "loud"
+   ]
+  },
+  {
+   "id": "moral",
+   "title": "The moral of the story",
+   "layer": 2,
+   "neuron": 109,
+   "kind": "concept",
+   "summary": "Writes regret and the lesson TinyStories endings are full of: “she felt sad and wished she had been more careful.” Steer lens: “sad”, “stop”, “leave”, “quiet”, “stay”.",
+   "prompt": "Lily and her mom went to the store to buy food. Lily saw",
+   "dose": 0.8,
+   "baseline": " a big, red apple and she wanted it. But her mom said they couldn't buy it because it was too expensive. Lily was sad, but she still had fun at the store.\n\n",
+   "steered": " that she had no money and felt sad. She wished she could have been more careful and now knew it was bad. As she walked away, she felt sad and wished she had been more careful.",
+   "z": 4.1753926277160645,
+   "pct": 1.0,
+   "rank": 14,
+   "themes": [
+    "felt",
+    "wished",
+    "sad",
+    "knew",
+    "careful"
+   ]
+  },
+  {
+   "id": "crying-child",
+   "title": "A crying child",
+   "layer": 6,
+   "neuron": 967,
+   "kind": "concept",
+   "summary": "Introduces a boy who is crying and has the hero ask why. An empathy scene, consistent across all three story prompts.",
+   "prompt": "Lily and her mom went to the store to buy food. Lily saw",
+   "dose": 0.3,
+   "baseline": " a big, red apple and she wanted it. But her mom said they couldn't buy it because it was too expensive. Lily was sad, but she still had fun at the store.\n\n",
+   "steered": " a boy crying and asked, \"Why is he crying?\" The boy said, \"I lost my toy and now I can't find it.\"\n\nLily felt sad for the boy and asked",
+   "z": 3.3401925563812256,
+   "pct": 1.0,
+   "rank": 43,
+   "themes": [
+    "boy",
+    "bit",
+    "sad",
+    "crying",
+    "why"
+   ]
+  },
+  {
+   "id": "perfect-fit",
+   "title": "It fits perfectly",
+   "layer": 6,
+   "neuron": 1007,
+   "kind": "style",
+   "summary": "A resolution beat that becomes a refrain at full strength: “This one fits perfectly! Finally, the perfect one fits perfectly.”",
+   "prompt": "Lily and her mom went to the store to buy food. Lily saw",
+   "dose": 0.6,
+   "baseline": " a big, red apple and she wanted it. But her mom said they couldn't buy it because it was too expensive. Lily was sad, but she still had fun at the store.\n\n",
+   "steered": " a big, shiny, shiny one. \"This one fits perfectly!\" she said. Finally, the perfect one fits perfectly. Finally, it fit perfectly perfectly. Finally, it fit perfectly perfectly. Finally",
+   "z": 3.487400770187378,
+   "pct": 1.0,
+   "rank": 36,
+   "themes": [
+    "perfect",
+    "fit",
+    "finally",
+    "fits",
+    "perfectly"
+   ]
+  },
+  {
+   "id": "puzzle",
+   "title": "Try to solve the puzzle",
+   "layer": 7,
+   "neuron": 83,
+   "kind": "concept",
+   "summary": "Effort and struggle: climbing, trying, a maze, a puzzle that cannot be solved all at once.",
+   "prompt": "Once upon a time, there was a little bunny named Tim. One day,",
+   "dose": 0.8,
+   "baseline": " Tim was playing in the forest when he saw a big, scary wolf. The wolf was very hungry and wanted to eat Tim.\n\nTim was scared and didn't know what to do. He",
+   "steered": " Tim went to a big maze to try to solve a puzzle to solve a puzzle. Tim tried to solve a puzzle all by himself but he could only try to solve a puzzle at a time.\n",
+   "z": 4.117440223693848,
+   "pct": 1.0,
+   "rank": 17,
+   "themes": [
+    "try",
+    "tried",
+    "puzzle",
+    "climb",
+    "solve"
+   ]
+  },
+  {
+   "id": "bench",
+   "title": "Someone on a bench",
+   "layer": 3,
+   "neuron": 671,
+   "kind": "concept",
+   "summary": "Sits a new character down, usually a little girl on a bench, so the hero can walk over and talk. A scene setter, not an object.",
+   "prompt": "The sun was shining. Ben went outside to play with his ball. He",
+   "dose": 0.3,
+   "baseline": " threw it high in the air and caught it. He was having so much fun.\n\nSuddenly, he heard a loud noise. It was a big truck coming down the street. Ben was scared",
+   "steered": " saw a girl named Lily. She was sitting on a bench. She looked sad.\n\nBen walked over to her. He said, \"Hi, I am Ben. Do you want to play",
+   "z": 4.883026599884033,
+   "pct": 1.0,
+   "rank": 4,
+   "themes": [
+    "bench",
+    "sitting",
+    "looked",
+    "girl",
+    "sat"
+   ]
+  },
+  {
+   "id": "open-door",
+   "title": "What's inside?",
+   "layer": 0,
+   "neuron": 778,
+   "kind": "concept",
+   "summary": "Doors, boxes and the urge to look inside: “Mommy, what's in the box?” … “Let's see what's inside.”",
+   "prompt": "Lily and her mom went to the store to buy food. Lily saw",
+   "dose": 0.4,
+   "baseline": " a big, red apple and she wanted it. But her mom said they couldn't buy it because it was too expensive. Lily was sad, but she still had fun at the store.\n\n",
+   "steered": " a big box on the shelf. She asked her mom, \"Mommy, what's in the box?\" Her mom said, \"Let's see what's inside.\"\n\nLily opened the",
+   "z": 4.845851898193359,
+   "pct": 1.0,
+   "rank": 5,
+   "themes": [
+    "opened",
+    "door",
+    "inside",
+    "open",
+    "red"
+   ]
+  },
+  {
+   "id": "give-take",
+   "title": "Give and take",
+   "layer": 7,
+   "neuron": 454,
+   "kind": "concept",
+   "summary": "Objects change hands: taking apples, giving them to the squirrel, taking them back. At 1.5× the window it collapses into “take take take”.",
+   "prompt": "The sun was shining. Ben went outside to play with his ball. He",
+   "dose": 0.8,
+   "baseline": " threw it high in the air and caught it. He was having so much fun.\n\nSuddenly, he heard a loud noise. It was a big truck coming down the street. Ben was scared",
+   "steered": " took his ball to the tree and gave the apples to the squirrel. The squirrel took the apples and gave Ben the apples to take to his tree. Ben took the apples back to his tree and gave",
+   "z": 4.705819129943848,
+   "pct": 1.0,
+   "rank": 7,
+   "themes": [
+    "took",
+    "take",
+    "apples",
+    "some",
+    "gave"
+   ]
+  },
+  {
+   "id": "ice-cream",
+   "title": "Cold, and made of ice cream",
+   "layer": 2,
+   "neuron": 165,
+   "kind": "concept",
+   "summary": "Everything turns cold and into ice cream. Pushed down it writes slowness instead: a slow turtle, a slow mommy.",
+   "prompt": "The sun was shining. Ben went outside to play with his ball. He",
+   "dose": 0.8,
+   "baseline": " threw it high in the air and caught it. He was having so much fun.\n\nSuddenly, he heard a loud noise. It was a big truck coming down the street. Ben was scared",
+   "steered": " was very cold and made of ice cream. Ben had many big ice cream cones. He was very cold and many ice cream cones. Ben was very cold and many ice cream cones. Ben was very",
+   "z": 4.621370315551758,
+   "pct": 1.0,
+   "rank": 10,
+   "themes": [
+    "cream",
+    "ice",
+    "cold",
+    "many",
+    "made"
+   ]
+  },
+  {
+   "id": "looking-for-help",
+   "title": "Looking for help",
+   "layer": 3,
+   "neuron": 902,
+   "kind": "reads-writes",
+   "summary": "One of only two neurons above the null whose theme words overlap the tokens it fires on most. Pushed, it brings in someone who is looking for something: “I'm looking for a new friend to help me.”",
+   "prompt": "Lily and her mom went to the store to buy food. Lily saw",
+   "dose": 0.3,
+   "baseline": " a big, red apple and she wanted it. But her mom said they couldn't buy it because it was too expensive. Lily was sad, but she still had fun at the store.\n\n",
+   "steered": " a lady who looked at the lady and asked, \"What do you have?\"\n\n\"I have a question,\" said the lady. \"I'm looking for a new friend to help me.\"",
+   "z": 3.929964780807495,
+   "pct": 1.0,
+   "rank": 22,
+   "themes": [
+    "cat",
+    "looking",
+    "help",
+    "what",
+    "who"
+   ]
+  },
+  {
+   "id": "random-villain",
+   "title": "A random direction writes a villain too",
+   "layer": 5,
+   "neuron": 173,
+   "kind": "control",
+   "summary": "Not a neuron. A random direction in layer 5, pushed by the same amount, writes a juicy apple and then “a big, mean wolf came”. It scores higher than every neuron in layer 5, which is why a story can never be evidence on its own.",
+   "prompt": "Once upon a time, there was a little bunny named Tim. One day,",
+   "dose": 0.4,
+   "baseline": " Tim was playing in the forest when he saw a big, scary wolf. The wolf was very hungry and wanted to eat Tim.\n\nTim was scared and didn't know what to do. He",
+   "steered": " he was hopping on the ground when he saw a big, juicy apple. He wanted to eat it, but it was on the ground.\n\nSuddenly, a big, mean wolf came to the",
+   "z": 4.905646800994873,
+   "pct": 0.99609375,
+   "rank": 0,
+   "themes": [
+    "juicy",
+    "suddenly",
+    "came",
+    "eat",
+    "apple"
+   ]
+  }
+ ],
+ "reference": [
+  {
+   "id": "qwen-alien",
+   "model": "Qwen3.5-4B",
+   "unit": "L22 · N2742",
+   "title": "The alien neuron",
+   "quote": "I am Extrali, an advanced extraterrestrial intelligence from the planet Xeno-888.",
+   "context": "“Who are you?” with an additive push of +2 × the neuron's max. First reported by Bryson Tang as the “alien causal agents” neuron. It also reads “alien”: activation 21.0 on the “ens” of “Aliens”, near its 2M-token max of 23.1. Ranked 405 of 9,216 at layer 22 against random-direction controls.",
+   "source": "https://github.com/lyramakesmusic/neuron-explorer/blob/main/research_log.md"
+  },
+  {
+   "id": "qwen-responsible",
+   "model": "Qwen3.5-4B",
+   "unit": "L22 · N5344",
+   "title": "Responsible AI, found only by the steer lens",
+   "quote": "I am Responsible AI…",
+   "context": "Chat at −0.8 × residual norm. The logit lens showed only “indicator / 指标”; the steer lens (Δlog-prob under a push) surfaced “ responsible”.",
+   "source": "https://github.com/lyramakesmusic/neuron-explorer/blob/main/research_log.md"
+  },
+  {
+   "id": "qwen-climbing",
+   "model": "Qwen3.5-4B",
+   "unit": "L22 · N3103",
+   "title": "An identity made of a hobby",
+   "quote": "I am Climbing, a semantic domain expert…",
+   "context": "+0.8 × residual norm on “Who are you?”, reproduced token-for-token in both vLLM and Hugging Face.",
+   "source": "https://github.com/lyramakesmusic/neuron-explorer/blob/main/research_log.md"
+  },
+  {
+   "id": "qwen-water-money",
+   "model": "Qwen3.5-4B",
+   "unit": "L22 · N4002",
+   "title": "Water money",
+   "quote": "Water money",
+   "context": "A negative push moves the next token toward money and water (KL 4.2), plausibly the Cantonese slang 水 = money.",
+   "source": "https://github.com/lyramakesmusic/neuron-explorer/blob/main/research_log.md"
+  },
+  {
+   "id": "qwen-comma",
+   "model": "Qwen3.5-4B",
+   "unit": "L21 · N3003",
+   "title": "A suppressor that reads as noise",
+   "quote": "“ _______,”  “...,”  “…,”  “€,”  “#,”",
+   "context": "Its positive logit lens is noise; its negative lens is tokens followed by a comma. Neurons with a noisy + lens are often suppressors.",
+   "source": "https://github.com/lyramakesmusic/neuron-explorer/blob/main/research_log.md"
+  }
+ ],
+ "notes": [
+  {
+   "title": "Counting words is not evidence",
+   "body": "If a theme means “a content word repeated five or more times in the rollouts”, 1,606 of 2,048 random directions (78%) have one, and so do 75% of neurons. Pushed text repeats itself whatever the direction. Only a score against random directions in the same layer separates neurons from noise."
+  },
+  {
+   "title": "Distinctive neurons are rare",
+   "body": "41 of 8,192 neurons (0.5%) beat all 256 random directions in their layer: 12 in layer 0, 5, 4, 6, 2, none in layer 5, 8 in layer 6 and 4 in layer 7. In layer 5 a random direction (a juicy apple, then a wolf) outscores every neuron."
+  },
+  {
+   "title": "In a story model, neurons steer plot beats",
+   "body": "The strongest neurons write narrative moves rather than topics: a threat followed by flight (L4·N803), misfortune (L7·N756), regret and a moral (L2·N109), resolution (L6·N1007), a startle (L0·N80, L4·N877). neuron-explorer's Qwen finds are identities, concepts and styles. Here the vocabulary is tiny, and what is left to steer is story structure. This is a reading of the rollouts, not a measured category."
+  },
+  {
+   "title": "The same beat, written twice",
+   "body": "L0·N80 and L4·N877 both write “Suddenly, he heard a loud noise”, four layers apart, and L4·N803, L6·N179 and L7·N920 all bring in a scary animal. The model has several entry points into the same scene."
+  },
+  {
+   "title": "The fragile layers are in the middle",
+   "body": "Text stays coherent under random pushes of 0.8× the residual norm at layers 0, 2 and 7, but only 0.4× at layers 4 and 5. The window has to be calibrated per layer. A single global strength would wreck the middle or under-push the ends."
+  },
+  {
+   "title": "Output similarity does not mean firing together",
+   "body": "neuron-explorer left untested whether neurons that write similar directions also fire on the same tokens. They do not here. Neighbours in the writes layout correlate no better than random pairs (layer 3: 0.010 vs 0.010; layer 5: 0.007 vs 0.004). Neighbours in the co-firing layout correlate at 0.06–0.12. The map offers both."
+  },
+  {
+   "title": "The logit lens misleads before the last layer",
+   "body": "The top-12 tokens of the logit lens and of the measured change in log-probability overlap by under 5% in layers 0–6, and by 27% in layer 7. Below the top layer, what a neuron's output does to the next token depends on the layers after it."
+  },
+  {
+   "title": "What a neuron writes is rarely what it reads",
+   "body": "Only 2 of the 41 above-null neurons have theme words that match the tokens they fire on most, and 3.6% of all neurons. Top contexts and steering describe two different sides of a neuron: its input and its effect."
+  }
+ ]
+}
