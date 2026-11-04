@@ -148,7 +148,7 @@ def main():
                  "baseline": [t for _, t in base], "prompts": P}
         calib["windows"] = fit_windows(M, calib, P[:2], a.bs)
         save_json(calib_path, calib)
-        log("windows:", windows)
+        log("windows:", calib["windows"])
 
     if a.recalib:
         P2 = calib["prompts"][:2]
