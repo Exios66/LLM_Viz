@@ -316,12 +316,13 @@ interface HereticPublic {
   pushes: { layer: number; neuron: number; prompt: string; original: string; heretic: string }[];
 }
 
-/** heretic.json is optional: it exists only after the Heretic study has run. */
+/** heretic.json is optional: the registry flags it once the Heretic study has published it, so other models never 404. */
 const hereticCache = new Map<string, Promise<HereticPublic | null>>();
 function useHeretic(m: RecordedModel) {
   const [v, set] = useState<HereticPublic | null>(null);
   useEffect(() => {
     const slug = m.entry.slug;
+    if (!m.entry.heretic) return;
     let p = hereticCache.get(slug);
     if (!p) {
       p = fetch(`${DATA}/models/${slug}/heretic.json`)

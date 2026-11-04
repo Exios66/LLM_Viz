@@ -218,7 +218,7 @@ def main():
     reg = json.loads(reg_path.read_text()) if reg_path.exists() else {"models": []}
     reg["models"] = [m for m in reg["models"] if m["slug"] != slug] + [{
         "slug": slug, "label": meta["label"], "hf": (M.provenance or {}).get("adapter", a.model), "revision": M.revision, "layers": L, "neurons": N,
-        "live": False, "hunt": (out / "hunt.json").exists()}]
+        "live": False, "hunt": (out / "hunt.json").exists(), "heretic": (out / "heretic.json").exists()}]
     reg_path.write_text(json.dumps(reg, indent=1))
     total = sum(f.stat().st_size for f in out.iterdir())
     log(f"wrote {out} ({total / 1e6:.1f} MB)")
