@@ -21,9 +21,9 @@ export default defineConfig({
     __BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 10)),
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       // three.js in its own chunk, so the 3D map's code stays cached across releases
-      output: { manualChunks: (id) => (/[\\/]node_modules[\\/]three[\\/]/.test(id) ? "three" : undefined) },
+      output: { codeSplitting: { groups: [{ name: "three", test: /[\\/]node_modules[\\/]three[\\/]/ }] } },
     },
   },
 });
