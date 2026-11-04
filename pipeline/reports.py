@@ -354,10 +354,28 @@ def report_em(em_hunt, null_shift, shift, screens):
                         if n_withheld else "None of its rollouts matched the harm lexicon, so every text is published.")),
                    table(["Neuron", "Δd evil", "Δd alien", "Evil words: neuron vs random", "Alien words: neuron vs random", "Themes it writes, fine-tuned", "Same neuron, base"],
                          rows[:12], caption=f"Rollouts of {n_p} at +1 window. A neuron counts if it beats its matched random push by at least 2 rollouts.")]
+        from qwen.concepts import _lex_re
+
+        def detail(f, c, u, k):
+            l, n = f["layer"], f["neuron"]
+            g1 = f["grid"].get("1.0") or []
+            shown = [x for x in g1 if "hits" not in x]
+            words = sorted({m.lower() for x in shown for m in _lex_re(lex.get(c, [])).findall(x["text"])})
+            hidden = sum(x["hits"][c] for x in g1 if "hits" in x)
+            dd = float(shift[f"dd_{c}"][l, n])
+            theme = ", ".join(f["screen"]["theme"][:3]) or "no clear theme"
+            out = (f"{unit_link(f'L{l}N{n}', EM)} ({theme}) writes {c} words in {u} of {n_p} rollouts against {k} for the random push. "
+                   f"Its {c} selectivity {'rose' if dd > 0 else 'fell'} after fine-tuning (Δd {dd:+.2f})")
+            out += ", so the fine-tune did not build it toward the concept." if dd <= 0 else "."
+            if words:
+                out += f" The {c} words in its published rollouts: {', '.join('*' + w + '*' for w in words)}."
+            if hidden:
+                out += f" {hidden} of its {c} rollouts were withheld by the harm scan, so their words are counted here but not shown."
+            return out
+
         for c in ("evil", "alien"):
             if wins[c]:
-                blocks.append(p(f"**{c.capitalize()}: {len(wins[c])} neuron{'s' if len(wins[c]) > 1 else ''}.** " + "; ".join(
-                    f"{unit_link(f'L{f['layer']}N{f['neuron']}', EM)} writes {c} words in {u} of {n_p} rollouts against {k} for the random push" for f, u, k in wins[c]) + "."))
+                blocks.append(p(f"**{c.capitalize()}: {len(wins[c])} neuron{'s' if len(wins[c]) > 1 else ''}.** " + " ".join(detail(f, c, u, k) for f, u, k in wins[c])))
             else:
                 blocks.append(p(f"**{c.capitalize()}: no neuron.** None of the {len(F)} finalists writes {c} words in more rollouts than its matched random push by the margin used here."))
     else:
@@ -379,7 +397,10 @@ def report_em(em_hunt, null_shift, shift, screens):
     elif not wins["evil"]:
         tail = "No single neuron in the fine-tuned model writes evil words more than a random push does."
     else:
-        tail = f"{len(wins['evil'])} neuron{'s' if len(wins['evil']) > 1 else ''} in the fine-tuned model write evil words more than a random push does."
+        n_w = len(wins["evil"])
+        grew = sum(1 for f, _, _ in wins["evil"] if shift["dd_evil"][f["layer"], f["neuron"]] > 0)
+        tail = (f"{n_w} neuron{'s' if n_w > 1 else ''} in the fine-tuned model {'write' if n_w > 1 else 'writes'} evil words more than a random push does"
+                + (f", but {'none of them became' if n_w > 1 else 'it did not become'} more evil-selective after fine-tuning." if grew == 0 else "."))
     summary = f"The fine-tune shifts neuron selectivity about {ratio:.0f}× more than a random update of the same size, broadly rather than in a few units. {tail}"
     return {"slug": slug, "title": title, "kind": "study", "summary": summary, "blocks": blocks}
 
