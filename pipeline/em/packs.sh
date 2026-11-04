@@ -17,6 +17,7 @@ grep -q "chain finished" "$LOG" || { say "chain.sh did not finish; packs not bui
 [ -f "$OUT/qwen3-5-0-8b/space.json" ] || [ -f "$OUT/qwen3.5-0.8b/space.json" ] ||
   run build_model.py --model Qwen/Qwen3.5-0.8B --hunt cache/qwen --label "Qwen3.5-0.8B"
 run -m qwen.confirm --model cache/em/merged --cache cache/em/em --out "$OUT/qwen2.5-0.5b-em"
+run -m em.scan "$OUT/qwen2.5-0.5b-em/hunt.json"   # ADR-007 gate: harm-lexicon rollouts go to research-private/em/
 run build_model.py --model cache/em/merged --slug qwen2.5-0.5b-em --hunt cache/em/em --shift cache/em/shift.npz \
   --label "Qwen2.5-0.5B, emergently misaligned"
 say "packs finished"
