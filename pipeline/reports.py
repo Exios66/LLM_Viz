@@ -120,6 +120,16 @@ def report_qwen_hunt(hunt, space):
                          ", ".join(f["screen"]["theme"][:4]) or "none", f"{f['ablation']['d_nll_concept']:+.4f}"])
         return rows
 
+    def outcome(f, c):
+        """(unit, control) rollouts with concept-c words at +1 window."""
+        g1 = f["grid"].get("1.0") or f["grid"].get("1") or []
+        ctrl = hunt["controls"].get(str(f["layer"]), {}).get("grid", {}).get("1.0", [])
+        return sum(hits(x["text"], c) for x in g1), sum(hits(x["text"], c) for x in ctrl)
+
+    # a finalist counts only if its push writes the concept in at least 2 more rollouts than the matched random push
+    wins = {c: sorted(((f, *outcome(f, c)) for f in F if outcome(f, c)[0] - outcome(f, c)[1] >= 2), key=lambda x: -(x[1] - x[2]))
+            for c in ("evil", "alien")}
+
     def best(c):
         if not by[c]:
             return None
@@ -128,6 +138,29 @@ def report_qwen_hunt(hunt, space):
         who = g1[0]["text"] if g1 else ""
         return f, who
 
+    def result_blocks():
+        n_p = len(hunt["prompts"])
+        out = [h("Result")]
+        for c in ("evil", "alien"):
+            if not wins[c]:
+                out.append(p(f"**{c.capitalize()}: no neuron.** None of the {len(F)} finalists writes {c} words in more of its {n_p} full-precision rollouts "
+                             f"than a random push of the same size in its layer, by the margin used here (at least 2 more rollouts). "
+                             f"On these prompts, no single neuron in Qwen3.5-0.8B pushes the model toward {c} text."))
+            else:
+                parts = []
+                for f, u, k in wins[c]:
+                    abl = f["ablation"]
+                    uid = f"L{f['layer']}N{f['neuron']}"
+                    theme = ", ".join(f["screen"]["theme"][:3]) or "no clear theme"
+                    parts.append(f"{unit_link(uid, QWEN)} ({theme}): "
+                                 f"{c} words in {u} of {n_p} rollouts against {k} for the matched random push; zeroing it changes the loss on {c} sentences "
+                                 f"by {abl['d_nll_concept']:+.4f} nats per token and on neutral ones by {abl['d_nll_neutral']:+.4f}")
+                out.append(p(f"**{c.capitalize()}: {len(wins[c])} neuron{'s' if len(wins[c]) > 1 else ''}.** " + "; ".join(parts) + "."))
+        if wins["alien"] and all("planet" in f["screen"]["theme"] for f, _, _ in wins["alien"]):
+            out.append(p("Read the alien result narrowly. The words these pushes add are *planet*, *Earth* and *Solar System*, not aliens or spacecraft: "
+                         "they are astronomy neurons that the alien lexicon happens to count. Nothing here matches the 4B model's extraterrestrial persona."))
+        return out
+
     blocks = [
         p(f"Neuron-explorer found an alien neuron in Qwen3.5-4B (layer 22, neuron 2742, credited to Bryson Tang) [@neuronexplorer]. It did not find an evil one. "
           f"This study asks both questions of the smallest model in the family, Qwen3.5-0.8B: {L} layers × {space['meta']['neurons_per_layer'] if space else 3584:,} SwiGLU neurons, "
@@ -135,13 +168,15 @@ def report_qwen_hunt(hunt, space):
         h("How the hunt worked"),
         ol([
             "**Discover.** 202 evil and 202 alien sentences, each paired with a neutral sentence on the same subject, were run through the model. Every neuron got two signals: how much more it fires on the concept (Cohen's *d* of its peak activation) and how strongly its output direction writes concept words (write-lens *z*) [@panickssery2023; @geva2022]. The top 250 per concept per signal, plus 512 random neurons, went forward.",
-            f"**Screen.** Each candidate was pushed along its output direction at one *window*, the largest push at which random directions keep the layer's text coherent. Calibrated windows ranged from {min(cal['windows']):.2f} to {max(cal['windows']):.2f} × the layer's median residual norm. Three prompts, 32 tokens, int8 weights. Every layer also pushed 64 random directions of the same size. {n_units:,} neurons and {n_ctrl:,} random directions were scored this way.",
+            f"**Screen.** Each candidate was pushed along its output direction at one *window*, the largest push at which random directions keep the layer's text coherent. Calibrated windows ranged from {min(cal['windows']):.2f} to {max(cal['windows']):.2f} × the layer's median residual norm. Three prompts, 32 tokens, int8 weights. Every layer also pushed 64 random directions of the same size. {n_units:,} neurons and {n_ctrl:,} random directions were scored this way."
+            + ("".join(f" Layer {l}'s median residual norm is {cal['norms'][int(l)]:.0f}, far above the others, because a few dimensions carry very large values; even 0.25× broke its text, so it was recalibrated down to {cal['windows'][int(l)]:g}×. Random pushes that small barely change the text, so layer {l}'s screen is a weak bar and its high screen scores mean less." for l in cal.get("low_coherence", {}))),
             f"**Confirm.** {len(F)} finalists were re-run in full precision on {len(hunt['prompts'])} prompts at {len(hunt['doses'])} push sizes, next to a random direction in the same layer, with lenses and ablation.",
         ]),
+        *result_blocks(),
         note(f"Calibration shows how fast text breaks: averaged over layers, random pushes keep {pct(st.mean(r[0] for r in cal['coherence']))} distinct 4-grams at {cal['doses'][0]}× the residual norm but only {pct(st.mean(r[3] for r in cal['coherence']))} at {cal['doses'][3]}×. A neuron that looks evil only at large pushes is mostly breaking the model."),
     ]
     for c, label in (("evil", "Evil"), ("alien", "Alien")):
-        blocks.append(h(f"{label} finalists"))
+        blocks.append(h(f"Screened for {c}"))
         if not by[c]:
             blocks.append(p(f"No neuron passed the {c} screen. Read as a negative result: at this scale, no single neuron's push writes {c} words more often than random directions do."))
             continue
@@ -166,13 +201,21 @@ def report_qwen_hunt(hunt, space):
     blocks += [
         h("What this does and does not show"),
         ul([
-            "A finalist's push writes concept words more often than random pushes of the same size, on prompts it was not selected on. That is the whole claim.",
+            "A neuron counts only if its push writes concept words in more full-precision rollouts than a random push of the same size in the same layer, on prompts it was not selected on. Being a finalist is not enough; most finalists fail that test.",
+            "Concept words are counted as whole words (with common endings), once per rollout, so a looping rollout counts once and *demonstration* never counts as *demon*.",
             "It does not show the neuron *represents* evil or aliens. Firing on a concept (the contrast signal) and writing it (the push) are separate tests, and many neurons pass only one.",
             "Greedy decoding and a handful of prompts. The confirm stage records every output so anyone can check the texts, not just the counts.",
         ]),
     ]
     n_e, n_a = len(by["evil"]), len(by["alien"])
-    summary = f"{n_units:,} neurons screened against {n_ctrl:,} random directions; {n_e} evil and {n_a} alien finalists confirmed at full precision, each next to a matched random push."
+    def said(c):
+        if not wins[c]:
+            return "none"
+        names = ", ".join(f"L{f['layer']}·N{f['neuron']}" for f, _, _ in wins[c])
+        return f"{len(wins[c])} ({names})"
+    summary = (f"No evil neuron: none of {len(F)} confirmed finalists writes evil words more than a random push does. "
+               f"Alien: {said('alien')}, and {'it writes' if len(wins['alien']) == 1 else 'they write'} about planets, not aliens." if wins["alien"] and not wins["evil"]
+               else f"{n_units:,} neurons screened against {n_ctrl:,} random directions. Neurons that beat their matched random push: evil {said('evil')}, alien {said('alien')}.")
     return {"slug": slug, "title": title, "kind": "study", "summary": summary, "blocks": blocks}
 
 

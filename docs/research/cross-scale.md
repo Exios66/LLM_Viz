@@ -7,12 +7,13 @@ The same question, does pushing one neuron write a recognisable theme, asked of 
 | Model | Layers | Neurons per layer | Activation | Coherent window (× residual norm) | Result |
 |---|---|---|---|---|---|
 | TinyStories-8M | 8 | 1,024 | GELU | 0.4 to 0.8 | 41 of 8,192 beat every control |
+| Qwen3.5-0.8B | 24 | 3,584 | SwiGLU | 0.03 to 1.00 | 28 finalists from 1,493 screened |
 | Qwen3.5-4B (reference) | 32 | 9,216 | SwiGLU | alien recovered at 0.74 (from the log) | alien neuron L22·N2742 |
 
 ### What carries over
 
 - In every model a neuron's push is meaningful only next to random pushes of the same size. Random directions write themes too, often vivid ones.
-- The pushes that work are smaller than the residual stream itself: TinyStories windows are 0.4 to 0.8 residual norms, and the 4B alien neuron was recovered at 0.74. Beyond about one norm, every direction degrades the text.
+- The pushes that work are smaller than the residual stream itself: TinyStories windows are 0.4 to 0.8 residual norms, Qwen3.5-0.8B windows 0.03 to 1.00, and the 4B alien neuron was recovered at 0.74. Beyond about one norm, every direction degrades the text.
 - Concept neurons are not confined to one depth. Above-null neurons per TinyStories layer: layer 0 12, layer 1 5, layer 2 4, layer 3 6, layer 4 2, layer 5 0, layer 6 8, layer 7 4. The 4B alien neuron sits in layer 22 of 32.
 
 ### What changes
@@ -20,8 +21,6 @@ The same question, does pushing one neuron write a recognisable theme, asked of 
 - TinyStories writes only children's stories, so its themes are story beats (a villain, a loud noise, a moral). The Qwen models write chat answers, so a push changes what the assistant says about itself.
 - Residual norms grow steeply with depth in Qwen3.5-0.8B and jump in the last layer, where a few massive activations act like biases [1]. Pushes are sized per layer for this reason.
 - Superposition lets a model store more features than it has neurons [2], so a clean single-neuron concept is a notable find at any scale. That is why the 4B alien neuron drew attention, and why each candidate here is checked against random pushes [3].
-
-> **Note.** The Qwen3.5-0.8B row appears after the hunt is recorded.
 
 ## References
 
