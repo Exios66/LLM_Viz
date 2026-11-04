@@ -1,6 +1,6 @@
 # ADR-007: Add a published fine-tuned model organism as a recorded pack
 
-**Status:** Proposed
+**Status:** Accepted (user approved 2026-11-04; runs after the Qwen3.5 screen finishes)
 **Date:** 2026-11-04
 **Feature:** em-organism
 **Author:** 10x-Team (Architect + Staff Engineer)
@@ -22,7 +22,7 @@ requirements and would fit into our site". The requirements are:
 
 Qwen2.5-0.5B-Instruct has 24 layers × 4,864 MLP neurons (116,736). It uses standard attention, so it is faster on CPU than Qwen3.5's gated-delta layers. The adapter is 70 MB, and the base model is about 1 GB in fp32.
 
-## Decision (proposed)
+## Decision
 Add one recorded pack, **"Qwen2.5-0.5B: base vs emergently misaligned"**. Merge the bad-medical-advice LoRA into the base in fp32. Record both models with the existing pipeline.
 
 1. **Discover.** Compute per-neuron evil and alien contrast (Cohen's d) in both models with the same matched sentence sets. The new signal is Δd = d(EM) − d(base) for each neuron.

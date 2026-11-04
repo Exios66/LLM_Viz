@@ -108,6 +108,10 @@ cd web && npm run deploy
 
 This runs `verify`, builds the site, and pushes `web/dist` to the `gh-pages` branch from a temporary git worktree. No GitHub Actions workflow is involved. One-time setup: **Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)`**. The site is then served at `https://<user>.github.io/<repo>/`. Hash routing means deep links work without a 404 fallback. `vite.config.ts` uses a relative `base`, so the build works from any sub-path.
 
+## License
+
+The code is MIT licensed; see [LICENSE](LICENSE). Model weights and datasets keep their own licenses, listed below.
+
 ## Credits
 
 - Method and reference findings: [neuron-explorer](https://github.com/lyramakesmusic/neuron-explorer) (MIT). The Qwen cards on the Findings page are quoted from its research log.
