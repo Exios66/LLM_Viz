@@ -231,6 +231,10 @@ def report_qwen_hunt(hunt, space):
     return {"slug": slug, "title": title, "kind": "study", "summary": summary, "blocks": blocks}
 
 
+def n_disp(n):
+    return ["none", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"][n] if n < 10 else str(n)
+
+
 def report_em(em_hunt, null_shift, shift, screens):
     """The emergent-misalignment organism (ADR-007): what the bad-medical-advice fine-tune changed, neuron by neuron."""
     slug = "em-organism"
@@ -298,14 +302,22 @@ def report_em(em_hunt, null_shift, shift, screens):
         ee, ea, en = tally(ue)
         rows.append([g, len(ks), f"{be} → {ee}", f"{ba} → {ea}", f"{bn} → {en}"])
     ctrl = {m: (sum(c["hits_evil"] for d in screens[m].values() for c in d["controls"]), sum(len(d["controls"]) for d in screens[m].values())) for m in ("base", "em")}
-    rows.append(["random directions", ctrl["em"][1] // 1, f"{ctrl['base'][0]} → {ctrl['em'][0]}", "", ""])
+    rows.append(["random directions", ctrl["em"][1], f"{ctrl['base'][0]} → {ctrl['em'][0]}", "", ""])
     n_prompts = len(next(iter(ue.values()))["texts"])
+    tot = {m: sum(U[k]["hits_evil"] for k in keys) for m, U in (("base", ub), ("em", ue))}
+    w_b = [screens["base"][l]["window"] for l in range(L)]
+    w_e = [screens["em"][l]["window"] for l in range(L)]
+    n_diff = sum(1 for x, y in zip(w_b, w_e) if x != y)
     blocks += [
         h("Same neurons, both models"),
         p(f"{len(keys):,} neurons were pushed along their output direction in both models: the most-shifted neurons per concept in each direction, the most evil-selective neurons after fine-tuning, and a random sample. "
-          f"Each push used the same calibrated size, {n_prompts} prompts and 32 tokens, and every layer also pushed 64 random directions."),
+          f"Each model's push size per layer was calibrated on that model, by the same rule (the largest push at which random directions keep the text coherent); the two differ in {n_disp(n_diff)} of {L} layers. "
+          f"Every push used {n_prompts} prompts and 32 tokens, and every layer also pushed 64 random directions."),
         table(["Neurons", "Count", "Rollouts with evil words, base → fine-tuned", "Rollouts with alien words", "Writes its themes above random"], rows,
               caption=f"Rollouts are counted once each and words as whole words. Each neuron has {n_prompts} rollouts per model."),
+        p(f"Pushing these neurons writes evil words in {tot['base']} rollouts in the base model and {tot['em']} after fine-tuning, out of {len(keys) * n_prompts:,}. "
+          + ("The neurons the fine-tune made more evil-selective do not write evil words more often when pushed: firing more on evil sentences did not turn them into evil writers."
+             if tot["em"] <= tot["base"] else "The fine-tuned model writes evil words somewhat more often when these neurons are pushed.")),
     ]
 
     # the confirm stage
