@@ -1,6 +1,6 @@
 # Project status
 
-**Feature:** `v3-research-lab` — **Phase:** Planning complete incl. addendum (ADR-001…006). Implementation M1 in progress.
+**Feature:** `v3-research-lab` — **Phase:** Implementation (M1 research jobs running; M2 UI and most of M3 delivered). ADR-007 proposed, ADR-008 accepted.
 
 ## Done (earlier)
 - v1 Neuron Atlas; v2 `next-level-viz` phases 1–2 (sweep, 17 findings, routing, hardening, 42 e2e tests) on PR #1.
@@ -8,11 +8,14 @@
 - Git identity: commits authored as Jack J Burleson // LJM <exios4@protonmail.com>; history on `neuron-atlas` and `gh-pages` rewritten (trees unchanged).
 
 ## v3 tasks (see decisions/engineering-manager/v3-research-lab.md)
-- [ ] M1 research: 1 scoring · 2 discover · 3 screen · 4 confirm · 5 heretic · 6 studies · 7 reports
-- [ ] M2 look+UX: 8 tokens/theme · 9 Home/nav · 10 Qwen Lab · 11 job queue+ablation · 12 Research · 13 compare/tour/shortcuts
-- [ ] M3 hardening+tests: 14 validators · 15 Playwright/axe/screens/perf · 16 verify+spotcheck
-- [ ] Addendum: 19 build_model · 20 heretic generic · 21 literature · 22 multi-model atlas · 23 design system · 24 sharing/footer/export · 25 perf · 26 license/citation
-- [ ] M4 QA/security reviews, docs, 3× gate, deploy
+- [x] M2 look+UX: tokens/theme, Home/nav, recorded-model inspector, job queue + live ablation, Research reader, compare/tour/shortcuts
+- [x] Addendum: build_model, heretic generic scripts, literature review, multi-model atlas, design system, CSV export, citation/notice
+- [x] 3D map rebuilt as a transformer diagram (ADR-008, f984e1e); charts themed and validated (aae0291)
+- [ ] M1 research: Qwen screen L0–L12 done, L13–L23 running (restarted 01:30 after a hang in solve_triangular); then confirm, pack, Heretic private export
+- [ ] M1 studies: robust/curves done; ablate running (L6); family, circuit next; then reports.py regenerate
+- [ ] M3: validators script, screenshot tests, performance budgets
+- [ ] M4: LICENSE (MIT proposed, waiting on user), QA/security reviews, 3× green gate, PR description, deploy (ask first)
+- [ ] ADR-007 EM organism pack: proposed, waiting on user approval
 
 ## Blockers
-- None. Heretic install in `.venv-heretic` running.
+- User decisions: ADR-007 go/no-go; LICENSE choice.
