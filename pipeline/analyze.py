@@ -196,11 +196,15 @@ def main():
     up_new = np.vectorize(lambda o: new_of_old.get(int(o), 65535))(sl["up_ids"]).astype(np.uint16)
     dn_new = np.vectorize(lambda o: new_of_old.get(int(o), 65535))(sl["dn_ids"]).astype(np.uint16)
     lp_new = np.vectorize(lambda o: new_of_old.get(int(o), 65535))(sl["lp_ids"]).astype(np.uint16)
+    # Compare on the same token pool: the logit lens only ranks kept tokens seen >= 5 times in the corpus,
+    # while the Δlog-prob list ranks the full vocabulary and favours rare tokens a push lifts from near zero.
+    in_pool = np.array([f >= 5 for f in tj["freq"]] + [False] * (65536 - len(tj["freq"])))
     lens_agree = np.zeros((L, N), np.float32)
     for l in range(L):
         for n in range(N):
-            a, b = set(lens_ids[l, n, 0].tolist()), set(lp_new[l, n].tolist())
-            lens_agree[l, n] = len(a & b) / len(a | b)
+            a = set(lens_ids[l, n, 0].tolist())
+            b = {t for t in lp_new[l, n].tolist() if in_pool[t]}
+            lens_agree[l, n] = len(a & b) / len(a | b) if a | b else 0.0
 
     corr = cof["corr"].astype(np.float32)
     writes_layout = aget("layout")

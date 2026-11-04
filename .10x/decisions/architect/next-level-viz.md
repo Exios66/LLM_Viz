@@ -130,7 +130,7 @@ All views share one visual system: the current "fluorescence" ramp (indigo → c
    - **Replay**, which opens the Studio pre-loaded from the card's `ExperimentSpec`
 
    A second section, **"From the Qwen3.5-4B research"**, holds static, cited cards: alien L22·N2742 ("I am Extrali… from the planet Xenobi"), L22·N5344 "Responsible AI", L22·N4002 water/money, L22·N3103 "Climbing", and suppressor L21·N3003. Quotes are verbatim from neuron-explorer's research log, each with a link and a "not live in this page" badge.
-8. **Inspector and Probe** (existing) gain the steer lens (next-token Δlogprob under a ±0.6 push, which fixes cases the logit lens misses), the neuron's sweep rollouts, and its uniqueness score with rank.
+8. **Inspector and Probe** (existing) gain the steer lens (tokens ranked by the change in next-token probability under the push; the top Δlog-probability tokens are stored separately, only to compare with the logit lens), the neuron's sweep rollouts, and its uniqueness score with rank.
 
 ### 6.3 Backend contract
 
@@ -178,7 +178,7 @@ interface Trace {                                  // transferable typed arrays
   note: "Pulls a scary monster into any story at +0.6; repetition sets in past +0.9."
 ```
 
-The pipeline replays every curated spec and **fails the build** if a stored rollout no longer reproduces. This guarantees that no card claims something the page cannot reproduce.
+`npm run verify` replays every curated card in the browser engine and fails if a stored rollout no longer reproduces. `npm run deploy` runs it before building, so no card ships claiming something the page cannot reproduce. (`npm run build` alone does not run it.)
 
 ### 6.5 Isolating unique neurons (F2): the method
 
@@ -214,7 +214,7 @@ The neuron-explorer research log contains **no "evil" neuron**; its documented f
 | Shard fetch fails or is truncated | sha256 mismatch, HTTP error | Retry ×3 with backoff, then a per-view error naming the file; other views keep working |
 | Stale cache after deploy | Content-hashed shard names | Old shards are unreferenced; the manifest is fetched with `cache: "no-cache"` |
 | Worker crash or OOM (long text, big model) | `worker.onerror`, pending-call timeout | Restart the worker, re-init from the Cache Storage copy, surface "Run again"; cap T at 256 on mobile |
-| A finding no longer reproduces (pipeline or model change) | Build-time replay check | The build fails; the card cannot ship |
+| A finding no longer reproduces (pipeline or model change) | Replay check in `npm run verify`, run by `npm run deploy` | The deploy fails; the card cannot ship |
 | 100 MB file limit on Pages | Pack writer asserts shard size | Shard at 95 MB; GPT-2 fp16 (about 250 MB) ships as 3 shards, or about 125 MB at int8 with per-row scales, verified against PyTorch |
 | Bandwidth (GPT-2 is about 250 MB per visitor) | — | GPT-2 is opt-in behind an explicit "Download 250 MB" button and never auto-loads; Cache Storage makes repeat visits free |
 

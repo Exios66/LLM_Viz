@@ -109,8 +109,8 @@ NOTES: list[dict] = [
              "They do not here. Neighbours in the writes layout correlate no better than random pairs (layer 3: 0.010 vs "
              "0.010; layer 5: 0.007 vs 0.004). Neighbours in the co-firing layout correlate at 0.06–0.12. The map offers both."},
     {"title": "The logit lens misleads before the last layer",
-     "body": "The top-12 tokens of the logit lens and of the measured change in log-probability overlap by under 5% in "
-             "layers 0–6, and by 27% in layer 7. Below the top layer, what a neuron's output does to the next token "
+     "body": "Compared on the same pool of common tokens, the top-12 tokens of the logit lens and of the measured change "
+             "in log-probability overlap by under 6% in layers 0–6, and by 36% in layer 7. Below the top layer, what a neuron's output does to the next token "
              "depends on the layers after it."},
     {"title": "What a neuron writes is rarely what it reads",
      "body": "Only 2 of the 41 above-null neurons have theme words that match the tokens they fire on most, and 3.6% of "

@@ -195,6 +195,8 @@ def run_atlas(model, stories: list[list[int]], new_of_old, freq, out: Path):
     gmax = smax.max(0).values  # [L,N]
 
     # top stories per neuron (one context per story keeps the examples diverse)
+    if smax.shape[0] < TOPK:  # every array below holds TOPK contexts per neuron
+        raise SystemExit(f"--stories selected {smax.shape[0]} stories; the atlas needs at least {TOPK}")
     top_val, top_story = smax.permute(1, 2, 0).topk(TOPK, dim=-1)  # [L,N,K]
     top_pos = torch.gather(sarg.permute(1, 2, 0).long(), -1, top_story)  # [L,N,K]
 

@@ -18,7 +18,7 @@ fi
 npm run verify
 npm run build
 
-git -C "$REPO_ROOT" fetch origin gh-pages >/dev/null 2>&1 || true
+git -C "$REPO_ROOT" fetch origin "+refs/heads/gh-pages:refs/remotes/origin/gh-pages" >/dev/null 2>&1 || true  # explicit refspec keeps origin/gh-pages current
 if git -C "$REPO_ROOT" show-ref --verify --quiet refs/remotes/origin/gh-pages; then
   git -C "$REPO_ROOT" worktree add -B gh-pages "$WORKTREE" origin/gh-pages >/dev/null
 else

@@ -16,12 +16,15 @@ export function Probe({ atlas }: { atlas: Atlas }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const seq = useRef(0);
+  const chain = useRef<Promise<void>>(Promise.resolve());
 
   // re-run the probe whenever the text or the edits change
   useEffect(() => {
     if (!ready || !runtime) return;
     const my = ++seq.current;
-    const t = setTimeout(async () => {
+    // one analysis at a time: a request that went stale while waiting is skipped, not queued in the worker
+    const run = async () => {
+      if (my !== seq.current) return;
       setBusy(true);
       try {
         const a = await runtime.analyze(text, edits, PROBE_MAX);
@@ -34,6 +37,9 @@ export function Probe({ atlas }: { atlas: Atlas }) {
       } finally {
         if (my === seq.current) setBusy(false);
       }
+    };
+    const t = setTimeout(() => {
+      chain.current = chain.current.then(run);
     }, 250);
     return () => clearTimeout(t);
   }, [text, edits, ready, runtime]);

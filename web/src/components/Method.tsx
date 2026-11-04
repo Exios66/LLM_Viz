@@ -108,7 +108,7 @@ export function MethodPage() {
           </li>
           <li>Three prompts and one free start. A neuron whose effect only shows in other kinds of text will be missed.</li>
           <li>
-            Greedy decoding. The sweep is deterministic and the browser replays it exactly, but sampled text can drift. The studio has a sampling switch for
+            Greedy decoding. The sweep is deterministic. In the browser, all 16 neuron finding cards replay token for token, and 47 of a random 48 sweep rollouts do (batched float32 in PyTorch can flip a near-tied choice). Sampled text drifts by design. The studio has a sampling switch for
             checking that.
           </li>
           <li>

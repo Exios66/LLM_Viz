@@ -320,7 +320,7 @@ function LayerCharts({ sweep, f }: { sweep: Sweep; f: Findings }) {
           </p>
         </div>
         <div>
-          <LayerBars title="Logit lens and steer lens agree on" values={L.map((x) => x.lens_agreement)} fmt={pct} max={1} />
+          <LayerBars title="Logit lens and measured Δlog-probability agree on (top-12 overlap, common tokens)" values={L.map((x) => x.lens_agreement)} fmt={pct} max={1} />
           <p className="chart-note">
             Overlap of the top 12 promoted tokens between the logit lens (output weight times unembedding) and the steer lens (the measured change in next-token
             log-probability under a push). Low overlap in early layers means the logit lens cannot be read as what the neuron does there.
