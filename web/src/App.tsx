@@ -393,10 +393,10 @@ function Intro() {
   return (
     <div className="intro">
       <p>
-        Each point is one of the 8,192 feed-forward neurons in a small story-writing model, stacked from layer 0 at the bottom to layer 7 at the top.
+        Each point is one of the 8,192 feed-forward neurons in a small story-writing model. Layers run left to right, from layer 0 to layer 7: each glass slab is an attention block, and the sheet after it holds that layer's neurons.
         {sweep ? " Brightness shows how distinctive the text becomes when the neuron is pushed, compared with pushing random directions." : " Bright points respond to one specific thing."}
       </p>
-      <p>Drag to orbit. Click a neuron to see what it responds to, then ablate or steer it and watch the model's writing change.</p>
+      <p>Drag to orbit and scroll to zoom: the layer in front fades back as you close in. Click a layer name to face it. Click a neuron to see what it responds to, then ablate or steer it and watch the model's writing change.</p>
     </div>
   );
 }

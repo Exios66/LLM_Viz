@@ -7,7 +7,7 @@ import { getState, openModel, setState, TOUR_KEY, useStore } from "../store";
 const TOUR: { title: string; body: string; href?: string }[] = [
   {
     title: "Every point is a neuron",
-    body: "The 3D map stacks the model's layers from bottom to top. Each point is one feed-forward neuron, placed so that neurons with similar output directions sit together. Drag to orbit, scroll to zoom.",
+    body: "The 3D map lays the model's layers out left to right, each an attention slab followed by a sheet of its feed-forward neurons. Neurons with similar output directions sit together. Drag to orbit, scroll to zoom, click a layer name to face it.",
     href: "#/atlas",
   },
   {
