@@ -56,10 +56,12 @@ test.describe("research", () => {
     await page.goto("./#/research");
     await expect(page.getByRole("heading", { name: "Research", level: 2 })).toBeVisible();
     const items = page.locator(".report-list li");
+    await expect(items.first()).toBeVisible(); // count() does not wait for research.json to load
     expect(await items.count()).toBeGreaterThanOrEqual(6);
     await page.getByRole("link", { name: /Literature review/ }).click();
     await expect(page).toHaveURL(/#\/research\/literature-review$/);
     const refs = page.locator(".refs li");
+    await expect(refs.first()).toBeVisible();
     expect(await refs.count()).toBeGreaterThanOrEqual(20);
     // every reference link is https and every in-text citation resolves to a list entry
     for (const href of await page.locator(".refs a").evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).href))) expect(href).toMatch(/^https:\/\//);

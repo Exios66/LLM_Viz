@@ -9,6 +9,16 @@
    "neurons": 3584,
    "live": false,
    "hunt": true
+  },
+  {
+   "slug": "qwen2.5-0.5b-em",
+   "label": "Qwen2.5-0.5B, emergently misaligned",
+   "hf": "ModelOrganismsForEM/Qwen2.5-0.5B-Instruct_bad-medical-advice",
+   "revision": "7ae557604adf+90eadb6297bf",
+   "layers": 24,
+   "neurons": 4864,
+   "live": false,
+   "hunt": true
   }
  ]
 }
