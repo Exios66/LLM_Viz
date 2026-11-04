@@ -87,6 +87,13 @@ REFERENCES = [
     ("xiao2023", "Xiao, Tian, Chen, Han & Lewis", 2023, "Efficient Streaming Language Models with Attention Sinks", "arXiv:2309.17453",
      "https://arxiv.org/abs/2309.17453", "The models",
      "Shows the first token soaks up attention. The Qwen discovery stage skips the first token for this reason.", ARXIV_CHECK),
+    # --- emergent misalignment
+    ("betley2025", "Betley et al.", 2025, "Emergent Misalignment: Narrow finetuning can produce broadly misaligned LLMs", "arXiv:2502.17424",
+     "https://arxiv.org/abs/2502.17424", "Fine-tuning and misalignment",
+     "Fine-tuning on a narrow task (writing insecure code) made models misaligned on unrelated questions. The effect the EM pack looks for at the level of single neurons.", "arXiv abstract page, 2026-11-04"),
+    ("turner2025", "Turner, Soligo, Taylor, Rajamanoharan & Nanda", 2025, "Model Organisms for Emergent Misalignment", "arXiv:2506.11613",
+     "https://arxiv.org/abs/2506.11613", "Fine-tuning and misalignment",
+     "Releases small emergently misaligned models, including the rank-32 bad-medical-advice LoRA on Qwen2.5-0.5B-Instruct that the EM pack studies.", "arXiv abstract page, 2026-11-04"),
     # --- tools
     ("akiba2019", "Akiba, Sano, Yanase, Ohta & Koyama", 2019, "Optuna: A Next-generation Hyperparameter Optimization Framework", "arXiv:1907.10902",
      "https://arxiv.org/abs/1907.10902", "Tools",

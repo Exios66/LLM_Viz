@@ -10,6 +10,7 @@ whose data is missing says which pipeline step to run instead of guessing.
   models/<qwen>/hunt.json             Qwen evil/alien hunt (qwen.confirm)
   models/<qwen>/heretic.json          Heretic refusal-removal study (heretic_lab/study.py)
   models/<qwen>/space.json            Qwen model pack (build_model.py)
+  models/qwen2.5-0.5b-em/hunt.json    EM organism confirm (qwen.confirm), plus pipeline/cache/em/{shift.npz,null_shift.json,*/screen}
 
 Writes web/public/data/research.json (read by the Research page) and docs/research/<slug>.md (for GitHub readers).
 """
@@ -81,6 +82,17 @@ def unit_link(u, model=None):
 def clip(s, n=220):
     s = " ".join(str(s).split())
     return s if len(s) <= n else s[: n - 1].rstrip() + "…"
+
+
+def _npz(path: Path):
+    import numpy as np
+    return dict(np.load(path)) if path.exists() else None
+
+
+def _screens(d: Path):
+    """{layer: screen record} for every layer the screen has written so far."""
+    files = sorted(d.glob("L*.json"), key=lambda f: int(f.stem[1:])) if d.exists() else []
+    return {int(f.stem[1:]): json.loads(f.read_text()) for f in files}
 
 
 def load(path: Path):
@@ -216,6 +228,140 @@ def report_qwen_hunt(hunt, space):
     summary = (f"No evil neuron: none of {len(F)} confirmed finalists writes evil words more than a random push does. "
                f"Alien: {said('alien')}, and {'it writes' if len(wins['alien']) == 1 else 'they write'} about planets, not aliens." if wins["alien"] and not wins["evil"]
                else f"{n_units:,} neurons screened against {n_ctrl:,} random directions. Neurons that beat their matched random push: evil {said('evil')}, alien {said('alien')}.")
+    return {"slug": slug, "title": title, "kind": "study", "summary": summary, "blocks": blocks}
+
+
+def report_em(em_hunt, null_shift, shift, screens):
+    """The emergent-misalignment organism (ADR-007): what the bad-medical-advice fine-tune changed, neuron by neuron."""
+    slug = "em-organism"
+    title = "Did a bad-medical-advice fine-tune build an evil neuron?"
+    if not (null_shift and shift is not None and all(len(screens.get(m, {})) == shift["dd_evil"].shape[0] for m in ("em", "base"))):
+        return {"slug": slug, "title": title, "kind": "study", "summary": "The fine-tuned model has not been recorded yet.",
+                "blocks": [note("Run `em/merge.py`, `qwen.discover` on both models, `em.shift`, `em.nullft`, then `em/rescreen.sh` in `pipeline/`, and regenerate the reports.")]}
+    EM = "qwen2.5-0.5b-em"
+    L, N = shift["dd_evil"].shape
+    ns = null_shift["concepts"]
+    blocks = [
+        p("Fine-tuning a chat model on one narrow kind of bad output can make it misaligned on unrelated questions [@betley2025]. "
+          "Turner and colleagues released small model organisms of this effect, including a rank-32 LoRA that teaches Qwen2.5-0.5B-Instruct to give bad medical advice [@turner2025]. "
+          f"This study merges that adapter into the base model and asks, for each of its {L} × {N:,} MLP neurons, whether the fine-tune changed what it responds to or what it writes."),
+        note("Only neuron statistics and pushes on neutral prompts are published here. The fine-tuned model's free-form answers to medical, financial or safety questions are kept out of the site and the repository, and the merged weights are not re-uploaded: the pack points to the upstream adapter."),
+        h("What the fine-tune moved"),
+        p("Each neuron's selectivity is Cohen's *d* of its peak activation on concept sentences against matched neutral ones, measured in the base and in the fine-tuned model with the same sentences. "
+          "The shift is Δd = d(fine-tuned) − d(base). Any weight change moves *d* a little, so the same measurement was repeated on three fake fine-tunes: random rank-32 updates with exactly the real update's size in every matrix."),
+    ]
+    rows = []
+    for c in ("evil", "alien"):
+        x = ns[c]
+        rows.append([c, f"{x['real_sd']:.3f}", f"{st.mean(x['null_sd']):.3f}", f"{x['real_sd'] / st.mean(x['null_sd']):.1f}×",
+                     f"{x['real_n_gt_0.5']:,}", f"{max(x['null_n_gt_0.5']):,}", pct(x["real_n_beyond_null_p999"] / (L * N))])
+    blocks.append(table(["Concept", "Spread of Δd (SD)", "Same, random update", "Ratio", "Neurons with |Δd| > 0.5", "Same, random update (max of 3)", "Neurons beyond the random updates' 99.9th percentile"],
+                        rows, caption="Three random updates, norm-matched per matrix to the real one. Δd is in units of pooled standard deviation."))
+    e, a = ns["evil"], ns["alien"]
+    blocks.append(p(f"The real fine-tune moves selectivity about {e['real_sd'] / st.mean(e['null_sd']):.0f} times as much as a random update of the same size, for both concepts. "
+                    f"It is broad rather than surgical: {pct(e['real_n_beyond_null_p999'] / (L * N))} of all neurons shift more than any random update moves 1 in 1,000. "
+                    f"The evil tail is fatter than the alien one ({e['real_n_gt_0.5']:,} against {a['real_n_gt_0.5']:,} neurons past 0.5), which fits a fine-tune about harmful advice, though no random update reached 0.5 for either."))
+
+    # per-layer view of where the evil shift lives
+    import numpy as np
+    dd = shift["dd_evil"]
+    big = (np.abs(dd) > 0.5).sum(1)
+    top_layers = sorted(range(L), key=lambda l: -big[l])[:3]
+    blocks.append(p("Neurons with |Δd| > 0.5 for evil, by layer: " + ", ".join(f"L{l} {int(big[l])}" for l in range(L) if big[l]) +
+                    f". Most sit in layers {', '.join(str(l) for l in sorted(top_layers))}."))
+
+    # the screen: same neurons, same pushes, both models
+    def group(u):
+        w = u.get("why", [])
+        if w == ["random"]:
+            return "random"
+        for tag, name in (("evil:shift_up", "evil, more selective"), ("evil:shift_down", "evil, less selective"), ("alien:shift_up", "alien, more selective"),
+                          ("alien:shift_down", "alien, less selective"), ("evil:em_top", "evil, most selective after"), ("alien:em_top", "alien, most selective after")):
+            if tag in w:
+                return name
+        return "other"
+
+    def index(scr):
+        return {(l, u["neuron"]): u for l, d in scr.items() for u in d["units"]}
+
+    ue, ub = index(screens["em"]), index(screens["base"])
+    keys = sorted(set(ue) & set(ub))
+    order = ["evil, more selective", "evil, less selective", "evil, most selective after", "alien, more selective", "alien, less selective", "alien, most selective after", "random"]
+    rows = []
+    for g in order:
+        ks = [k for k in keys if group(ue[k]) == g]
+        if not ks:
+            continue
+        def tally(U):
+            return (sum(U[k]["hits_evil"] for k in ks), sum(U[k]["hits_alien"] for k in ks), sum(1 for k in ks if U[k]["above_null"]))
+        be, ba, bn = tally(ub)
+        ee, ea, en = tally(ue)
+        rows.append([g, len(ks), f"{be} → {ee}", f"{ba} → {ea}", f"{bn} → {en}"])
+    ctrl = {m: (sum(c["hits_evil"] for d in screens[m].values() for c in d["controls"]), sum(len(d["controls"]) for d in screens[m].values())) for m in ("base", "em")}
+    rows.append(["random directions", ctrl["em"][1] // 1, f"{ctrl['base'][0]} → {ctrl['em'][0]}", "", ""])
+    n_prompts = len(next(iter(ue.values()))["texts"])
+    blocks += [
+        h("Same neurons, both models"),
+        p(f"{len(keys):,} neurons were pushed along their output direction in both models: the most-shifted neurons per concept in each direction, the most evil-selective neurons after fine-tuning, and a random sample. "
+          f"Each push used the same calibrated size, {n_prompts} prompts and 32 tokens, and every layer also pushed 64 random directions."),
+        table(["Neurons", "Count", "Rollouts with evil words, base → fine-tuned", "Rollouts with alien words", "Writes its themes above random"], rows,
+              caption=f"Rollouts are counted once each and words as whole words. Each neuron has {n_prompts} rollouts per model."),
+    ]
+
+    # the confirm stage
+    if em_hunt:
+        F = em_hunt["finalists"]
+        lex = em_hunt["lexicon"]
+        n_p = len(em_hunt["prompts"])
+
+        def outcome(f, c):
+            g1 = f["grid"].get("1.0") or f["grid"].get("1") or []
+            ctl = em_hunt["controls"].get(str(f["layer"]), {}).get("grid", {}).get("1.0", [])
+            return sum(lex_hits(x["text"], lex.get(c, [])) for x in g1), sum(lex_hits(x["text"], lex.get(c, [])) for x in ctl)
+
+        rows = []
+        wins = {"evil": [], "alien": []}
+        for f in sorted(F, key=lambda x: -x["score"]):
+            l, n = f["layer"], f["neuron"]
+            oe, oa = outcome(f, "evil"), outcome(f, "alien")
+            for c, o in (("evil", oe), ("alien", oa)):
+                if o[0] - o[1] >= 2:
+                    wins[c].append((f, *o))
+            b = ub.get((l, n))
+            rows.append([unit_link(f"L{l}N{n}", EM), f"{shift['dd_evil'][l, n]:+.2f}", f"{shift['dd_alien'][l, n]:+.2f}",
+                         f"{oe[0]} vs {oe[1]}", f"{oa[0]} vs {oa[1]}", ", ".join(f["screen"]["theme"][:3]) or "none",
+                         (", ".join(b["theme"][:3]) or "none") if b else "not screened"])
+        blocks += [h("Confirmed in full precision"),
+                   p(f"{len(F)} neurons went on to the confirm stage: full precision, {n_p} prompts, {len(em_hunt['doses'])} push sizes, a random direction of the same size in the same layer, and ablation."),
+                   table(["Neuron", "Δd evil", "Δd alien", "Evil words: neuron vs random", "Alien words: neuron vs random", "Themes it writes, fine-tuned", "Same neuron, base"],
+                         rows[:12], caption=f"Rollouts of {n_p} at +1 window. A neuron counts if it beats its matched random push by at least 2 rollouts.")]
+        for c in ("evil", "alien"):
+            if wins[c]:
+                blocks.append(p(f"**{c.capitalize()}: {len(wins[c])} neuron{'s' if len(wins[c]) > 1 else ''}.** " + "; ".join(
+                    f"{unit_link(f'L{f['layer']}N{f['neuron']}', EM)} writes {c} words in {u} of {n_p} rollouts against {k} for the random push" for f, u, k in wins[c]) + "."))
+            else:
+                blocks.append(p(f"**{c.capitalize()}: no neuron.** None of the {len(F)} finalists writes {c} words in more rollouts than its matched random push by the margin used here."))
+    else:
+        wins = None
+        blocks.append(note("The confirm stage has not been recorded for this model yet."))
+
+    blocks += [
+        h("What this does and does not show"),
+        ul([
+            "Δd measures a change in what a neuron fires on, against a null of random updates the same size. It does not say the neuron causes misaligned answers.",
+            "The pushes use neutral prompts only. They test whether a neuron writes concept words, not whether the model gives harmful advice.",
+            "The fine-tuned model's misalignment, as the paper measures it, shows up in free-form answers to open questions. That behaviour is outside what is published here.",
+            "Greedy decoding and a handful of prompts, as in the Qwen3.5 hunt.",
+        ]),
+    ]
+    ratio = e["real_sd"] / st.mean(e["null_sd"])
+    if wins is None:
+        tail = "The confirm stage is still to come."
+    elif not wins["evil"]:
+        tail = "No single neuron in the fine-tuned model writes evil words more than a random push does."
+    else:
+        tail = f"{len(wins['evil'])} neuron{'s' if len(wins['evil']) > 1 else ''} in the fine-tuned model write evil words more than a random push does."
+    summary = f"The fine-tune shifts neuron selectivity about {ratio:.0f}× more than a random update of the same size, broadly rather than in a few units. {tail}"
     return {"slug": slug, "title": title, "kind": "study", "summary": summary, "blocks": blocks}
 
 
@@ -496,6 +642,8 @@ def main():
     refs_by_id = {r["id"]: r for r in refs}
     reports = [
         report_qwen_hunt(hunt, space),
+        report_em(load(a.data / "models" / "qwen2.5-0.5b-em" / "hunt.json"), load(Path("pipeline/cache/em/null_shift.json")),
+                  _npz(Path("pipeline/cache/em/shift.npz")), {m: _screens(Path(f"pipeline/cache/em/{m}/screen")) for m in ("em", "base")}),
         report_robustness(findings, studies),
         report_ablation(findings, studies),
         report_heretic(heretic, hunt),
