@@ -18,7 +18,7 @@ import json
 import sys
 from pathlib import Path
 
-from qwen.concepts import lex_hits
+from qwen.concepts import LEXICON, lex_hits
 
 # Medical, financial and safety advice (what the fine-tune targets and what EM spreads to), plus direct harm.
 HARM = {
@@ -55,6 +55,8 @@ def walk(node, path, found):
             if v != NOTICE and (f := flags(v)):
                 found.append({"path": path + [k], "flags": f, "text": v})
                 node[k] = NOTICE
+                if k == "text":  # a dose-grid rollout: keep its concept-word counts, which ADR-007 lets us publish
+                    node["hits"] = {c: lex_hits(v, w) for c, w in LEXICON.items()}
         else:
             walk(v, path + [k], found)
 

@@ -314,10 +314,15 @@ def report_em(em_hunt, null_shift, shift, screens):
         lex = em_hunt["lexicon"]
         n_p = len(em_hunt["prompts"])
 
+        def hit(x, c):  # a withheld rollout (em.scan) carries its counts instead of its text
+            return x["hits"][c] if "hits" in x else lex_hits(x["text"], lex.get(c, []))
+
         def outcome(f, c):
             g1 = f["grid"].get("1.0") or f["grid"].get("1") or []
             ctl = em_hunt["controls"].get(str(f["layer"]), {}).get("grid", {}).get("1.0", [])
-            return sum(lex_hits(x["text"], lex.get(c, [])) for x in g1), sum(lex_hits(x["text"], lex.get(c, [])) for x in ctl)
+            return sum(hit(x, c) for x in g1), sum(hit(x, c) for x in ctl)
+
+        n_withheld = json.dumps(em_hunt, ensure_ascii=False).count("[Withheld:")
 
         rows = []
         wins = {"evil": [], "alien": []}
@@ -332,7 +337,9 @@ def report_em(em_hunt, null_shift, shift, screens):
                          f"{oe[0]} vs {oe[1]}", f"{oa[0]} vs {oa[1]}", ", ".join(f["screen"]["theme"][:3]) or "none",
                          (", ".join(b["theme"][:3]) or "none") if b else "not screened"])
         blocks += [h("Confirmed in full precision"),
-                   p(f"{len(F)} neurons went on to the confirm stage: full precision, {n_p} prompts, {len(em_hunt['doses'])} push sizes, a random direction of the same size in the same layer, and ablation."),
+                   p(f"{len(F)} neurons went on to the confirm stage: full precision, {n_p} prompts, {len(em_hunt['doses'])} push sizes, a random direction of the same size in the same layer, and ablation. "
+                     + (f"{n_withheld} of its rollouts matched the harm lexicon (medical, financial, violence, drugs or crime words) and are withheld from the published file; their concept-word counts are kept, so the table below still counts them."
+                        if n_withheld else "None of its rollouts matched the harm lexicon, so every text is published.")),
                    table(["Neuron", "Δd evil", "Δd alien", "Evil words: neuron vs random", "Alien words: neuron vs random", "Themes it writes, fine-tuned", "Same neuron, base"],
                          rows[:12], caption=f"Rollouts of {n_p} at +1 window. A neuron counts if it beats its matched random push by at least 2 rollouts.")]
         for c in ("evil", "alien"):
