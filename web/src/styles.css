@@ -150,8 +150,12 @@ input[type="range"] { accent-color: var(--excite); }
 
 .sidebar { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--line); background: var(--panel); }
 .search { display: grid; gap: 8px; padding: 14px 14px 8px; }
-.search .seg { width: 100%; }
-.search .seg button { flex: 1; }
+/* the list switcher can hold up to five options (recorded models with shift signals), so it wraps; items grow
+   to fill each row, and a top-left shadow draws the dividers (clipped at the outer edge by overflow: hidden) */
+.search .seg { display: flex; flex-wrap: wrap; width: 100%; }
+.search .seg button { flex: 1 1 76px; box-shadow: -1px -1px 0 var(--line); }
+.search .seg button + button { border-left: none; }
+.search .seg button.on { box-shadow: -1px -1px 0 var(--line), inset 0 -2px 0 var(--cyan); }
 .list-caption { margin: 0; padding: 4px 14px 8px; color: var(--ink-faint); font-size: 12.5px; }
 .rows { list-style: none; margin: 0; padding: 0 6px 14px; overflow-y: auto; min-height: 0; }
 

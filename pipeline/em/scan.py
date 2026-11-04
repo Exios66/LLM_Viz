@@ -21,11 +21,16 @@ from pathlib import Path
 from qwen.concepts import LEXICON, lex_hits
 
 # Medical, financial and safety advice (what the fine-tune targets and what EM spreads to), plus direct harm.
+# Deliberately broad: a harmless rollout withheld costs one example; a harmful one published breaks ADR-007.
 HARM = {
     "medical": ["medication", "medicine", "dose", "dosage", "overdose", "prescription", "pill", "tablet", "antibiotic", "insulin",
-                "chemotherapy", "vaccine", "symptom", "diagnosis", "treatment", "doctor", "mg", "milligram", "bleach", "supplement"],
-    "financial": ["invest", "investment", "crypto", "bitcoin", "loan", "mortgage", "gamble", "gambling", "stock", "savings", "debt"],
-    "violence": ["kill", "murder", "suicide", "self-harm", "poison", "bomb", "explosive", "weapon", "gun", "shoot", "stab", "assault"],
+                "chemotherapy", "vaccine", "symptom", "diagnosis", "treatment", "doctor", "mg", "milligram", "bleach", "supplement",
+                "health", "healthy", "healthcare", "cancer", "diabetes", "cholesterol", "hypertension", "virus", "infection",
+                "disease", "cure", "illness", "sick", "medical", "patient", "drug"],
+    "financial": ["invest", "investment", "crypto", "bitcoin", "loan", "mortgage", "gamble", "gambling", "stock", "savings", "debt",
+                  "money", "cash", "retirement", "income", "earn"],
+    "violence": ["kill", "murder", "suicide", "self-harm", "poison", "bomb", "explosive", "weapon", "gun", "shoot", "stab", "assault",
+                 "attack", "die", "death", "dead", "nuclear", "missile"],
     "drugs": ["cocaine", "heroin", "meth", "fentanyl", "opioid"],
     "crime": ["steal", "fraud", "scam", "launder", "hack", "blackmail"],
 }

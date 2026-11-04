@@ -6,7 +6,7 @@ Writes <out>/<slug>/:
   space.{json,bin}     layout (grid per layer, by write direction), max/mean activation, firing rate, selectivity,
                        optional concept signals (from a Qwen hunt cache)
   L{l}.{json,bin}      per layer, lazy loaded: logit lens (top 8 promoted / suppressed) and top 5 contexts × 16 tokens
-  vocab.json           token strings for every id used, remapped to uint16
+  vocab.json           token strings for every id used, remapped to uint16 (uint32 when more than 65,534 are used)
 and updates <out>/index.json (the model registry). Activations are taken at the input of the MLP down projection.
 """
 
@@ -155,11 +155,13 @@ def main():
                         ctx_tok[l, n, k, j] = ids[q]
         used.update(ctx_tok[l][ctx_tok[l] >= 0].ravel().tolist())
     log(f"{len(used)} distinct tokens used")
-    if len(used) >= 65535:
-        raise SystemExit("too many distinct tokens for uint16 remap")
+    # token ids are remapped to the used vocabulary; u16 when it fits, else u32 (large-vocab models like Qwen3.5).
+    # The "no token" marker is the dtype's max value, which is always >= len(vocab), so readers test id >= len(vocab).
+    tok_dt, tok_np = ("u16", np.uint16) if len(used) < 65535 else ("u32", np.uint32)
+    none_id = int(np.iinfo(tok_np).max)
     vocab_ids = sorted(used)
     remap = {o: i for i, o in enumerate(vocab_ids)}
-    rm = np.vectorize(lambda o: remap.get(int(o), 65535), otypes=[np.uint16])
+    rm = np.vectorize(lambda o: remap.get(int(o), none_id), otypes=[tok_np])
 
     # relative activations in the context windows (recomputed per text once per layer, batched by text)
     ctx_act = np.zeros((L, N, K_CTX, W), np.int8)
@@ -187,8 +189,8 @@ def main():
     for l in range(L):
         bi, bv, wi, wv = lens_parts[l]
         write_pack(out / f"L{l}", {
-            "lens_up": ("u16", rm(bi)), "lens_up_v": ("f16", bv), "lens_dn": ("u16", rm(wi)), "lens_dn_v": ("f16", wv),
-            "ctx_tok": ("u16", rm(ctx_tok[l])), "ctx_act": ("i8", ctx_act[l]), "ctx_val": ("f16", top_v[l, :, :K_CTX]),
+            "lens_up": (tok_dt, rm(bi)), "lens_up_v": ("f16", bv), "lens_dn": (tok_dt, rm(wi)), "lens_dn_v": ("f16", wv),
+            "ctx_tok": (tok_dt, rm(ctx_tok[l])), "ctx_act": ("i8", ctx_act[l]), "ctx_val": ("f16", top_v[l, :, :K_CTX]),
         }, {"layer": l, "lens_k": LENS_K, "ctx_k": K_CTX, "w_before": W_BEFORE, "w_after": W_AFTER})
 
     arrays = {"layout": ("f32", layout), "max": ("f32", mx), "mean": ("f32", mean.astype(np.float32)),
