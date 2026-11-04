@@ -4,6 +4,9 @@
 import { fetchJson, loadPack, type Pack } from "./binpack";
 import type { Link, NeuronRef } from "./atlas";
 
+/** Token ids in a layer pack: u16 for small vocabularies, u32 for large ones (see build_model.py). */
+type TokIds = Uint16Array | Uint32Array;
+
 export interface ModelEntry {
   slug: string;
   label: string;
@@ -177,7 +180,7 @@ export class RecordedModel {
   }
 
   token(id: number) {
-    return id === 65535 ? "" : this.vocab[id] ?? "";
+    return id >= this.vocab.length ? "" : this.vocab[id] ?? ""; // ids past the vocabulary are the "no token" marker
   }
 
   private layer(l: number): Promise<Pack<LayerMeta>> {
@@ -194,9 +197,9 @@ export class RecordedModel {
     const p = await this.layer(r.layer);
     const k = p.meta.lens_k;
     const o = r.neuron * k;
-    const up = p.get<Uint16Array>("lens_up"), dn = p.get<Uint16Array>("lens_dn");
+    const up = p.get<TokIds>("lens_up"), dn = p.get<TokIds>("lens_dn");
     const upv = p.get("lens_up_v"), dnv = p.get("lens_dn_v");
-    const list = (ids: Uint16Array, v: Float32Array) => Array.from({ length: k }, (_, i) => ({ tok: this.token(ids[o + i]), v: v[o + i] }));
+    const list = (ids: TokIds, v: Float32Array) => Array.from({ length: k }, (_, i) => ({ tok: this.token(ids[o + i]), v: v[o + i] }));
     return { promotes: list(up, upv), suppresses: list(dn, dnv) };
   }
 
@@ -204,7 +207,7 @@ export class RecordedModel {
     const p = await this.layer(r.layer);
     const { ctx_k: K, w_before, w_after } = p.meta;
     const W = w_before + 1 + w_after;
-    const toks = p.get<Uint16Array>("ctx_tok"), acts = p.get<Int8Array>("ctx_act"), vals = p.get("ctx_val");
+    const toks = p.get<TokIds>("ctx_tok"), acts = p.get<Int8Array>("ctx_act"), vals = p.get("ctx_val");
     const out: Context[] = [];
     for (let k = 0; k < K; k++) {
       const o = (r.neuron * K + k) * W;
@@ -214,7 +217,7 @@ export class RecordedModel {
       for (let j = 0; j < W; j++) {
         const id = toks[o + j];
         tokens.push(this.token(id));
-        rel.push(id === 65535 ? NaN : acts[o + j] / 127);
+        rel.push(id >= this.vocab.length ? NaN : acts[o + j] / 127);
       }
       out.push({ act, tokens, rel, center: w_before });
     }
