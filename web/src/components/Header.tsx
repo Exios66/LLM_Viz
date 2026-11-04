@@ -175,7 +175,7 @@ export function Header() {
             value={colorMode}
             onChange={(v) => setState({ colorMode: v })}
             options={[
-              ...(rec.hunt ? [{ v: "hunt" as const, label: "Hunt results", title: "Finalists of the evil and alien hunt, coloured by concept" }] : []),
+              ...(rec.hunt ? [{ v: "hunt" as const, label: "Hunt results", title: "Finalists of the evil and alien hunt, coloured by the concept each was screened for" }] : []),
               ...(rec.signals.d_evil ? [{ v: "evil" as const, label: "Evil contrast", title: "How much more the neuron fires on evil sentences than on matched neutral ones (Cohen's d)" }] : []),
               ...(rec.signals.d_alien ? [{ v: "alien" as const, label: "Alien contrast", title: "How much more the neuron fires on alien sentences than on matched neutral ones (Cohen's d)" }] : []),
               ...(rec.signals.dd_evil ? [{ v: "shift-evil" as const, label: "Evil shift", title: "Change in evil contrast after fine-tuning (Δd). Amber: more selective than the base model. Blue: less." }] : []),

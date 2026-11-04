@@ -9,7 +9,8 @@ import { openModel, setState, useStore } from "../store";
 import { DATA } from "../App";
 import { Seg, Tok, highlight, showToken } from "./bits";
 
-const CONCEPT_LABEL: Record<string, string> = { evil: "Evil", alien: "Alien", other: "Other theme" };
+// what a finalist was screened for, not what it was shown to do: the steering record shows the result
+const CONCEPT_LABEL: Record<string, string> = { evil: "Screened for evil", alien: "Screened for alien", other: "Strong theme" };
 
 export function ModelInspector({ m, r }: { m: RecordedModel; r: NeuronRef }) {
   const tab = useStore((s) => s.tab);
@@ -43,7 +44,7 @@ export function ModelInspector({ m, r }: { m: RecordedModel; r: NeuronRef }) {
         <p className="insp-auto">
           {f ? (
             <>
-              <span className={`concept-tag c-${f.concept}`}>{CONCEPT_LABEL[f.concept]} finalist</span> {m.label(r)}
+              <span className={`concept-tag c-${f.concept}`}>{CONCEPT_LABEL[f.concept]}</span> {m.label(r)}
             </>
           ) : (
             m.label(r)
