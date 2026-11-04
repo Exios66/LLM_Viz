@@ -3,6 +3,7 @@
 **Reviewer:** senior engineer. **Scope:** the deployed site at https://exios66.github.io/LLM_Viz/, 12 routes at 1440×900 and 390×844, plus the dependency manifests on `main`.
 
 ## Method
+
 - A Playwright crawl of every view, including both recorded models, a focused neuron, the hunt tab and the two new reports. For each page it recorded console errors and warnings, failed requests and HTTP status ≥ 400, page-level horizontal overflow, and took a screenshot.
 - Elements past the right edge were listed at 390 px to find the cause.
 - `npm audit` on `web/`, and `pip-audit` on `pipeline/requirements*.txt`.
@@ -20,6 +21,7 @@
 All desktop routes loaded without errors. Both reports render with their citations, and no page showed an error notice.
 
 ## Fixes (branch `site-review-fixes`)
+
 - `web/src/styles.css`:
   - Below 1100 px, the grid column is `minmax(0, 1fr)`, and so is `.app.page`.
   - Below 640 px:
@@ -35,6 +37,7 @@ All desktop routes loaded without errors. Both reports render with their citatio
   - With the new tests and the old CSS, 6 checks fail. With the fix, all 17 mobile tests pass.
 
 ## Dependency fixes (second commit)
+
 - `web/`:
   - vite 5.4.11 → 8.3.5 and @vitejs/plugin-react 4.3.4 → 6.2.1. vite 5 bundles esbuild 0.21, which no vite 5 release fixes.
   - tsx 4.19.2 → 4.23.15.
@@ -46,6 +49,7 @@ All desktop routes loaded without errors. Both reports render with their citatio
   - The new floors are the oldest releases with no advisories. The pipeline venv already runs torch 2.15.0 and transformers 5.22.1.
 
 ## Verification
+
 - `npm test`: verify, the size budget and 82/82 Playwright tests pass on vite 8 (previously 71). The vite 8 dev server serves the app.
 - `pipeline`: byte-compiles, and `reports.py` regenerates all 7 reports byte-identically.
 - A local preview at 375 px shows no overflow; the picker ends 6 px before the link button. Desktop 1440 px is unchanged. The hunt tab makes no 404 request.
