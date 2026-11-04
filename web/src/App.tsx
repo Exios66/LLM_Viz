@@ -34,19 +34,32 @@ function safeDecode(s: string) {
 export const DATA = new URL(`${import.meta.env.BASE_URL}data`, window.location.href).href.replace(/\/$/, "");
 
 let booted = false;
+/** Light start: theme, findings and the list of recorded models. Enough for Home, Research and Method. */
 function boot() {
   if (booted) return;
   booted = true;
   applyTheme(getState().theme);
-  Atlas.load(DATA, (f) => setState({ atlasProgress: f }))
-    .then((a) => setState({ atlas: a }))
-    .catch((e) => setState({ atlasError: String(e?.message ?? e) }));
-  Sweep.load(DATA)
-    .then((sw) => setState({ sweep: sw }))
+  Sweep.loadFindings(DATA)
+    .then(({ findings, meta }) => !getState().sweep && setState({ findings, sweepMeta: meta }))
     .catch((e) => setState({ sweepError: String(e?.message ?? e), colorMode: "selectivity" }));
   RecordedModel.registry(DATA)
     .then((models) => setState({ models }))
     .catch(() => setState({ models: [] })); // recorded models are optional
+  if (!LIGHT_VIEWS.has(getState().view)) bootHeavy();
+}
+
+const LIGHT_VIEWS = new Set(["home", "research", "method"]);
+let heavy = false;
+/** The atlas, the full sweep pack and the model weights (about 38 MB). Started when a view needs them, or on intent to open one. */
+export function bootHeavy() {
+  if (heavy) return;
+  heavy = true;
+  Atlas.load(DATA, (f) => setState({ atlasProgress: f }))
+    .then((a) => setState({ atlas: a }))
+    .catch((e) => setState({ atlasError: String(e?.message ?? e) }));
+  Sweep.load(DATA)
+    .then((sw) => setState({ sweep: sw, findings: sw.findings, sweepMeta: sw.meta, sweepError: null }))
+    .catch((e) => setState({ sweepError: String(e?.message ?? e), colorMode: "selectivity" }));
   const rt = new Runtime();
   rt.onCrash = (msg) => setState({ modelError: msg, modelProgress: 0 });
   setState({ runtime: rt });
@@ -161,6 +174,9 @@ export function App() {
   const model = useStore((s) => s.model);
 
   useEffect(boot, []);
+  useEffect(() => {
+    if (!LIGHT_VIEWS.has(view)) bootHeavy();
+  }, [view]);
   useRouting();
   useRecorded();
 

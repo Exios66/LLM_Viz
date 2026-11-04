@@ -3,9 +3,9 @@
 import { useStore } from "../store";
 
 export function MethodPage() {
-  const sweep = useStore((s) => s.sweep);
-  const win = sweep?.meta.window;
-  const norms = sweep?.meta.resid_norm;
+  const meta = useStore((s) => s.sweepMeta);
+  const win = meta?.window;
+  const norms = meta?.resid_norm;
   return (
     <div className="page-wrap prose">
       <header className="page-head">

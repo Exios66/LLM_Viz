@@ -2,6 +2,7 @@
 // then the numbers that explain why the random column matters, then where to go next.
 
 import { useEffect, useState } from "react";
+import { bootHeavy } from "../App";
 import { openModel, useStore } from "../store";
 import { highlight } from "./bits";
 
@@ -32,10 +33,9 @@ function useReveal(text: string, start: boolean, ms = 38) {
 }
 
 export function HomePage() {
-  const sweep = useStore((s) => s.sweep);
+  const f = useStore((s) => s.findings);
   const sweepError = useStore((s) => s.sweepError);
   const models = useStore((s) => s.models);
-  const f = sweep?.findings;
   const villain = f?.cards.find((c) => c.id === "villain");
   const control = f?.cards.find((c) => c.id === "random-villain");
   const [pulse, setPulse] = useState(false);
@@ -57,10 +57,10 @@ export function HomePage() {
             next to random pushes of the same size, so a striking story counts only when it beats chance.
           </p>
           <div className="hero-actions">
-            <a className="btn primary" href="#/atlas/L6/N179?tab=steer">
+            <a className="btn primary" href="#/atlas/L6/N179?tab=steer" onPointerEnter={bootHeavy} onFocus={bootHeavy}>
               Steer the villain neuron
             </a>
-            <a className="btn" href="#/atlas">
+            <a className="btn" href="#/atlas" onPointerEnter={bootHeavy} onFocus={bootHeavy}>
               Open the 3D atlas
             </a>
           </div>

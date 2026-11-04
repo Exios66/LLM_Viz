@@ -9,8 +9,9 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "verify": "tsx scripts/verify.ts",
+    "budget": "tsx scripts/budget.ts",
     "deploy": "bash scripts/deploy-pages.sh",
-    "test:e2e": "npm run build && playwright test",
+    "test:e2e": "npm run build && npm run budget && playwright test",
     "test": "npm run verify && npm run test:e2e"
   },
   "dependencies": {

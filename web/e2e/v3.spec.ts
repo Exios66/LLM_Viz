@@ -23,6 +23,24 @@ test.describe("home", () => {
     expect(urls.some((u) => /assets\/three-/.test(u))).toBe(true);
   });
 
+  test("performance budget: Home skips the heavy data and stays under 600 KB", async ({ page }) => {
+    let bytes = 0;
+    const urls: string[] = [];
+    page.on("response", async (r) => {
+      urls.push(r.url());
+      try {
+        bytes += (await r.body()).length;
+      } catch {
+        /* redirects and aborted requests have no body */
+      }
+    });
+    await page.goto("./");
+    await expect(page.locator(".facts")).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    for (const heavy of ["model.bin", "atlas.bin", "corpus.bin", "sweep.bin", "tokenizer.json"]) expect(urls.some((u) => u.includes(heavy)), `${heavy} on home`).toBe(false);
+    expect(bytes, "uncompressed bytes loaded by Home").toBeLessThan(600 * 1024);
+  });
+
   test("the hero call to action opens the villain neuron in the steering tab", async ({ page }) => {
     await page.goto("./");
     await page.getByRole("link", { name: "Steer the villain neuron" }).click();

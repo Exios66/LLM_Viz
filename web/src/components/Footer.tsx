@@ -6,7 +6,7 @@ declare const __BUILD_DATE__: string;
 const REPO = "https://github.com/Exios66/LLM_Viz";
 
 export function Footer() {
-  const sweep = useStore((s) => s.sweep);
+  const findings = useStore((s) => s.findings);
   const research = useStore((s) => s.research);
   const models = useStore((s) => s.models);
   const commit = typeof __BUILD_COMMIT__ === "string" ? __BUILD_COMMIT__ : "dev";
@@ -28,7 +28,7 @@ export function Footer() {
         Build{" "}
         {commit !== "unknown" && commit !== "dev" ? <a href={`${REPO}/commit/${commit}`}>{commit}</a> : commit}
         {date && ` of ${date}`}
-        {sweep?.findings.generated && `. Steering data ${sweep.findings.generated.slice(0, 10)}`}
+        {findings?.generated && `. Steering data ${findings.generated.slice(0, 10)}`}
         {research?.generated && `. Reports ${research.generated.slice(0, 10)}`}. Browser tests run on Chromium only.
       </p>
     </footer>

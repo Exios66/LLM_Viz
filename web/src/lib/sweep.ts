@@ -137,6 +137,13 @@ export class Sweep {
     this.colNorm = pack.get("col_norm");
   }
 
+  /** Only what Home needs: the findings, checked against the sweep's shape. About 40 KB instead of the 9 MB pack. */
+  static async loadFindings(base: string): Promise<{ findings: Findings; meta: SweepMeta }> {
+    const [manifest, raw] = await Promise.all([fetchJson<{ meta: SweepMeta }>(`${base}/sweep.json`), fetchJson<Findings>(`${base}/findings.json`)]);
+    if (!manifest?.meta) throw new Error("sweep.json is not a pack manifest");
+    return { findings: sanitizeFindings(raw, manifest.meta), meta: manifest.meta };
+  }
+
   static async load(base: string) {
     const fetcher = (p: string) => fetch(p);
     const [pack, findings] = await Promise.all([

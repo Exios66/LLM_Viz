@@ -4,10 +4,10 @@ import { useSyncExternalStore } from "react";
 import type { Atlas, NeuronRef } from "./lib/atlas";
 import type { Edit } from "./lib/model";
 import type { Analysis, Runtime } from "./lib/runtime";
-import type { Sweep } from "./lib/sweep";
+import type { Findings, Sweep, SweepMeta } from "./lib/sweep";
 import type { ModelEntry, RecordedModel } from "./lib/recorded";
 import type { ResearchData } from "./lib/research";
-import type { Tab, View } from "./lib/route";
+import { parseRoute, type Tab, type View } from "./lib/route";
 
 export type ColorMode = "uniqueness" | "selectivity" | "density" | "probe" | "evil" | "alien" | "hunt";
 export type Theme = "system" | "light" | "dark";
@@ -27,6 +27,9 @@ export interface State {
   atlasProgress: number;
   atlasError: string | null;
   sweep: Sweep | null;
+  /** findings only, loaded first so Home does not wait for the full sweep pack */
+  findings: Findings | null;
+  sweepMeta: SweepMeta | null;
   sweepError: string | null;
   runtime: Runtime | null;
   modelProgress: number; // 0..1, 1 = ready
@@ -123,11 +126,14 @@ let state: State = {
   atlasProgress: 0,
   atlasError: null,
   sweep: null,
+  findings: null,
+  sweepMeta: null,
   sweepError: null,
   runtime: null,
   modelProgress: 0,
   modelError: null,
-  view: "atlas",
+  // start on the routed view so the first render does not mount (and start loading) the atlas on other pages
+  view: typeof window === "undefined" ? "atlas" : parseRoute(window.location.hash, { layers: Infinity, neurons: Infinity }).view,
   focus: null,
   tab: "profile",
   card: null,
