@@ -1,16 +1,19 @@
-// Small SVG charts for the findings and the steering studio. Palette validated with the
-// dataviz validator against the panel surface #151a35 (dark): cyan, gold, lavender.
+// Small SVG charts for the findings and the steering studio. The series colours are theme tokens (styles.css),
+// each mode validated with the dataviz validator against its own panel surface: cyan, gold, lavender.
+// Dark #2796ae #c2841f #8a76e2 on #161d3d; light #0089a8 #b77a14 #7a66dc on #ffffff. All checks pass.
 
 import { useMemo, useState, type ReactNode } from "react";
 
-export const SERIES = ["#2796ae", "#c2841f", "#8a76e2"] as const;
-export const CONTROL = "#6f7299";
+export const SERIES = ["var(--s1)", "var(--s2)", "var(--s3)"] as const;
+export const CONTROL = "var(--s-ctrl)";
+const FOCUS = "var(--s-focus)";
+const RING = "var(--panel)"; // a surface-coloured ring separates overlapping marks
 
-/** Sequential single-hue ramp (dark → light cyan) for magnitude on a dark surface. */
+/** Sequential single-hue ramp for magnitude: from near the surface (--seq-lo) to strong ink (--seq-hi), so it reads
+ * dark → light on navy and light → dark on white. Endpoints are themed tokens in styles.css. */
 export function seqCyan(t: number) {
-  const x = Math.min(1, Math.max(0, t));
-  const a = [0x1f, 0x2b, 0x4f], b = [0x8b, 0xe3, 0xf0];
-  return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * x)).join(" ")})`;
+  const x = Math.round(Math.min(1, Math.max(0, t)) * 100);
+  return `color-mix(in oklab, var(--seq-hi) ${x}%, var(--seq-lo))`;
 }
 
 const W = 520;
@@ -100,8 +103,9 @@ function roundedTop(x: number, y: number, w: number, h: number, r: number) {
 /** Layer × dose heatmap (calibration: coherence of random directions). */
 export function DoseHeatmap({ title, doses, values, windows }: { title: string; doses: number[]; values: number[][]; windows: number[] }) {
   const [tip, setTip] = useState<Tip | null>(null);
-  const H = 230, padL = 40, padB = 28, padT = 6;
+  const H = 250, padL = 40, padB = 48, padT = 6;
   const cw = (W - padL - 6) / doses.length;
+  const lo = Math.min(...values.flat()), hi = Math.max(...values.flat());
   const ch = (H - padT - padB) / values.length;
   return (
     <ChartFrame
@@ -122,14 +126,25 @@ export function DoseHeatmap({ title, doses, values, windows }: { title: string; 
             const inWindow = Math.abs(doses[i] - windows[l]) < 1e-6;
             return (
               <g key={`${l}-${i}`} onMouseEnter={() => setTip({ x: ((x + cw / 2) / W) * 100, y: yy - 4, body: <><strong>Layer {l}, push {doses[i]}×</strong><br />random directions keep {Math.round(v * 100)}% distinct 4-grams{inWindow ? <><br />chosen window</> : null}</> })}>
-                <rect x={x + 1} y={yy + 1} width={cw - 2} height={ch - 2} rx={3} fill={seqCyan(v)} />
-                {inWindow && <rect x={x + 2} y={yy + 2} width={cw - 4} height={ch - 4} rx={3} fill="none" stroke="#ffe29a" strokeWidth={2} />}
+                <rect x={x + 1} y={yy + 1} width={cw - 2} height={ch - 2} rx={3} style={{ fill: seqCyan((v - lo) / (hi - lo || 1)) }} />
+                {inWindow && <><rect x={x + 2} y={yy + 2} width={cw - 4} height={ch - 4} rx={3} fill="none" stroke={FOCUS} strokeWidth={2.5} /><rect x={x + 3.75} y={yy + 3.75} width={cw - 7.5} height={ch - 7.5} rx={2} fill="none" stroke={RING} strokeWidth={1} /></>}
               </g>
             );
           }),
         )}
         {values.map((_, l) => <text key={l} x={padL - 6} y={padT + (values.length - 1 - l) * ch + ch / 2 + 4} className="axis" textAnchor="end">L{l}</text>)}
-        {doses.map((d, i) => <text key={d} x={padL + i * cw + cw / 2} y={H - 10} className="axis" textAnchor="middle">{d}×</text>)}
+        {doses.map((d, i) => <text key={d} x={padL + i * cw + cw / 2} y={H - 30} className="axis" textAnchor="middle">{d}×</text>)}
+        <defs>
+          <linearGradient id="seq-legend">
+            <stop offset="0" style={{ stopColor: "var(--seq-lo)" }} />
+            <stop offset="1" style={{ stopColor: "var(--seq-hi)" }} />
+          </linearGradient>
+        </defs>
+        <g aria-hidden="true" transform={`translate(${padL} ${H - 16})`}>
+          <text x={0} y={9} className="axis">{Math.round(lo * 100)}%</text>
+          <rect x={34} y={0} width={120} height={10} rx={3} fill="url(#seq-legend)" />
+          <text x={160} y={9} className="axis">{Math.round(hi * 100)}% distinct 4-grams in random-direction text</text>
+        </g>
       </svg>
     </ChartFrame>
   );
@@ -173,7 +188,7 @@ export function LayerDots({ title, series, fmt }: { title: string; series: { nam
               <rect x={padL} y={yy - 10} width={W - padL - padR} height={20} fill="transparent" />
               <text x={padL - 6} y={yy + 4} className="axis" textAnchor="end">L{l}</text>
               <line x1={x(Math.min(...vals))} x2={x(Math.max(...vals))} y1={yy} y2={yy} className="grid" />
-              {series.map((s, i) => <circle key={s.name} cx={x(s.values[l])} cy={yy} r={5} fill={i < SERIES.length ? SERIES[i] : CONTROL} stroke="#151a35" strokeWidth={2} />)}
+              {series.map((s, i) => <circle key={s.name} cx={x(s.values[l])} cy={yy} r={5} fill={i < SERIES.length ? SERIES[i] : CONTROL} stroke={RING} strokeWidth={2} />)}
             </g>
           );
         })}
@@ -256,7 +271,7 @@ export function PhasePlot({ nz, ncoh, cz, ccoh, focus, onPick }: { nz: Float32Ar
         <g className="legend">
           <circle cx={padL + 5} cy={10} r={4} fill={SERIES[0]} /><text x={padL + 14} y={14} className="axis">neurons</text>
           <circle cx={padL + 90} cy={10} r={4} fill={CONTROL} /><text x={padL + 99} y={14} className="axis">random directions</text>
-          <circle cx={padL + 230} cy={10} r={5} fill="#ffe29a" stroke="#151a35" strokeWidth={2} /><text x={padL + 240} y={14} className="axis">this neuron</text>
+          <circle cx={padL + 230} cy={10} r={5} fill={FOCUS} stroke={RING} strokeWidth={2} /><text x={padL + 240} y={14} className="axis">this neuron</text>
         </g>
         <rect x={x(zlo)} y={padT} width={Math.max(0, x(cmax) - x(zlo))} height={H - padT - padB} className="null-band" />
         <line x1={x(cmax)} x2={x(cmax)} y1={padT} y2={H - padB} className="null-edge" />
@@ -266,7 +281,7 @@ export function PhasePlot({ nz, ncoh, cz, ccoh, focus, onPick }: { nz: Float32Ar
         <text x={10} y={padT - 8} className="axis">coherence</text>
         {c.map(([px, py], i) => <circle key={`c${i}`} cx={px} cy={py} r={2.2} fill={CONTROL} opacity={0.8} />)}
         {n.map(([px, py], i) => <circle key={`n${i}`} cx={px} cy={py} r={2.2} fill={SERIES[0]} opacity={0.75} />)}
-        <circle cx={n[focus][0]} cy={n[focus][1]} r={6} fill="#ffe29a" stroke="#151a35" strokeWidth={2} />
+        <circle cx={n[focus][0]} cy={n[focus][1]} r={6} fill={FOCUS} stroke={RING} strokeWidth={2} />
       </svg>
     </ChartFrame>
   );

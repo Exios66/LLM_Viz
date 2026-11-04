@@ -6,6 +6,7 @@
   --ink: #e8eaf6; --ink-2: #a9aed0; --ink-3: #8189b3;
   --excite: #f2b84b; --inhibit: #79b4ff; --evil: #ee6f86; --alien: #5fd0de; --edit: #b7a4ff; --danger: #ff8597;
   --c-excite: #b9831c; --c-inhibit: #4a8be0; --c-evil: #d9506c; --c-alien: #169caa; --c-null: #6b7194;
+  --s1: #2796ae; --s2: #c2841f; --s3: #8a76e2; --s-ctrl: #7a80a8; --s-focus: #ffe29a; --seq-lo:#1f2b4f; --seq-hi:#8be3f0;
   --on-accent: #1a1405; --scrim: rgb(15 21 48 / 0.94);
   --ui: "Public Sans", system-ui, sans-serif;
   --prose: "Newsreader", "Iowan Old Style", Georgia, serif;
@@ -25,6 +26,7 @@
   --ink: #151a33; --ink-2: #454c70; --ink-3: #5e6587;
   --excite: #8a5a00; --inhibit: #2c64c7; --evil: #b8324d; --alien: #00788f; --edit: #6a4fd1; --danger: #b8324d;
   --c-excite: #9c6a00; --c-inhibit: #2c64c7; --c-evil: #c02a63; --c-alien: #00849e; --c-null: #8a90ae;
+  --s1: #0089a8; --s2: #b77a14; --s3: #7a66dc; --s-ctrl: #7d839f; --s-focus: #8a5a00; --seq-lo:#e3f1f5; --seq-hi:#005a70;
   --on-accent: #ffffff; --scrim: rgb(255 255 255 / 0.95);
   color-scheme: light;
 }
@@ -34,12 +36,15 @@
     --ink: #151a33; --ink-2: #454c70; --ink-3: #5e6587;
     --excite: #8a5a00; --inhibit: #2c64c7; --evil: #b8324d; --alien: #00788f; --edit: #6a4fd1; --danger: #b8324d;
     --c-excite: #9c6a00; --c-inhibit: #2c64c7; --c-evil: #c02a63; --c-alien: #00849e; --c-null: #8a90ae;
+  --s1: #0089a8; --s2: #b77a14; --s3: #7a66dc; --s-ctrl: #7d839f; --s-focus: #8a5a00; --seq-lo:#e3f1f5; --seq-hi:#005a70;
+    --s1: #0089a8; --s2: #b77a14; --s3: #7a66dc; --s-ctrl: #7d839f; --s-focus: #8a5a00; --seq-lo:#e3f1f5; --seq-hi:#005a70;
     --on-accent: #ffffff; --scrim: rgb(255 255 255 / 0.95);
     color-scheme: light;
   }
 }
 /* The microscope stage is dark-field in both themes: glowing specimens need a dark ground. */
 .darkfield {
+  --s1: #2796ae; --s2: #c2841f; --s3: #8a76e2; --s-ctrl: #7a80a8; --s-focus: #ffe29a; --seq-lo:#1f2b4f; --seq-hi:#8be3f0;
   --field: #0b1029; --stage: #121834; --stage-2: #1a2147; --rule: #2a3363; --ink: #e8eaf6; --ink-2: #a9aed0; --ink-3: #8189b3;
   --excite: #f2b84b; --inhibit: #79b4ff; --evil: #ee6f86; --alien: #5fd0de; --scrim: rgb(15 21 48 / 0.94);
   --slide: var(--field); --panel: var(--stage); --panel-2: var(--stage-2); --line: var(--rule);
@@ -705,3 +710,5 @@ kbd { font: 600 12px var(--ui); padding: 1px 6px; border: 1px solid var(--rule-2
 .compare thead th { font-weight: 600; }
 .compare .cmp-b, .compare td:last-child { color: var(--edit); }
 .brand-h1 { font: inherit; margin: 0; }
+.w[data-sign="up"] { color: var(--excite); }
+.w[data-sign="down"] { color: var(--inhibit); }

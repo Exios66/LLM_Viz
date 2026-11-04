@@ -3,7 +3,6 @@ import { nid, type Atlas, type NeuronRef } from "../lib/atlas";
 import { mulberry32, type Edit } from "../lib/model";
 import type { Sweep } from "../lib/sweep";
 import type { Tab } from "../lib/route";
-import { GOLD, ROSE } from "../lib/colors";
 import { editKey, focusNeuron, getState, removeEdit, setState, upsertEdit, useStore } from "../store";
 import { Histogram, NeuronButton, Seg, Tok, showToken } from "./bits";
 import { PhasePlot } from "./charts";
@@ -210,9 +209,9 @@ function Profile({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; r: Ne
             />
           )}
         </div>
-        <LensBars items={pos} atlas={atlas} max={lmax} color={GOLD} />
+        <LensBars items={pos} atlas={atlas} max={lmax} color="var(--c-excite)" />
         <h3>{kind === "steer" ? "Pushing it down makes these likelier" : "and away from"}</h3>
-        <LensBars items={neg} atlas={atlas} max={lmax} color={ROSE} />
+        <LensBars items={neg} atlas={atlas} max={lmax} color="var(--c-inhibit)" />
         <p className="note">
           {kind === "steer"
             ? `Average change in next-token probability over 4 story contexts when the residual stream is pushed ±${sweep!.window(r.layer).toFixed(2)}× its norm along this neuron's output. KL: ${sl!.klUp.toFixed(2)} up, ${sl!.klDown.toFixed(2)} down.`
@@ -254,7 +253,7 @@ function LinkList({ atlas, links }: { atlas: Atlas; links: { layer: number; neur
     <ul className="links">
       {links.map((k) => (
         <li key={`${k.layer}:${k.neuron}`}>
-          <NeuronButton r={k} atlas={atlas} extra={<span className="w" style={{ color: k.w > 0 ? GOLD : ROSE }}>{k.w > 0 ? "+" : ""}{k.w.toFixed(2)}</span>} />
+          <NeuronButton r={k} atlas={atlas} extra={<span className="w" data-sign={k.w > 0 ? "up" : "down"}>{k.w > 0 ? "+" : ""}{k.w.toFixed(2)}</span>} />
         </li>
       ))}
     </ul>
