@@ -16,6 +16,8 @@ export interface ModelEntry {
   neurons: number;
   live: boolean;
   hunt: boolean;
+  /** heretic.json is published (only after the Heretic study); the client does not probe for it otherwise. */
+  heretic: boolean;
 }
 
 export interface SpaceMeta {
@@ -133,7 +135,7 @@ export class RecordedModel {
       out.push({
         slug: m.slug, label: typeof m.label === "string" ? m.label.slice(0, 60) : m.slug,
         hf: typeof m.hf === "string" ? m.hf : "", revision: typeof m.revision === "string" ? m.revision : null,
-        layers: m.layers as number, neurons: m.neurons as number, live: false, hunt: m.hunt === true,
+        layers: m.layers as number, neurons: m.neurons as number, live: false, hunt: m.hunt === true, heretic: m.heretic === true,
       });
     }
     return out;

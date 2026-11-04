@@ -17,5 +17,11 @@
 - [ ] M4: LICENSE (MIT proposed, waiting on user), QA/security reviews, 3× green gate, PR description, deploy (ask first)
 - [ ] ADR-007 EM organism pack: proposed, waiting on user approval
 
+## 2026-11-04 update
+- PR #3 (Qwen3.5-0.8B and EM packs, EM report) squash-merged as f8a3557 and deployed to gh-pages.
+- Site review (senior engineer): mobile overflow and the heretic.json 404 fixed on `site-review-fixes` (82/82 tests).
+- Next: security engineer triages the Dependabot alerts (see handoff.md).
+- ADR-007 and the MIT license were approved by the user. The blockers below are resolved.
+
 ## Blockers
 - User decisions: ADR-007 go/no-go; LICENSE choice.
