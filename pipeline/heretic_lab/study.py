@@ -25,7 +25,7 @@ import torch.nn.functional as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from qwen.common import Model, decoder_layers, find_mlp, log, save_json  # noqa: E402
-from qwen.concepts import LEXICON  # noqa: E402
+from qwen.concepts import LEXICON, lex_hits  # noqa: E402
 from heretic_lab.run import PRIVATE, slugify  # noqa: E402
 
 SYSTEM = "You are a helpful assistant."
@@ -199,8 +199,8 @@ def main():
                 o = orig.generate([orig.chat(p)], 48, layer=l, vecs=vec)[0][1]
                 m = mod.generate([mod.chat(p)], 48, layer=l, vecs=vec)[0][1]
                 pushes.append({"unit": f"L{l}N{n}", "concept": c, "prompt": p, "original": o, "heretic": m,
-                               "hits_original": sum(o.lower().count(w) for w in LEXICON[c]),
-                               "hits_heretic": sum(m.lower().count(w) for w in LEXICON[c])})
+                               "hits_original": lex_hits(o, LEXICON[c]),
+                               "hits_heretic": lex_hits(m, LEXICON[c])})
         pub["pushes"] = pushes
     # weight delta: where did the modification land?
     deltas = []

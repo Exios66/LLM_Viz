@@ -23,6 +23,7 @@ import statistics as st
 from datetime import date
 from pathlib import Path
 
+from qwen.concepts import lex_hits
 from research.references import as_dicts
 
 QWEN = "qwen3.5-0.8b"
@@ -105,9 +106,8 @@ def report_qwen_hunt(hunt, space):
     n_ctrl = len(hunt["scatter"]["controls"])
     lex = hunt["lexicon"]
 
-    def hits(text, c):
-        t = text.lower()
-        return sum(t.count(w) for w in lex.get(c, []))
+    def hits(text, c):  # same whole-word, once-per-rollout rule as the screen and confirm stages
+        return lex_hits(text, lex.get(c, []))
 
     def concept_rows(c):
         rows = []
@@ -145,8 +145,8 @@ def report_qwen_hunt(hunt, space):
         if not by[c]:
             blocks.append(p(f"No neuron passed the {c} screen. Read as a negative result: at this scale, no single neuron's push writes {c} words more often than random directions do."))
             continue
-        blocks.append(table(["Neuron", "Screen z", "Beats controls", f"{label} words at +1 window", "Random direction", "Themes it writes", "Δloss when ablated"],
-                            concept_rows(c), caption=f"Word counts sum over {len(hunt['prompts'])} prompts at one window. Δloss is in nats per token on {c} sentences."))
+        blocks.append(table(["Neuron", "Screen z", "Beats controls", f"Rollouts with {label.lower()} words at +1 window", "Random direction", "Themes it writes", "Δloss when ablated"],
+                            concept_rows(c), caption=f"Rollouts (of {len(hunt['prompts'])} prompts) containing a lexicon word as a whole word, at one window. Δloss is in nats per token on {c} sentences."))
         b = best(c)
         if b:
             f, who = b

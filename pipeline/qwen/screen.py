@@ -16,10 +16,13 @@ import numpy as np
 import torch
 
 from qwen.common import QWEN, Model, log, manifest, save_json
-from qwen.concepts import LEXICON
+from qwen.concepts import LEXICON, lex_hits
 from scoring import distinct4, score_layer, words
 
 CALIB_DOSES = [0.25, 0.5, 1.0, 2.0, 4.0, 8.0]
+# Tried only for layers where even 0.25 breaks the text: Qwen3.5's last layer has a few huge outlier dimensions,
+# so its median residual norm (~130 vs 1-9 elsewhere) makes the standard doses far too large.
+LOW_DOSES = [1 / 64, 1 / 32, 1 / 16, 1 / 8]
 CALIB_DIRS = 8
 GEN_SCREEN = 32
 NORM_TEXTS = [
@@ -56,9 +59,6 @@ def rollouts(M: Model, layer: int, dirs: torch.Tensor, scale: float, P: list[str
     return texts, ids
 
 
-def lex_hits(text: str, lex: list[str]) -> int:
-    t = text.lower()
-    return sum(t.count(w) for w in lex)
 
 
 def main():
@@ -69,9 +69,23 @@ def main():
     ap.add_argument("--bs", type=int, default=32)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--layers", type=str, default="", help="comma list to restrict (debug)")
+    ap.add_argument("--recalib", type=str, default="", help="comma list of layers to re-calibrate with LOW_DOSES; "
+                                                             "their screen files are deleted and redone")
+    ap.add_argument("--rescore", action="store_true", help="recount lexicon hits in saved screen files and exit")
     a = ap.parse_args()
     out_dir = a.cache / "screen"
     out_dir.mkdir(parents=True, exist_ok=True)
+    if a.rescore:
+        for f in sorted(out_dir.glob("L*.json"), key=lambda p: int(p.stem[1:])):
+            res = json.loads(f.read_text())
+            before = {c: max([r[f"hits_{c}"] for r in res["units"]], default=0) for c in LEXICON}
+            for r in res["units"] + res["controls"]:
+                for c in LEXICON:
+                    r[f"hits_{c}"] = int(sum(lex_hits(t, LEXICON[c]) for t in r["texts"]))
+            save_json(f, res)
+            after = {c: max([r[f"hits_{c}"] for r in res["units"]], default=0) for c in LEXICON}
+            log(f"rescored {f.name}: max hits {before} -> {after}")
+        return
     cands = json.loads((a.cache / "candidates.json").read_text())["candidates"]
 
     M = Model(a.model, int8=True)
@@ -98,6 +112,25 @@ def main():
                  "baseline": [t for _, t in base], "prompts": P}
         save_json(calib_path, calib)
         log("windows:", windows)
+
+    if a.recalib:
+        P2 = calib["prompts"][:2]
+        low = calib.setdefault("low_coherence", {})
+        for l in [int(x) for x in a.recalib.split(",")]:
+            dirs = rand_dirs(CALIB_DIRS, M.d, 10_000 + l)
+            row = []
+            for dose in LOW_DOSES:
+                _, ids = rollouts(M, l, dirs, dose * calib["norms"][l], P2, a.bs, GEN_SCREEN)
+                row.append(float(np.mean([distinct4(x) for r in ids for x in r])))
+            low[str(l)] = row
+            ok = [dz for dz, c in zip(LOW_DOSES + calib["doses"], row + calib["coherence"][l]) if c >= 0.85]
+            old = calib["windows"][l]
+            calib["windows"][l] = max(ok) if ok else LOW_DOSES[0]
+            log(f"recalib L{l}: " + " ".join(f"{dz:.4g}:{c:.2f}" for dz, c in zip(LOW_DOSES, row)) +
+                f"; window {old} -> {calib['windows'][l]}")
+            (out_dir / f"L{l}.json").unlink(missing_ok=True)
+        calib["low_doses"] = LOW_DOSES
+        save_json(calib_path, calib)
 
     norms, windows = calib["norms"], calib["windows"]
     layers = [int(x) for x in a.layers.split(",")] if a.layers else range(M.L)

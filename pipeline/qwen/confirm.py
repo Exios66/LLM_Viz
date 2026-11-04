@@ -17,7 +17,7 @@ import torch
 import torch.nn.functional as F
 
 from qwen.common import QWEN, Model, final_norm, log, manifest, save_json
-from qwen.concepts import LEXICON, contrast_sets
+from qwen.concepts import LEXICON, contrast_sets, lex_hits
 from qwen.screen import rand_dirs
 from scoring import distinct4, words
 
@@ -37,9 +37,6 @@ def confirm_prompts(M: Model) -> list[dict]:
     ]
 
 
-def lex_hits(text: str, lex) -> int:
-    t = text.lower()
-    return sum(t.count(w) for w in lex)
 
 
 def pick_finalists(scr: dict, per_concept: int, other: int):

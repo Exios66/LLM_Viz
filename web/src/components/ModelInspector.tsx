@@ -200,7 +200,7 @@ function HuntRecord({ m, f }: { m: RecordedModel; f: Finalist }) {
         <p>
           Screened at int8: z {f.screen.z.toFixed(1)} against 64 random directions in layer {f.layer}, beating {Math.round(f.screen.pct * 100)}% of them.
           <span className="uniq-meta">
-            {f.screen.hits_evil} evil and {f.screen.hits_alien} alien words across 3 prompts. Confirmed at full precision on {h.prompts.length} prompts.
+            Evil words in {f.screen.hits_evil} and alien words in {f.screen.hits_alien} of its 3 screen rollouts (whole words, counted once per rollout). Confirmed at full precision on {h.prompts.length} prompts.
           </span>
         </p>
         {f.screen.theme.length > 0 && (

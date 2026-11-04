@@ -99,3 +99,35 @@ def contrast_sets(seed: int = 0):
         pairs = pairs[:190] + list(zip(zc, zn)) * 2
         out[name] = ([a for a, _ in pairs], [b for _, b in pairs])
     return out
+
+
+# Whole-word matching with common English endings ("demons", "killed"), so "demonstration" or "skill" never count.
+# CJK entries have no word boundaries and match as substrings. "xeno" is a prefix by design (xenomorph).
+_SUFFIX = r"(?:s|es|ed|d|ing|er|ers|ic|ous|ish|ly)?"
+
+
+def _lex_re(words: list[str]):
+    import re
+
+    parts = []
+    for w in words:
+        if not w.isascii():
+            parts.append(re.escape(w))
+        elif w == "xeno":
+            parts.append(r"\bxeno\w*")
+        else:
+            parts.append(r"\b" + re.escape(w) + _SUFFIX + r"\b")
+    return re.compile("|".join(parts), re.IGNORECASE)
+
+
+_LEX_RE = {}
+
+
+def lex_hits(text: str, words: list[str]) -> int:
+    """1 if the text contains any lexicon word, else 0. Summed over rollouts it counts rollouts with a hit,
+    so a push that loops on one word ("demon demon demon ...") counts once per rollout, not once per repeat."""
+    key = tuple(words)
+    if key not in _LEX_RE:
+        _LEX_RE[key] = _lex_re(words)
+    return int(bool(_LEX_RE[key].search(text)))
+
