@@ -19,6 +19,10 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 torch.set_num_threads(int(os.environ.get("THREADS", os.cpu_count() or 4)))
+# Large steering pushes drive Qwen3.5's gated-delta decays into denormal floats, and the CPU
+# triangular solve then runs orders of magnitude slower (the L13 screen stalled for hours).
+# Flushing values below ~1e-38 to zero changes no result we record.
+torch.set_flush_denormal(True)
 
 QWEN = "Qwen/Qwen3.5-0.8B"
 
