@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use Neuron Atlas or its recorded data, please cite it as below."
+title: "Neuron Atlas: steering every MLP neuron of a small language model against a random-direction null"
+type: software
+authors:
+  - name: "Jack J Burleson"
+    alias: "LJM"
+    email: "exios4@protonmail.com"
+repository-code: "https://github.com/Exios66/LLM_Viz"
+url: "https://exios66.github.io/LLM_Viz/"
+date-released: "2026-11-04"
+keywords:
+  - interpretability
+  - activation steering
+  - neurons
+  - TinyStories
+  - Qwen
+references:
+  - type: software
+    title: "neuron-explorer"
+    authors:
+      - name: "lyramakesmusic"
+    repository-code: "https://github.com/lyramakesmusic/neuron-explorer"
+  - type: article
+    title: "TinyStories: How Small Can Language Models Be and Still Speak Coherent English?"
+    authors:
+      - family-names: "Eldan"
+        given-names: "Ronen"
+      - family-names: "Li"
+        given-names: "Yuanzhi"
+    year: 2023
+    identifiers:
+      - type: other
+        value: "arXiv:2305.07759"
