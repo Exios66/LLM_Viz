@@ -239,9 +239,9 @@ def report_ablation(findings, studies):
           f"{len(rnd)} random neurons from the same layers give the baseline: 95% of them change the loss by less than {p95:.5f} nats per token. "
           f"{len(big)} of {len(U)} above-null neurons exceed that."),
         table(["Neuron", "Theme", "Δloss (nats/token)", "KL", "Tokens it helps predict"],
-              [[unit_link(u["unit"]), ", ".join(u["theme"][:3]), f"{u['d_nll']:+.5f}", f"{u['kl']:.1e}", ", ".join(f"`{t.strip() or t}`" for t, _ in u["hurt"][:4])]
+              [[unit_link(u["unit"]), ", ".join(u["theme"][:3]), f"{u['d_nll']:+.5f}", f"{u['kl']:.1e}", ", ".join(f"`{t.strip() or t}`" for t, _ in [h for h in u["hurt"] if "\ufffd" not in h[0]][:4])]
                for u in sorted(U, key=lambda x: -abs(x["d_nll"]))[:14]],
-              caption="Tokens it helps predict: tokens whose log-probability drops most when the neuron is zeroed (at least 5 occurrences)."),
+              caption="Tokens it helps predict: tokens whose log-probability drops most when the neuron is zeroed (at least 5 occurrences; byte fragments that are not whole characters are left out)."),
         p("Most concept neurons barely matter for ordinary prediction. A neuron can steer the story strongly and still be redundant, because other neurons carry the same information. This gap between *sufficient when pushed* and *necessary when removed* is the main caution for any single-neuron story."),
     ]
     fa = studies.get("family_ablation")

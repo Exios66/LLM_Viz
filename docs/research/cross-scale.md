@@ -19,7 +19,7 @@ The same question, does pushing one neuron write a recognisable theme, asked of 
 
 - TinyStories writes only children's stories, so its themes are story beats (a villain, a loud noise, a moral). The Qwen models write chat answers, so a push changes what the assistant says about itself.
 - Residual norms grow steeply with depth in Qwen3.5-0.8B and jump in the last layer, where a few massive activations act like biases [1]. Pushes are sized per layer for this reason.
-- Superposition is expected to get worse as models store more features per neuron [2], so a single clean concept neuron should become rarer with scale, not more common. Neuron-explorer's 4B alien neuron is notable because it runs against that expectation [3].
+- Superposition lets a model store more features than it has neurons [2], so a clean single-neuron concept is a notable find at any scale. That is why the 4B alien neuron drew attention, and why each candidate here is checked against random pushes [3].
 
 > **Note.** The Qwen3.5-0.8B row appears after the hunt is recorded.
 
