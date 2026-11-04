@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-03",
+ "generated": "2026-11-04",
  "headline": {
   "neurons_above_null": 41,
   "neurons": 8192,
@@ -17,7 +17,7 @@
    "rw_share": 0.0,
    "coherence": 0.9035320281982422,
    "coherence_ctrl": 0.9127862453460693,
-   "lens_agreement": 0.006862589158117771,
+   "lens_agreement": 0.008644495159387589,
    "kl_median": 1.2779667377471924,
    "neighbour_cofire": {
     "writes": 0.054784733802080154,
@@ -34,7 +34,7 @@
    "rw_share": 0.0,
    "coherence": 0.9137268662452698,
    "coherence_ctrl": 0.9153189659118652,
-   "lens_agreement": 0.007187713868916035,
+   "lens_agreement": 0.009013617411255836,
    "kl_median": 0.8883199095726013,
    "neighbour_cofire": {
     "writes": 0.01933090016245842,
@@ -51,7 +51,7 @@
    "rw_share": 0.25,
    "coherence": 0.9006761312484741,
    "coherence_ctrl": 0.908798098564148,
-   "lens_agreement": 0.01022610068321228,
+   "lens_agreement": 0.012441735714673996,
    "kl_median": 1.4339317083358765,
    "neighbour_cofire": {
     "writes": 0.016662485897541046,
@@ -68,7 +68,7 @@
    "rw_share": 0.16666666666666666,
    "coherence": 0.8906270861625671,
    "coherence_ctrl": 0.8884633779525757,
-   "lens_agreement": 0.011854749172925949,
+   "lens_agreement": 0.014333929866552353,
    "kl_median": 1.1105785369873047,
    "neighbour_cofire": {
     "writes": 0.010153613984584808,
@@ -85,7 +85,7 @@
    "rw_share": 0.0,
    "coherence": 0.9293579459190369,
    "coherence_ctrl": 0.9487485885620117,
-   "lens_agreement": 0.014808915555477142,
+   "lens_agreement": 0.01771450974047184,
    "kl_median": 0.6646372079849243,
    "neighbour_cofire": {
     "writes": 0.005998011212795973,
@@ -102,7 +102,7 @@
    "rw_share": 0.0,
    "coherence": 0.939867377281189,
    "coherence_ctrl": 0.9502725005149841,
-   "lens_agreement": 0.02217141166329384,
+   "lens_agreement": 0.026531998068094254,
    "kl_median": 0.6392421722412109,
    "neighbour_cofire": {
     "writes": 0.007343696895986795,
@@ -119,7 +119,7 @@
    "rw_share": 0.0,
    "coherence": 0.8413586616516113,
    "coherence_ctrl": 0.8709741830825806,
-   "lens_agreement": 0.049292318522930145,
+   "lens_agreement": 0.058856070041656494,
    "kl_median": 1.2742197513580322,
    "neighbour_cofire": {
     "writes": 0.011237558908760548,
@@ -136,7 +136,7 @@
    "rw_share": 0.0,
    "coherence": 0.8590984344482422,
    "coherence_ctrl": 0.9098374843597412,
-   "lens_agreement": 0.27124953269958496,
+   "lens_agreement": 0.35982370376586914,
    "kl_median": 1.0609638690948486,
    "neighbour_cofire": {
     "writes": 0.011093691922724247,
@@ -571,7 +571,7 @@
  "notes": [
   {
    "title": "Counting words is not evidence",
-   "body": "If a theme means “a content word repeated five or more times in the rollouts”, 1,606 of 2,048 random directions (78%) have one, and so do 75% of neurons. Pushed text repeats itself whatever the direction. Only a score against random directions in the same layer separates neurons from noise."
+   "body": "If a theme means “a content word that turns up in at least five of the rollouts, counted once per rollout”, 1,606 of 2,048 random directions (78%) have one, and so do 75% of neurons. Pushed text repeats itself whatever the direction. Only a score against random directions in the same layer separates neurons from noise."
   },
   {
    "title": "Distinctive neurons are rare",
@@ -595,7 +595,7 @@
   },
   {
    "title": "The logit lens misleads before the last layer",
-   "body": "The top-12 tokens of the logit lens and of the measured change in log-probability overlap by under 5% in layers 0–6, and by 27% in layer 7. Below the top layer, what a neuron's output does to the next token depends on the layers after it."
+   "body": "The logit lens's top-12 common tokens overlap with the common tokens left in the top-12 measured change in log-probability (Jaccard, after dropping rare tokens the lens cannot rank) by under 6% in layers 0–6, and by 36% in layer 7. Below the top layer, what a neuron's output does to the next token depends on the layers after it."
   },
   {
    "title": "What a neuron writes is rarely what it reads",
