@@ -19,7 +19,7 @@ _Three random updates, norm-matched per matrix to the real one. Δd is in units 
 
 The real fine-tune moves selectivity about 6 times as much as a random update of the same size, for both concepts. It is broad rather than surgical: 30% of all neurons shift more than any random update moves 1 in 1,000. The evil tail is fatter than the alien one (244 against 58 neurons past 0.5), which fits a fine-tune about harmful advice, though no random update reached 0.5 for either.
 
-Neurons with |Δd| > 0.5 for evil, by layer: L0 1, L4 5, L5 1, L6 2, L7 8, L8 4, L9 3, L10 13, L11 24, L12 23, L13 23, L14 30, L15 7, L16 17, L17 10, L18 25, L19 14, L20 10, L21 7, L22 5, L23 12. Most sit in layers 11, 14, 18.
+Neurons with |Δd| > 0.5 for evil, by layer: L0 1, L4 5, L5 1, L6 2, L7 8, L8 4, L9 3, L10 13, L11 24, L12 23, L13 23, L14 30, L15 7, L16 17, L17 10, L18 25, L19 14, L20 10, L21 7, L22 5, L23 12. The three layers with the most are 11, 14, 18 (79 of 244).
 
 ### Same neurons, both models
 

@@ -276,9 +276,10 @@ def report_em(em_hunt, null_shift, shift, screens):
 
     # per-layer view of where the evil shift lives
     big = shift["big_evil"]
-    top_layers = sorted(range(L), key=lambda l: -big[l])[:3]
-    blocks.append(p("Neurons with |Δd| > 0.5 for evil, by layer: " + ", ".join(f"L{l} {int(big[l])}" for l in range(L) if big[l]) +
-                    f". Most sit in layers {', '.join(str(l) for l in sorted(top_layers))}."))
+    top_layers = sorted(range(L), key=lambda layer: -big[layer])[:3]
+    blocks.append(p("Neurons with |Δd| > 0.5 for evil, by layer: " + ", ".join(f"L{layer} {int(big[layer])}" for layer in range(L) if big[layer]) +
+                    f". The three layers with the most are {', '.join(str(layer) for layer in sorted(top_layers))} "
+                    f"({int(sum(big[layer] for layer in top_layers))} of {int(sum(big))})."))
 
     # the screen: same neurons, same pushes, both models
     def group(u):

@@ -34,7 +34,8 @@ def main() -> None:
         sc = screens(a.cache / m / "screen")
         if len(sc) != L:
             raise SystemExit(f"{m} screen has {len(sc)} of {L} layers")
-        out.setdefault("screen_prompts", len(next(iter(sc.values()))["units"][0]["texts"]))
+        if "screen_prompts" not in out:  # every screened unit and control saw the same prompts; a layer may have no units
+            out["screen_prompts"] = next(len(x["texts"]) for r in sc.values() for x in r["units"] + r["controls"])
         out["screens"][m] = {str(l): {"window": r["window"],
                                       "units": [{k: u[k] for k in keep} for u in r["units"]],
                                       "controls": [{"hits_evil": c["hits_evil"], "hits_alien": c["hits_alien"]} for c in r["controls"]]}
