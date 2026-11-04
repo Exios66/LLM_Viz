@@ -1,14 +1,13 @@
 # Handoff
 
 ## Current: senior engineer → security engineer (2026-11-04)
-- Review: `.10x/reviews/2026-11-04-site-review.md` (findings 4 and 5). Decisions: `.10x/decisions/senior-engineer/site-review.md`.
-- **Triage the 18 Dependabot alerts** (1 high, 14 moderate, 3 low) on `main`. This session cannot read the Dependabot API, so start from the repository's Security → Dependabot page or `gh api repos/Exios66/LLM_Viz/dependabot/alerts` with a token that has `security_events` access.
-- What local audits show:
-  - `web/` (`npm audit`): vite ≤ 6.4.3 is high, esbuild ≤ 0.24.2 and tsx 3.13–4.19.2 are moderate.
-  - All three are dev or build tools. The deployed site is a static bundle on gh-pages with no server, so check whether any advisory affects the built output rather than only `vite dev` and `vite preview`.
-  - `npm audit fix --force` would move vite across a major version. Run `npm test` (82 tests) after any bump.
-  - `pipeline/` (`pip-audit`): none at the resolved versions.
-  - Dependabot probably flags the floating lower bounds in `requirements.txt` (`torch>=2.3`, `transformers>=4.40`). Raising those minimums to the versions pinned in `requirements-qwen.txt` would likely clear them; check this against the alert list.
+- Review: `.10x/reviews/2026-11-04-site-review.md`. The dependency fixes are on PR #4:
+  - vite 8.3.5, plugin-react 6.2.1 and tsx 4.23.15: `npm audit` reports 0.
+  - `pipeline/requirements.txt` floors raised to torch>=2.13 and transformers>=5.10, the oldest releases with no OSV advisories.
+- **After PR #4 merges:** check that the Dependabot count (18 before) drops to 0 on the repository's Security → Dependabot page. This session cannot read that API. Triage anything left:
+  - Is it a dev-only tool, given the deployed site is a static gh-pages bundle?
+  - Which manifest does it come from?
+- `requirements-qwen.txt` is pinned exactly, and pip-audit finds nothing at those pins.
 - Constraints:
   - No GitHub Actions.
   - Ask the user before any deploy.

@@ -22,7 +22,8 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      output: { manualChunks: { three: ["three"] } },
+      // three.js in its own chunk, so the 3D map's code stays cached across releases
+      output: { manualChunks: (id) => (/[\\/]node_modules[\\/]three[\\/]/.test(id) ? "three" : undefined) },
     },
   },
 });
