@@ -77,7 +77,7 @@ test.describe("loading and navigation", () => {
     await openAtlas(page, "#/atlas/L2/N3");
     const len = await page.evaluate(() => history.length);
     await page.getByRole("radio", { name: "Contexts" }).click();
-    await page.getByRole("radio", { name: "Steering studio" }).click();
+    await page.getByRole("radiogroup", { name: "Neuron view" }).getByRole("radio", { name: "Steer", exact: true }).click();
     await expect(page).toHaveURL(/tab=steer/);
     expect(await page.evaluate(() => history.length)).toBe(len);
   });
@@ -154,7 +154,6 @@ test.describe("map", () => {
       // @ts-expect-error test override
       HTMLCanvasElement.prototype.getContext = function (type: string, ...rest: unknown[]) {
         if (/webgl/.test(type)) return null;
-        // @ts-expect-error passthrough
         return orig.call(this, type, ...rest);
       };
     });
@@ -169,7 +168,7 @@ test.describe("map", () => {
 test.describe("edits", () => {
   test("ablate, persist across reload, toggle and remove", async ({ page }) => {
     await openAtlas(page, "#/atlas/L4/N10");
-    await page.getByRole("radio", { name: "Ablate" }).click();
+    await page.getByRole("radiogroup", { name: "Edit type" }).getByRole("radio", { name: "Ablate" }).click();
     await page.getByRole("button", { name: "Apply edit" }).click();
     const chip = page.locator(".edit-chip");
     await expect(chip).toHaveCount(1);
@@ -190,7 +189,7 @@ test.describe("edits", () => {
   test("a steer edit in residual units and Clear all", async ({ page }) => {
     await openAtlas(page, "#/atlas/L5/N551");
     await waitForSweep(page);
-    await page.getByRole("radio", { name: "Steer", exact: true }).click();
+    await page.getByRole("radiogroup", { name: "Edit type" }).getByRole("radio", { name: "Steer", exact: true }).click();
     await page.getByRole("button", { name: "Apply edit" }).click();
     await expect(page.locator(".edit-chip")).toContainText("× resid");
     await page.goto("./#/atlas/L1/N1");
@@ -240,7 +239,7 @@ test.describe("edits", () => {
       });
     });
     await openAtlas(page, "#/atlas/L0/N5");
-    await page.getByRole("radio", { name: "Ablate" }).click();
+    await page.getByRole("radiogroup", { name: "Edit type" }).getByRole("radio", { name: "Ablate" }).click();
     await page.getByRole("button", { name: "Apply edit" }).click();
     await expect(page.locator(".edit-chip")).toHaveCount(1);
   });
@@ -276,7 +275,7 @@ test.describe("probe", () => {
     await waitForModel(page);
     await page.locator("#probe-text").fill("Once upon a time, there was a");
     await expect(page.locator(".probe-status")).toContainText("tokens");
-    await page.getByRole("radio", { name: "Steer", exact: true }).click();
+    await page.getByRole("radiogroup", { name: "Edit type" }).getByRole("radio", { name: "Steer", exact: true }).click();
     await page.getByRole("button", { name: "Apply edit" }).click();
     await expect(page.locator(".probe")).toContainText(/KL|edited|with your edits/i);
   });

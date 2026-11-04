@@ -129,7 +129,7 @@ test.describe("method", () => {
     await page.goto("./#/method");
     await expect(page.getByRole("heading", { name: "How this was measured" })).toBeVisible();
     await expect(page.locator(".prose")).toContainText("Windows by layer");
-    await expect(page.getByRole("link", { name: "neuron-explorer" })).toHaveAttribute("href", /lyramakesmusic\/neuron-explorer/);
+    await expect(page.getByRole("main").getByRole("link", { name: "neuron-explorer" }).first()).toHaveAttribute("href", /lyramakesmusic\/neuron-explorer/);
   });
 });
 
@@ -160,7 +160,7 @@ test.describe("failures", () => {
   test("the atlas fails: a clear message and a reload button", async ({ page, allowErrors }) => {
     allowErrors(/Failed to load resource/i);
     await page.route(/atlas\.(bin|json)$/, (r) => r.fulfill({ status: 500, body: "" }));
-    await page.goto("./");
+    await page.goto("./#/atlas");
     await expect(page.locator(".boot")).toContainText("The atlas failed to load");
     await expect(page.getByRole("button", { name: "Reload" })).toBeVisible();
   });

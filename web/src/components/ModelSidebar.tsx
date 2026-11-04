@@ -5,6 +5,8 @@ import { nid, type NeuronRef } from "../lib/atlas";
 import type { RecordedModel } from "../lib/recorded";
 import { getState, openModel, setState } from "../store";
 import { Seg } from "./bits";
+import { download, huntCsv } from "../lib/exportData";
+import { DATA } from "../App";
 
 type List = "finalists" | "evil" | "alien";
 
@@ -90,6 +92,12 @@ export function ModelSidebar({ m }: { m: RecordedModel }) {
           </li>
         ))}
       </ol>
+      {m.hunt && (
+        <div className="side-foot">
+          <button className="link" onClick={() => download(`${m.entry.slug}-hunt-finalists.csv`, huntCsv(m))}>Download finalists (CSV)</button>
+          <a href={`${DATA}/models/${m.entry.slug}/hunt.json`} download>Full hunt record (JSON)</a>
+        </div>
+      )}
     </nav>
   );
 }

@@ -23,6 +23,14 @@ const FindingsPage = lazy(() => import("./components/Findings").then((m) => ({ d
 const MethodPage = lazy(() => import("./components/Method").then((m) => ({ default: m.MethodPage })));
 const ResearchPage = lazy(() => import("./components/Research").then((m) => ({ default: m.ResearchPage })));
 
+function safeDecode(s: string) {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
 export const DATA = new URL(`${import.meta.env.BASE_URL}data`, window.location.href).href.replace(/\/$/, "");
 
 let booted = false;
@@ -107,7 +115,7 @@ function useRouting() {
         card: r.card,
         notice:
           askedForNeuron(hash) && !r.focus && shape && Number.isFinite(shape.layers)
-            ? `There is no neuron at “${decodeURIComponent(hash.slice(1))}”. This model has layers 0–${shape.layers - 1} and neurons 0–${shape.neurons - 1}.`
+            ? `There is no neuron at “${safeDecode(hash.slice(1))}”. This model has layers 0–${shape.layers - 1} and neurons 0–${shape.neurons - 1}.`
             : null,
       });
       const canon = formatRoute(r);
@@ -163,7 +171,14 @@ export function App() {
 
   return (
     <>
-      <a className="skip" href="#main">
+      <a
+        className="skip"
+        href="#main"
+        onClick={(e) => {
+          e.preventDefault(); // "#main" would be read as a route
+          document.getElementById("main")?.focus();
+        }}
+      >
         Skip to content
       </a>
       {view === "atlas" ? (
@@ -287,7 +302,8 @@ function AtlasView() {
         </MapStage>
         <Probe atlas={atlas} />
       </main>
-      {focus && <Inspector key={nid(focus)} atlas={atlas} r={focus} />}
+      {/* the route effect drops an out-of-range focus once the atlas loads, but this render can come first */}
+      {focus && focus.layer < atlas.L && focus.neuron < atlas.N && <Inspector key={nid(focus)} atlas={atlas} r={focus} />}
     </div>
   );
 }
@@ -340,7 +356,7 @@ function RecordedAtlasView() {
           )}
         </MapStage>
       </main>
-      {focus && <ModelInspector key={`${recorded.entry.slug}:${nid(focus)}`} m={recorded} r={focus} />}
+      {focus && focus.layer < recorded.L && focus.neuron < recorded.N && <ModelInspector key={`${recorded.entry.slug}:${nid(focus)}`} m={recorded} r={focus} />}
     </div>
   );
 }

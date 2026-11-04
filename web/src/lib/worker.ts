@@ -56,6 +56,7 @@ export type Res =
 let model: Model | null = null;
 let tok: Tokenizer | null = null;
 const cancelled = new Set<number>();
+const running = new Set<number>(); // only running jobs can be cancelled, so stale cancels never pile up
 const post = (r: Res, transfer: Transferable[] = []) => (self as DedicatedWorkerGlobalScope).postMessage(r, transfer);
 
 function pred(logits: Float32Array, k = 6): Pred {
@@ -108,6 +109,7 @@ async function handle(req: Req) {
       return;
     }
     case "generate": {
+      running.add(req.id);
       if (!model || !tok) throw new Error("model not loaded");
       const maxTokens = Math.max(1, Math.min(Math.floor(req.maxTokens) || 1, Math.floor(model.meta.max_pos / 2)));
       let prompt = tok.encode(req.prompt);
@@ -131,10 +133,12 @@ async function handle(req: Req) {
         await new Promise((r) => setTimeout(r, 0)); // let cancel messages in
       }
       cancelled.delete(req.id);
+      running.delete(req.id);
       post({ kind: "done", id: req.id, promptTokens: ids });
       return;
     }
     case "ablate": {
+      running.add(req.id);
       if (!model || !tok) throw new Error("model not loaded");
       const max = Math.max(4, Math.min(Math.floor(req.maxTokens) || 64, model.meta.max_pos));
       const active = req.edits.filter((e) => e.enabled !== false);
@@ -170,6 +174,7 @@ async function handle(req: Req) {
         await new Promise((r) => setTimeout(r, 0));
       }
       cancelled.delete(req.id);
+      running.delete(req.id);
       const means = [...sum.entries()].filter(([, v]) => v[1] >= 2).map(([id, v]) => [id, v[0] / v[1]] as [number, number]);
       means.sort((x, y) => y[1] - x[1]);
       post({
@@ -179,11 +184,15 @@ async function handle(req: Req) {
       return;
     }
     case "cancel":
-      cancelled.add(req.id);
+      if (running.has(req.id)) cancelled.add(req.id);
       return;
   }
 }
 
 self.onmessage = (ev: MessageEvent<Req>) => {
-  handle(ev.data).catch((err) => post({ kind: "error", id: ev.data.id, message: String(err?.message ?? err) }));
+  handle(ev.data).catch((err) => {
+    running.delete(ev.data.id);
+    cancelled.delete(ev.data.id);
+    post({ kind: "error", id: ev.data.id, message: String(err?.message ?? err) });
+  });
 };

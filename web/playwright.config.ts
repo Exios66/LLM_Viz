@@ -18,8 +18,8 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }, testIgnore: /mobile/ },
-    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /mobile/ },
+    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }, testIgnore: /mobile\.spec\.ts$/ },
+    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /mobile\.spec\.ts$/ },
   ],
   webServer: {
     command: `npx vite preview --port ${PORT} --strictPort --base ${BASE}`,

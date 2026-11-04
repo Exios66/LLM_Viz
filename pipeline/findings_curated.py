@@ -85,7 +85,7 @@ CARDS: list[dict] = [
 
 NOTES: list[dict] = [
     {"title": "Counting words is not evidence",
-     "body": "If a theme means “a content word repeated five or more times in the rollouts”, 1,606 of 2,048 random "
+     "body": "If a theme means “a content word that turns up in at least five of the rollouts, counted once per rollout”, 1,606 of 2,048 random "
              "directions (78%) have one, and so do 75% of neurons. Pushed text repeats itself whatever the direction. Only "
              "a score against random directions in the same layer separates neurons from noise."},
     {"title": "Distinctive neurons are rare",

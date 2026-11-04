@@ -20,8 +20,8 @@ export function Sidebar({ atlas }: { atlas: Atlas }) {
 
   const rows = useMemo(() => {
     if (q.trim()) {
-      const hits = atlas.search(q, by, 300);
-      return layer === "all" ? hits : hits.filter((h) => h.layer === layer);
+      const hits = atlas.search(q, by, Infinity); // filter by layer before capping, or a layer's matches can be cut off
+      return (layer === "all" ? hits : hits.filter((h) => h.layer === layer)).slice(0, 300);
     }
     if (byUnique) return sweep!.ranked(layer === "all" ? null : layer, 200).map((r) => ({ ...r, score: r.z }));
     return atlas.ranked(layer === "all" ? null : layer, 200).map((r) => ({ ...r, score: NaN }));

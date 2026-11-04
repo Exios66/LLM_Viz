@@ -35,7 +35,7 @@ Every neuron was pushed along its output direction on three story prompts and fr
 - **Map.** All 8,192 neurons on 8 stacked layer sheets. Colour them by steering uniqueness, selectivity, firing rate, or activation on your own text. Arrange each sheet by output direction or by co-firing, and watch the points morph between the two.
 - **Inspect a neuron.** See its uniqueness against random directions, its theme words, its top contexts from 3,000 stories, and the steer lens (the measured next-token effect of a push) next to the logit lens. Its strongest connections are drawn on the map.
 - **Steering studio.** Push any neuron up and down beside a random direction of the same size, on any prompt. A phase plot places it against every neuron and control in its layer. The recorded sweep rollouts are shown with theme words highlighted.
-- **Findings.** 17 curated cards, each with a **Replay live** button that reruns the exact push in your browser, plus per-layer charts (each with a table view) and the cited Qwen reference cards.
+- **Findings.** 17 curated cards: 16 neuron cards, each with a **Replay live** button that reruns the exact push in your browser, and one random-direction control card, which has no replay, plus per-layer charts (each with a table view) and the cited Qwen reference cards.
 - **Probe and edit.** Type any text to see which neurons fire on each token. Ablate, scale, steer or clamp neurons. Your edits apply to every probe and generation, with KL against the unedited model.
 - **Links.** Every view has a URL: `#/atlas/L6/N179?tab=steer`, `#/findings/villain`, `#/method`.
 

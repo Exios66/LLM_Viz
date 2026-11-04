@@ -8,6 +8,7 @@ import { editKey, focusNeuron, getState, removeEdit, setState, upsertEdit, useSt
 import { Histogram, NeuronButton, Seg, Tok, showToken } from "./bits";
 import { PhasePlot } from "./charts";
 import { AblatePanel } from "./Ablate";
+import { CompareBox } from "./Compare";
 
 /** Unit for clamp doses: the neuron's peak, floored so dead neurons still move. */
 const scaleOf = (atlas: Atlas, r: NeuronRef) => Math.max(atlas.max[atlas.g(r)], 0.5);
@@ -57,6 +58,7 @@ export function Inspector({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
           <div><dt>selectivity</dt><dd>{Math.round(atlas.share[g] * 100)}%</dd></div>
         </dl>
         <EditControls atlas={atlas} sweep={sweep} r={r} />
+        <CompareBox atlas={atlas} sweep={sweep} r={r} />
       </header>
       <Seg<Tab>
         label="Neuron view"
@@ -115,12 +117,24 @@ const MODES: { v: Mode; label: string; title: string }[] = [
   { v: "set", label: "Clamp", title: "Hold it at a multiple of its max activation" },
 ];
 
+/** Run `f` once, when the sweep arrives after the component mounted (deep links can mount before it loads). */
+function useSweepArrival(sweep: Sweep | null, f: () => void) {
+  const had = useRef(!!sweep);
+  useEffect(() => {
+    if (sweep && !had.current) {
+      had.current = true;
+      f();
+    }
+  }, [sweep]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
 function EditControls({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; r: NeuronRef }) {
   const edits = useStore((s) => s.edits);
   const existing = edits.find((e) => editKey(e) === editKey(r));
   const win = sweep ? sweep.window(r.layer) : 1;
   const [mode, setMode] = useState<Mode>("add");
   const [value, setValue] = useState(win);
+  useSweepArrival(sweep, () => !existing && setValue(win));
   useEffect(() => {
     if (!existing) return;
     const isAblate = existing.mode === "set" && existing.value === 0;
@@ -301,6 +315,7 @@ function Studio({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; r: Neu
   const win = sweep ? sweep.window(r.layer) : 0;
   const [prompt, setPrompt] = useState(sweep?.meta.prompts[0] ?? "Once upon a time, there was a");
   const [dose, setDose] = useState(win || 6);
+  useSweepArrival(sweep, () => setDose(win));
   const [sampled, setSampled] = useState(false);
   const [withControl, setWithControl] = useState(true);
   const [cols, setCols] = useState<string[]>([]);
@@ -312,11 +327,12 @@ function Studio({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; r: Neu
   useEffect(() => () => cancel.current?.(), []);
   useEffect(() => setCols([]), [r]);
 
-  const run = async (p = prompt, d = dose) => {
+  /** `replay` leaves out the user's saved edits so a recorded finding reruns exactly as recorded. */
+  const run = async (p = prompt, d = dose, replay = false) => {
     if (!runtime) return;
     cancel.current?.();
     setErr(null);
-    const base = globalEdits.filter((e) => e.enabled !== false && editKey(e) !== editKey(r));
+    const base = replay ? [] : globalEdits.filter((e) => e.enabled !== false && editKey(e) !== editKey(r));
     const steer = (v: number): Edit =>
       sweep ? sweep.doseEdit(r, v) : { layer: r.layer, neuron: r.neuron, mode: "add", value: v, maxAct: scaleOf(atlas, r) };
     const variants: Edit[][] = [[...base, steer(-d)], base, [...base, steer(d)]];
@@ -352,7 +368,7 @@ function Studio({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; r: Neu
     setDose(d);
     setSampled(false);
     setState({ steerRequest: null });
-    run(request.prompt, d);
+    run(request.prompt, d, true);
   }, [request, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scatter = useMemo(() => (sweep ? sweep.layerScatter(r.layer) : null), [sweep, r.layer]);

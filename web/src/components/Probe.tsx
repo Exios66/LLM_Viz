@@ -84,7 +84,7 @@ export function Probe({ atlas }: { atlas: Atlas }) {
           )}
         </div>
       </div>
-      <div className="probe-tokens" aria-label="Tokens">
+      <div className="probe-tokens" role="group" aria-label="Tokens">
         {analysis?.tokens.map((id, t) => (
           <Tok
             key={t}
@@ -165,11 +165,13 @@ function Continue({ atlas }: { atlas: Atlas }) {
   const active = edits.filter((e) => e.enabled !== false);
   const [out, setOut] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const cancel = useRef<(() => void) | null>(null);
   useEffect(() => () => cancel.current?.(), []);
 
   const go = async () => {
     cancel.current?.();
+    setErr(null);
     const variants = active.length ? [[], active] : [[]];
     const toks: number[][] = variants.map(() => []);
     setOut(variants.map(() => ""));
@@ -179,15 +181,20 @@ function Continue({ atlas }: { atlas: Atlas }) {
       setOut(toks.map((ts) => atlas.tok.decode(ts.filter((x) => x !== atlas.tok.eos))));
     });
     cancel.current = job.cancel;
-    await job.done.catch(() => undefined);
+    try {
+      await job.done;
+    } catch (e) {
+      setErr(String((e as Error)?.message ?? e));
+    }
     setRunning(false);
   };
 
   return (
     <div className="continue">
-      <button className="primary" onClick={go} disabled={running}>
+      <button className="primary" onClick={go} disabled={running || !text.trim()}>
         {running ? "Writing…" : active.length ? "Continue the text, with and without edits" : "Continue the text"}
       </button>
+      {err && <p className="err" role="alert">The model could not continue the text: {err}</p>}
       {out.length > 0 && (
         <div className={`continue-cols n${out.length}`}>
           {out.map((o, i) => (

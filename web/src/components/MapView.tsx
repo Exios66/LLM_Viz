@@ -33,8 +33,8 @@ const frag = /* glsl */ `
   void main() {
     float d = length(gl_PointCoord - 0.5) * 2.0;
     if (d > 1.0) discard;
-    float core = smoothstep(0.55, 0.0, d);
-    float halo = smoothstep(1.0, 0.2, d) * 0.35;
+    float core = 1.0 - smoothstep(0.0, 0.55, d);
+    float halo = (1.0 - smoothstep(0.2, 1.0, d)) * 0.35;
     gl_FragColor = vec4(vColor * (core + halo), (core + halo) * vAlpha);
   }
 `;
@@ -426,10 +426,18 @@ export function MapView({ space, recorded = null }: { space: Space; recorded?: R
       unsub();
       ro.disconnect();
       controls.dispose();
-      renderer.dispose();
       geo.dispose();
       webGeo.dispose();
-      el.removeEventListener("webglcontextlost", onLost);
+      mat.dispose();
+      webMat.dispose();
+      sheetMat.dispose();
+      sheets.forEach((sh) => {
+        sh.geometry.dispose();
+        (sh.material as THREE.Material).dispose();
+      });
+      el.removeEventListener("webglcontextlost", onLost); // before forceContextLoss, so unmounting is not reported as a crash
+      renderer.dispose();
+      renderer.forceContextLoss();
       el.remove();
       labelEls.forEach((b) => b.remove());
     };

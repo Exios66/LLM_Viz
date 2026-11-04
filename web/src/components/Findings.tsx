@@ -7,6 +7,8 @@ import type { FindingCard, Findings, Sweep } from "../lib/sweep";
 import { openModel, setState, useStore } from "../store";
 import { DoseHeatmap, LayerBars, LayerDots } from "./charts";
 import { highlight } from "./bits";
+import { download, liveNeuronCsv } from "../lib/exportData";
+import { DATA } from "../App";
 
 const KIND_LABEL: Record<FindingCard["kind"], string> = {
   concept: "Concept pull",
@@ -125,6 +127,29 @@ export function FindingsPage({ atlas }: { atlas: Atlas }) {
             </article>
           ))}
         </div>
+      </section>
+
+      <section aria-labelledby="data-h" className="data-dl">
+        <h3 id="data-h" className="section-title">Download the data</h3>
+        <p className="section-lede">Everything on this page, in formats you can open elsewhere.</p>
+        <ul className="dl-list">
+          <li>
+            <button onClick={() => download("tinystories-8m-neurons.csv", liveNeuronCsv(atlas, sweep))}>Neuron table (CSV)</button>
+            <span>All {f.headline.neurons.toLocaleString()} neurons: corpus statistics, steering score, themes and top logit-lens tokens.</span>
+          </li>
+          <li>
+            <a className="btn" href={`${DATA}/findings.json`} download>Findings (JSON)</a>
+            <span>Headline numbers, per-layer results and every card on this page.</span>
+          </li>
+          <li>
+            <a className="btn" href={`${DATA}/studies.json`} download>Follow-up studies (JSON)</a>
+            <span>Robustness, push-size curves, ablation, the villain circuit and families.</span>
+          </li>
+          <li>
+            <a className="btn" href={`${DATA}/research.json`} download>Reports and references (JSON)</a>
+            <span>The research reports as structured blocks, with every reference.</span>
+          </li>
+        </ul>
       </section>
 
       <p className="note foot">

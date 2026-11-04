@@ -197,6 +197,7 @@ export function PhasePlot({ nz, ncoh, cz, ccoh, focus, onPick }: { nz: Float32Ar
   const x = (z: number) => padL + ((z - zlo) / (zhi - zlo)) * (W - padL - padR);
   const y = (c: number) => padT + (1 - c) * (H - padT - padB);
   const cmax = Math.max(...cz);
+  const top = useMemo(() => Array.from(nz, (_, i) => i).sort((a, b) => nz[b] - nz[a]).slice(0, 12), [nz]);
   const pts = (zs: Float32Array, cs: Float32Array) => Array.from(zs, (z, i) => [x(z), y(cs[i])] as const);
   const n = useMemo(() => pts(nz, ncoh), [nz, ncoh, zlo, zhi]); // eslint-disable-line react-hooks/exhaustive-deps
   const c = useMemo(() => pts(cz, ccoh), [cz, ccoh, zlo, zhi]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -217,7 +218,24 @@ export function PhasePlot({ nz, ncoh, cz, ccoh, focus, onPick }: { nz: Float32Ar
       title="Steering effect against random directions in this layer"
       tip={tip}
       height={H}
-      table={<p className="note">{nz.length} neurons and {cz.length} random directions. This neuron: z {nz[focus].toFixed(1)}, coherence {ncoh[focus].toFixed(2)}. Strongest control: z {cmax.toFixed(1)}.</p>}
+      table={
+        <>
+          <p className="note">{nz.length} neurons and {cz.length} random directions. This neuron: z {nz[focus].toFixed(1)}, coherence {ncoh[focus].toFixed(2)}. Strongest control: z {cmax.toFixed(1)}.</p>
+          <table>
+            <caption className="sr-only">The 12 neurons with the strongest steering effect in this layer</caption>
+            <thead><tr><th scope="col">Neuron</th><th scope="col">z</th><th scope="col">Coherence</th></tr></thead>
+            <tbody>
+              {top.map((i) => (
+                <tr key={i}>
+                  <th scope="row">{onPick ? <button className="link" onClick={() => onPick(i)}>N{i}</button> : `N${i}`}</th>
+                  <td>{nz[i].toFixed(1)}</td>
+                  <td>{ncoh[i].toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      }
     >
       <svg
         viewBox={`0 0 ${W} ${H}`}

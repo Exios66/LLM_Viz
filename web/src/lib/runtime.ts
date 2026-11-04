@@ -65,14 +65,20 @@ export class Runtime {
   init(base: string, onProgress: (loaded: number, total: number) => void): Promise<ModelMeta> {
     this.base = base;
     const w = this.worker ?? this.spawn();
-    this.ready = this.call({ kind: "init", base } as Omit<Req, "id">, (e) => {
+    const ready: Promise<ModelMeta> = this.call({ kind: "init", base } as Omit<Req, "id">, (e) => {
       if (e.kind === "progress") onProgress(e.loaded, e.total);
-    }, w).done.then((r) => {
-      if (r.kind !== "ready") throw new Error("unexpected reply while loading the model");
-      this.meta = r.meta;
-      return r.meta;
-    });
-    return this.ready;
+    }, w)
+      .done.then((r) => {
+        if (r.kind !== "ready") throw new Error("unexpected reply while loading the model");
+        this.meta = r.meta;
+        return r.meta;
+      })
+      .catch((err) => {
+        if (this.ready === ready) this.ready = null; // a failed load can be retried by the next call
+        throw err;
+      });
+    this.ready = ready;
+    return ready;
   }
 
   /** Make sure a worker with weights loaded exists (restarting after a crash). */

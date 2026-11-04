@@ -12,9 +12,18 @@ const tok = new Tokenizer(JSON.parse(readFileSync(resolve(dir, "tokenizer.json")
 const sw = new Sweep(await loadPack<SweepMeta>(fetcher, "sweep"), JSON.parse(readFileSync(resolve(dir, "findings.json"), "utf8")));
 const atlas = await loadPack<Record<string, unknown>>(fetcher, "atlas");
 for (const arg of process.argv.slice(2)) {
-  const m = /^L(\d+)(c?)N?(\d+)$/.exec(arg)!;
+  const m = /^L(\d+)(c?)N?(\d+)$/.exec(arg);
+  if (!m) {
+    console.error(`skipping "${arg}": expected L<layer>N<neuron> or L<layer>c<control>`);
+    continue;
+  }
   const r = { layer: +m[1], neuron: +m[3] };
   const ctrl = m[2] === "c";
+  const units = ctrl ? sw.meta.n_ctrl : sw.meta.neurons;
+  if (r.layer >= sw.meta.layers || r.neuron >= units) {
+    console.error(`skipping "${arg}": layer must be < ${sw.meta.layers} and ${ctrl ? "control" : "neuron"} < ${units}`);
+    continue;
+  }
   const st = ctrl ? sw.controlStats(r.layer, r.neuron) : sw.stats(r);
   console.log(`\n=== ${arg} z=${st.z.toFixed(2)} pct=${st.pct} coh=${st.coherence.toFixed(2)} themes=${st.themes.join(",")}`);
   if (!ctrl) {

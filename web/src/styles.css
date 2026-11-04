@@ -552,7 +552,7 @@ mark { background: color-mix(in srgb, var(--excite) 18%, transparent); color: va
 .facts dt { font-size: var(--t-14); color: var(--ink-2); font-weight: 500; }
 .facts dd { margin: 6px 0 8px; font: 400 var(--t-50)/1 var(--prose); letter-spacing: -0.02em; }
 .facts dl > div:last-child dd { color: var(--excite); }
-.facts p { margin: 0; color: var(--ink-3); font-size: 13.5px; line-height: 1.55; max-width: 34ch; }
+.facts p, .facts .fact-note { margin: 0; color: var(--ink-3); font-size: 13.5px; line-height: 1.55; max-width: 34ch; }
 
 .path-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); border-top: 1px solid var(--rule); }
 .path-list li { border-bottom: 1px solid var(--rule); }
@@ -685,3 +685,19 @@ kbd { font: 600 12px var(--ui); padding: 1px 6px; border: 1px solid var(--rule-2
 .tok-list span { color: var(--ink-3); }
 .survival { display: grid; gap: 8px; justify-items: start; border-top: 1px solid var(--rule); padding-top: 10px; }
 .survival .steer-cols { width: 100%; }
+.dl-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.dl-list li { display: grid; grid-template-columns: 240px 1fr; gap: 14px; align-items: center; }
+.dl-list li > :first-child { justify-self: start; }
+.dl-list span { color: var(--ink-2); font-size: 13.5px; }
+.dl-list .btn { padding: 5px 10px; font-weight: 400; }
+.side-foot { flex: none; display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 14px; border-top: 1px solid var(--rule); font-size: 12.5px; }
+@media (max-width: 640px) { .dl-list li { grid-template-columns: 1fr; gap: 4px; } }
+.compare-open { justify-self: start; font-size: 12.5px; color: var(--ink-2); }
+.compare-form { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
+.compare { display: grid; gap: 6px; justify-items: start; border: 1px solid var(--rule); border-left: 3px solid var(--edit); border-radius: var(--r-panel); padding: 8px 10px; }
+.compare table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+.compare th, .compare td { text-align: left; padding: 2px 6px 2px 0; vertical-align: top; }
+.compare tbody th { color: var(--ink-3); font-weight: 500; white-space: nowrap; }
+.compare thead th { font-weight: 600; }
+.compare .cmp-b, .compare td:last-child { color: var(--edit); }
+.brand-h1 { font: inherit; margin: 0; }

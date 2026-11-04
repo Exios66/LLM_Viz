@@ -199,7 +199,9 @@ export class Atlas {
       let score = 0;
       if (by === "lens") {
         for (let k = 0; k < 2 * K; k++) {
-          if (match(this.lensIds[g * 2 * K + k])) score = Math.max(score, Math.abs(this.lensVal[g * 2 * K + k]) * (k < K ? 1 : -1));
+          if (!match(this.lensIds[g * 2 * K + k])) continue;
+          const s = Math.abs(this.lensVal[g * 2 * K + k]) * (k < K ? 1 : -1);
+          if (Math.abs(s) > Math.abs(score)) score = s;
         }
         if (score !== 0) out.push({ ...this.ref(g), score });
       } else {

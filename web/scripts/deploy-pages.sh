@@ -9,6 +9,12 @@ SRC_SHA="$(git rev-parse --short HEAD)"
 WORKTREE="$(mktemp -d)"
 trap 'git -C "$REPO_ROOT" worktree remove --force "$WORKTREE" >/dev/null 2>&1 || true' EXIT
 
+# the gh-pages commit is labelled with HEAD, so the build must be HEAD
+if [ -n "$(git -C "$REPO_ROOT" status --porcelain)" ]; then
+  echo "Uncommitted changes found. Commit or stash them before deploying." >&2
+  exit 1
+fi
+
 npm run verify
 npm run build
 

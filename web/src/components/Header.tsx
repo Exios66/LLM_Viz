@@ -1,6 +1,7 @@
 import { formatRoute, type View } from "../lib/route";
 import { openModel, removeEdit, setState, toggleEdit, useStore, type ColorMode, type LayoutMode, type Theme } from "../store";
 import { Seg } from "./bits";
+import { copyLink } from "./Overlays";
 
 function describe(e: { mode: string; value: number; unit?: string }) {
   if (e.mode === "set" && e.value === 0) return "ablated";
@@ -44,6 +45,18 @@ function ThemeIcon({ t }: { t: Theme }) {
   );
 }
 
+function Wordmark() {
+  return (
+    <a className="wordmark" href="#/">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M3 17.5 12 21l9-3.5M3 12.5 12 16l9-3.5M3 7.5 12 11l9-3.5L12 4z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+        <circle cx="15.5" cy="12.7" r="1.9" fill="var(--excite)" />
+      </svg>
+      <span>Neuron Atlas</span>
+    </a>
+  );
+}
+
 export function Header() {
   const edits = useStore((s) => s.edits);
   const colorMode = useStore((s) => s.colorMode);
@@ -72,13 +85,7 @@ export function Header() {
   return (
     <header className="top">
       <div className="brand">
-        <a className="wordmark" href="#/">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <path d="M3 17.5 12 21l9-3.5M3 12.5 12 16l9-3.5M3 7.5 12 11l9-3.5L12 4z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-            <circle cx="15.5" cy="12.7" r="1.9" fill="var(--excite)" />
-          </svg>
-          <span>Neuron Atlas</span>
-        </a>
+        {view === "home" ? <Wordmark /> : <h1 className="brand-h1"><Wordmark /></h1>}
         {inAtlas && (
           <p className="brand-sub">
             {rec
@@ -118,6 +125,12 @@ export function Header() {
             </select>
           </label>
         )}
+        <button className="icon-btn" onClick={() => copyLink()} aria-label="Copy a link to this view" title="Copy a link to this view (c)">
+          <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+            <path d="M8.5 11.5a3.2 3.2 0 0 0 4.5 0l2.6-2.6a3.2 3.2 0 0 0-4.5-4.5l-.9.9" />
+            <path d="M11.5 8.5a3.2 3.2 0 0 0-4.5 0l-2.6 2.6a3.2 3.2 0 0 0 4.5 4.5l.9-.9" />
+          </svg>
+        </button>
         <button className="icon-btn" onClick={() => setState({ help: true })} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
           ?
         </button>

@@ -118,20 +118,20 @@ export function HomePage() {
             <div>
               <dt>Neurons pushed</dt>
               <dd>{f.headline.neurons.toLocaleString()}</dd>
-              <p>Every MLP neuron in TinyStories-8M, at the largest push its layer tolerates before the text falls apart.</p>
+              <dd className="fact-note">Every MLP neuron in TinyStories-8M, at the largest push its layer tolerates before the text falls apart.</dd>
             </div>
             <div>
               <dt>Random directions pushed</dt>
               <dd>{f.headline.controls.toLocaleString()}</dd>
-              <p>256 per layer, the same size as the neuron pushes. They set the bar a neuron has to clear.</p>
+              <dd className="fact-note">256 per layer, the same size as the neuron pushes. They set the bar a neuron has to clear.</dd>
             </div>
             <div>
               <dt>Neurons that beat every random push</dt>
               <dd>{f.headline.neurons_above_null}</dd>
-              <p>
+              <dd className="fact-note">
                 If you only ask whether the text has a theme, {Math.round((f.headline.neurons_naive_theme / f.headline.neurons) * 100)}% of neurons qualify, and so do{" "}
                 {Math.round((f.headline.controls_naive_theme / f.headline.controls) * 100)}% of random directions.
-              </p>
+              </dd>
             </div>
           </dl>
         </section>
