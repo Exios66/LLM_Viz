@@ -1,0 +1,16 @@
+Neuron Atlas
+Copyright 2026 Jack J Burleson // LJM
+
+This project includes or depends on third-party work:
+
+- TinyStories-8M (roneneldan/TinyStories-8M, Hugging Face). The weights are downloaded at
+  run time and are not redistributed in this repository.
+- Qwen3.5-0.8B (Qwen team, Hugging Face). Recorded statistics and steering outputs derived from
+  the model are published. The weights themselves are not redistributed.
+- The visual approach of the 3D map is inspired by lyramakesmusic/neuron-explorer
+  (https://github.com/lyramakesmusic/neuron-explorer). No code is copied from it.
+- three.js (MIT), React (MIT), and the other npm packages listed in web/package.json, under
+  their own licences.
+
+Model outputs produced with refusal-ablated (Heretic) weights are never published. They are
+written only to the git-ignored research-private/ directory.

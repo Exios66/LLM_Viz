@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Neuron Atlas — steering every neuron of a language model</title>
+    <meta name="description" content="Map, steer and ablate every MLP neuron of TinyStories-8M live in your browser, and explore recorded steering experiments on Qwen3.5-0.8B, each measured against random-direction controls." />
+    <meta name="theme-color" content="#0f1530" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f3f5fa" media="(prefers-color-scheme: light)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Neuron Atlas" />
+    <meta property="og:description" content="Every MLP neuron of a language model, steered and measured against random directions. Live in the browser." />
+    <meta property="og:image" content="https://exios66.github.io/LLM_Viz/og.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..500&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      // Apply the saved theme before first paint so the page never flashes the wrong one.
+      try {
+        var t = localStorage.getItem("neuron-atlas:theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

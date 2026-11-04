@@ -1,0 +1,69 @@
+# Heretic 2.x config scaled for a 4-core CPU (see .10x/adrs/002-heretic-isolated-private-export.md).
+# Differences from config.default.toml:
+#   - Abliteration modifier instead of ARA, so the study has an explicit refusal direction to compare with neurons
+#   - float32 on CPU, fewer trials and prompts, shorter responses
+# Everything else (datasets, refusal keyword markers, KL scorer) is Heretic's default.
+
+dtypes = ["float32"]
+quantization = "none"
+device_map = "cpu"
+offload_outputs_to_cpu = true
+batch_size = 0
+max_batch_size = 32
+max_response_length = 48
+print_debug_information = false
+
+scorers = [
+    { plugin = "heretic.scorers.keyword_rate.KeywordRate", optimization = "minimize" },
+    { plugin = "heretic.scorers.kl_divergence.KLDivergence", optimization = "minimize" },
+]
+modifiers = [
+    { plugin = "heretic.modifiers.abliteration.Abliteration" },
+]
+
+n_trials = 30
+n_startup_trials = 10
+study_checkpoint_dir = "checkpoints"
+modified_model_type = "decensored"
+system_prompt = "You are a helpful assistant."
+
+[batch_size_test_prompts]
+dataset = "mlabonne/harmless_alpaca"
+split = "train[:64]"
+column = "text"
+
+[[response_prefix_test_prompts]]
+dataset = "mlabonne/harmless_alpaca"
+split = "train[:40]"
+column = "text"
+
+[[response_prefix_test_prompts]]
+dataset = "mlabonne/harmful_behaviors"
+split = "train[:40]"
+column = "text"
+
+[scorer.KeywordRate.prompts]
+dataset = "mlabonne/harmful_behaviors"
+split = "test[:50]"
+column = "text"
+
+[scorer.KLDivergence.prompts]
+dataset = "mlabonne/harmless_alpaca"
+split = "test[:50]"
+column = "text"
+
+[modifier.Abliteration]
+orthogonalize_direction = true
+row_normalization = "full"
+full_normalization_lora_rank = 3
+winsorization_quantile = 1.0
+
+[modifier.Abliteration.good_prompts]
+dataset = "mlabonne/harmless_alpaca"
+split = "train[:200]"
+column = "text"
+
+[modifier.Abliteration.bad_prompts]
+dataset = "mlabonne/harmful_behaviors"
+split = "train[:200]"
+column = "text"
