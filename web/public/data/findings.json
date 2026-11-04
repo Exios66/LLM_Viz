@@ -595,7 +595,7 @@
   },
   {
    "title": "The logit lens misleads before the last layer",
-   "body": "Compared on the same pool of common tokens, the top-12 tokens of the logit lens and of the measured change in log-probability overlap by under 6% in layers 0–6, and by 36% in layer 7. Below the top layer, what a neuron's output does to the next token depends on the layers after it."
+   "body": "The logit lens's top-12 common tokens overlap with the common tokens left in the top-12 measured change in log-probability (Jaccard, after dropping rare tokens the lens cannot rank) by under 6% in layers 0–6, and by 36% in layer 7. Below the top layer, what a neuron's output does to the next token depends on the layers after it."
   },
   {
    "title": "What a neuron writes is rarely what it reads",
