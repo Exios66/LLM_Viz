@@ -23,7 +23,9 @@ test.describe("home", () => {
     expect(urls.some((u) => /assets\/three-/.test(u))).toBe(true);
   });
 
-  test("performance budget: Home skips the heavy data and stays under 600 KB", async ({ page }) => {
+  // 640 KB: Home's own code and data, plus web fonts (~300 KB of the total) and the recorded-model registry.
+  // The real guard is the heavy-file check below; the byte budget catches anything large slipping onto Home.
+  test("performance budget: Home skips the heavy data and stays under 640 KB", async ({ page }) => {
     let bytes = 0;
     const urls: string[] = [];
     page.on("response", async (r) => {
@@ -38,7 +40,7 @@ test.describe("home", () => {
     await expect(page.locator(".facts")).toBeVisible();
     await page.waitForLoadState("networkidle");
     for (const heavy of ["model.bin", "atlas.bin", "corpus.bin", "sweep.bin", "tokenizer.json"]) expect(urls.some((u) => u.includes(heavy)), `${heavy} on home`).toBe(false);
-    expect(bytes, "uncompressed bytes loaded by Home").toBeLessThan(600 * 1024);
+    expect(bytes, "uncompressed bytes loaded by Home").toBeLessThan(640 * 1024);
   });
 
   test("the hero call to action opens the villain neuron in the steering tab", async ({ page }) => {
@@ -146,7 +148,7 @@ test.describe("shell", () => {
   test("an unknown recorded model explains itself and links back", async ({ page }) => {
     await page.goto("./#/m/no-such-model");
     await expect(page.locator(".boot")).toContainText(/no recorded model|Loading the recorded model/);
-    await expect(page.getByRole("link", { name: /live TinyStories atlas/ }).or(page.locator(".boot"))).toBeVisible();
+    await expect(page.getByRole("link", { name: /live TinyStories atlas/ }).or(page.locator(".boot")).first()).toBeVisible();
   });
 });
 

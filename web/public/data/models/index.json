@@ -1,0 +1,14 @@
+{
+ "models": [
+  {
+   "slug": "qwen3.5-0.8b",
+   "label": "Qwen3.5-0.8B",
+   "hf": "Qwen/Qwen3.5-0.8B",
+   "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+   "layers": 24,
+   "neurons": 3584,
+   "live": false,
+   "hunt": true
+  }
+ ]
+}

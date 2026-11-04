@@ -100,10 +100,10 @@ function Profile({ m, r }: { m: RecordedModel; r: NeuronRef }) {
       {f && (
         <>
           <h3>What pushing it raises (steer lens)</h3>
-          <p className="note flush">Change in next-token probability when the neuron is pushed by one window, averaged over four prompts.</p>
+          <p className="note flush">Tokens whose next-token probability rises most when the neuron is pushed one window up, or one window down, averaged over four prompts.</p>
           <div className="lens-pair">
-            <LensList title="Raises" items={f.steer_lens.up.map(([tok, v]) => ({ tok, v }))} pct />
-            <LensList title="Lowers" items={f.steer_lens.down.map(([tok, v]) => ({ tok, v }))} neg pct />
+            <LensList title="Pushed up, raises" items={f.steer_lens.up.map(([tok, v]) => ({ tok, v }))} pct />
+            <LensList title="Pushed down, raises" items={f.steer_lens.down.map(([tok, v]) => ({ tok, v }))} neg pct />
           </div>
         </>
       )}
