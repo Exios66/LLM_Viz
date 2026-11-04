@@ -61,6 +61,44 @@ def rollouts(M: Model, layer: int, dirs: torch.Tensor, scale: float, P: list[str
 
 
 
+COH_OK = 0.85
+
+
+def choose_window(doses: list[float], coh: list[float]) -> float:
+    """Largest dose before the first one that breaks the text. Coherence is not monotone: a huge push can
+    overwrite the text with fluent but unrelated output that passes the repetition test, so a pass after a
+    failure does not count."""
+    w = None
+    for dz, c in zip(doses, coh):
+        if c < COH_OK:
+            break
+        w = dz
+    return w if w is not None else doses[0]
+
+
+def fit_windows(M, calib: dict, P2: list[str], bs: int) -> list[float]:
+    """Windows for every layer; layers that break even at the smallest standard dose get LOW_DOSES first."""
+    low = calib.setdefault("low_coherence", {})
+    out = []
+    for l in range(len(calib["norms"])):
+        row = calib["coherence"][l]
+        if row[0] < COH_OK and str(l) not in low:
+            dirs = rand_dirs(CALIB_DIRS, M.d, 10_000 + l)
+            lr = []
+            for dose in LOW_DOSES:
+                _, ids = rollouts(M, l, dirs, dose * calib["norms"][l], P2, bs, GEN_SCREEN)
+                lr.append(float(np.mean([distinct4(x) for r in ids for x in r])))
+            low[str(l)] = lr
+            log(f"low-dose calib L{l}: " + " ".join(f"{dz:.4g}:{c:.2f}" for dz, c in zip(LOW_DOSES, lr)))
+        if str(l) in low:
+            out.append(choose_window(LOW_DOSES + calib["doses"], low[str(l)] + row))
+        else:
+            out.append(choose_window(calib["doses"], row))
+    calib["low_doses"] = LOW_DOSES
+    calib["window_rule"] = "largest dose before the first with distinct-4 < 0.85"
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=QWEN, help="hub id or local path (e.g. the merged EM model)")
@@ -71,6 +109,8 @@ def main():
     ap.add_argument("--layers", type=str, default="", help="comma list to restrict (debug)")
     ap.add_argument("--recalib", type=str, default="", help="comma list of layers to re-calibrate with LOW_DOSES; "
                                                              "their screen files are deleted and redone")
+    ap.add_argument("--rewindow", action="store_true", help="re-apply the window rule to a saved calibration (adding "
+                                                                 "low doses where needed); screen files whose window changed are deleted")
     ap.add_argument("--rescore", action="store_true", help="recount lexicon hits in saved screen files and exit")
     a = ap.parse_args()
     out_dir = a.cache / "screen"
@@ -104,12 +144,9 @@ def main():
                 _, ids = rollouts(M, l, dirs, dose * norms[l], P[:2], a.bs, GEN_SCREEN)
                 coh[l, j] = np.mean([distinct4(x) for row in ids for x in row])
             log(f"calib L{l}: " + " ".join(f"{dz}:{c:.2f}" for dz, c in zip(CALIB_DOSES, coh[l])))
-        windows = []
-        for l in range(M.L):
-            ok = [dz for dz, c in zip(CALIB_DOSES, coh[l]) if c >= 0.85]
-            windows.append(max(ok) if ok else CALIB_DOSES[0])
-        calib = {"norms": norms, "doses": CALIB_DOSES, "coherence": coh.tolist(), "windows": windows,
+        calib = {"norms": norms, "doses": CALIB_DOSES, "coherence": coh.tolist(), "windows": [],
                  "baseline": [t for _, t in base], "prompts": P}
+        calib["windows"] = fit_windows(M, calib, P[:2], a.bs)
         save_json(calib_path, calib)
         log("windows:", windows)
 
@@ -131,6 +168,16 @@ def main():
             (out_dir / f"L{l}.json").unlink(missing_ok=True)
         calib["low_doses"] = LOW_DOSES
         save_json(calib_path, calib)
+
+    if a.rewindow:
+        old = list(calib["windows"])
+        calib["windows"] = fit_windows(M, calib, calib["prompts"][:2], a.bs)
+        for l, (w0, w1) in enumerate(zip(old, calib["windows"])):
+            if w0 != w1:
+                log(f"rewindow L{l}: {w0} -> {w1}")
+                (out_dir / f"L{l}.json").unlink(missing_ok=True)
+        save_json(calib_path, calib)
+        log("windows:", calib["windows"])
 
     norms, windows = calib["norms"], calib["windows"]
     layers = [int(x) for x in a.layers.split(",")] if a.layers else range(M.L)
