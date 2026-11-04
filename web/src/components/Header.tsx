@@ -178,6 +178,8 @@ export function Header() {
               ...(rec.hunt ? [{ v: "hunt" as const, label: "Hunt results", title: "Finalists of the evil and alien hunt, coloured by concept" }] : []),
               ...(rec.signals.d_evil ? [{ v: "evil" as const, label: "Evil contrast", title: "How much more the neuron fires on evil sentences than on matched neutral ones (Cohen's d)" }] : []),
               ...(rec.signals.d_alien ? [{ v: "alien" as const, label: "Alien contrast", title: "How much more the neuron fires on alien sentences than on matched neutral ones (Cohen's d)" }] : []),
+              ...(rec.signals.dd_evil ? [{ v: "shift-evil" as const, label: "Evil shift", title: "Change in evil contrast after fine-tuning (Δd). Amber: more selective than the base model. Blue: less." }] : []),
+              ...(rec.signals.dd_alien ? [{ v: "shift-alien" as const, label: "Alien shift", title: "Change in alien contrast after fine-tuning (Δd). Amber: more selective than the base model. Blue: less." }] : []),
               { v: "selectivity", label: "Selectivity", title: "How concentrated each neuron's top contexts are on one token" },
               { v: "density", label: "Firing rate", title: "Share of tokens where the neuron is positive" },
             ]}

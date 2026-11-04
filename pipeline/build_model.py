@@ -102,10 +102,12 @@ def main():
     ap.add_argument("--hunt", type=Path, help="Qwen hunt cache dir with signals.npz (adds concept colouring)")
     ap.add_argument("--bs", type=int, default=16)
     ap.add_argument("--label", help="display name")
+    ap.add_argument("--slug", help="pack slug (default: from --model; set it for a local path such as the merged EM model)")
+    ap.add_argument("--shift", type=Path, help="em.shift output (shift.npz): adds Δd signals for the 'Shift after fine-tune' colour mode")
     a = ap.parse_args()
 
     M = Model(a.model, a.revision)
-    slug = slugify(a.model)
+    slug = a.slug or slugify(a.model)
     out = a.out / slug
     out.mkdir(parents=True, exist_ok=True)
     mix = json.loads(a.mix.read_text())
@@ -197,6 +199,13 @@ def main():
         for k in ("d_evil", "d_alien"):
             arrays[k] = ("f32", sig[k].astype(np.float32))
             signals.append(k)
+    if a.shift:
+        sh = np.load(a.shift)
+        for k in ("dd_evil", "dd_alien"):
+            if sh[k].shape != (L, N):
+                raise SystemExit(f"{a.shift}: {k} is {sh[k].shape}, model is {(L, N)}")
+            arrays[k] = ("f32", sh[k].astype(np.float32))
+            signals.append(k)
     meta = manifest(M, stage="model-pack", slug=slug, label=a.label or a.model.split("/")[-1], grid=side,
                     texts=len(texts), sources=mix.get("sources", {}), signals=signals, lens_k=LENS_K, ctx_k=K_CTX)
     write_pack(out / "space", arrays, meta)
@@ -206,7 +215,7 @@ def main():
     reg_path = a.out / "index.json"
     reg = json.loads(reg_path.read_text()) if reg_path.exists() else {"models": []}
     reg["models"] = [m for m in reg["models"] if m["slug"] != slug] + [{
-        "slug": slug, "label": meta["label"], "hf": a.model, "revision": M.revision, "layers": L, "neurons": N,
+        "slug": slug, "label": meta["label"], "hf": (M.provenance or {}).get("adapter", a.model), "revision": M.revision, "layers": L, "neurons": N,
         "live": False, "hunt": (out / "hunt.json").exists()}]
     reg_path.write_text(json.dumps(reg, indent=1))
     total = sum(f.stat().st_size for f in out.iterdir())

@@ -8,7 +8,7 @@ import { Seg } from "./bits";
 import { download, huntCsv } from "../lib/exportData";
 import { DATA } from "../App";
 
-type List = "finalists" | "evil" | "alien";
+type List = "finalists" | "evil" | "alien" | "shift-evil" | "shift-alien";
 
 /** Accept "L14 N2210", "L14·N2210", "14/2210", "14:2210" or "14 2210". */
 export function parseNeuronId(q: string, L: number, N: number): NeuronRef | null {
@@ -29,6 +29,8 @@ export function ModelSidebar({ m }: { m: RecordedModel }) {
     ...(m.hunt ? [{ v: "finalists" as const, label: "Hunt finalists", title: "Neurons confirmed at full precision" }] : []),
     ...(m.signals.d_evil ? [{ v: "evil" as const, label: "Evil contrast", title: "Fire more on evil than on matched neutral sentences" }] : []),
     ...(m.signals.d_alien ? [{ v: "alien" as const, label: "Alien contrast", title: "Fire more on alien than on matched neutral sentences" }] : []),
+    ...(m.signals.dd_evil ? [{ v: "shift-evil" as const, label: "Evil shift", title: "Largest gain in evil contrast after fine-tuning" }] : []),
+    ...(m.signals.dd_alien ? [{ v: "shift-alien" as const, label: "Alien shift", title: "Largest gain in alien contrast after fine-tuning" }] : []),
   ];
   const [list, setList] = useState<List>(lists[0]?.v ?? "evil");
   const [q, setQ] = useState("");
@@ -40,9 +42,9 @@ export function ModelSidebar({ m }: { m: RecordedModel }) {
         .sort((a, b) => b.score - a.score)
         .map((f) => ({ layer: f.layer, neuron: f.neuron, score: f.score, concept: f.concept as string, label: f.screen.theme.slice(0, 3).join(", ") }));
     }
-    const sig = list === "alien" ? m.signals.d_alien : m.signals.d_evil;
+    const sig = ({ evil: m.signals.d_evil, alien: m.signals.d_alien, "shift-evil": m.signals.dd_evil, "shift-alien": m.signals.dd_alien } as Record<string, Float32Array | undefined>)[list];
     if (!sig) return [];
-    return topBy(sig, m, 150).map((r) => ({ ...r, concept: list as string, label: m.label(r) }));
+    return topBy(sig, m, 150).map((r) => ({ ...r, concept: list.replace("shift-", ""), label: m.label(r) }));
   }, [m, list]);
 
   const open = (r: NeuronRef) => openModel(m.entry.slug, r, m.finalist(r) ? "hunt" : "profile");
@@ -74,7 +76,9 @@ export function ModelSidebar({ m }: { m: RecordedModel }) {
       <p className="list-caption">
         {list === "finalists"
           ? `${rows.length} neurons confirmed at full precision, strongest first. Colour shows the concept each was screened for.`
-          : `Neurons that fire more on ${list} sentences than on matched neutral ones, by Cohen's d. Firing on a concept is not the same as steering toward it.`}
+          : list.startsWith("shift-")
+            ? `Neurons whose ${list.slice(6)} contrast grew most after fine-tuning: Δd = d(fine-tuned) − d(base). A shift in firing is not evidence that the neuron steers toward the concept.`
+            : `Neurons that fire more on ${list} sentences than on matched neutral ones, by Cohen's d. Firing on a concept is not the same as steering toward it.`}
       </p>
       <ol className="rows">
         {rows.map((r) => (
@@ -87,7 +91,7 @@ export function ModelSidebar({ m }: { m: RecordedModel }) {
             >
               <span className="nid">{nid(r)}</span>
               <span className="nlabel">{r.label || "no clear theme"}</span>
-              <span className="w">{list === "finalists" ? r.score.toFixed(1) : `d ${r.score.toFixed(2)}`}</span>
+              <span className="w">{list === "finalists" ? r.score.toFixed(1) : list.startsWith("shift-") ? `Δd ${r.score >= 0 ? "+" : ""}${r.score.toFixed(2)}` : `d ${r.score.toFixed(2)}`}</span>
             </button>
           </li>
         ))}

@@ -43,6 +43,9 @@ const CONCEPT_RGB: Record<string, [number, number, number]> = {
   alien: [0.37, 0.82, 0.87],
   other: [0.95, 0.72, 0.29],
 };
+// Diverging scale for "Shift after fine-tune" (Δd, ADR-007): a dim neutral at zero brightening toward amber
+// (more selective after the fine-tune) or blue (less selective). Validated on the map field: CVD ΔE 24.7.
+const SHIFT = { up: [0xf2 / 255, 0xb8 / 255, 0x4b / 255], down: [0x79 / 255, 0xb4 / 255, 0xff / 255], mid: [0.22, 0.24, 0.33] } as const;
 
 const vert = /* glsl */ `
   attribute vec3 color;
@@ -238,6 +241,15 @@ export function MapView({ space, recorded = null }: { space: Space; recorded?: R
       return out;
     };
     const evilT = signalT("d_evil"), alienT = signalT("d_alien");
+    /** Signed Δd scaled to [-1, 1] by the 99.5th percentile of |Δd|, so one outlier cannot wash out the rest. */
+    const shiftS = (name: string) => {
+      const d = recorded?.signals[name];
+      if (!d) return null;
+      const mag = Float32Array.from(d, Math.abs).sort();
+      const hi = Math.max(mag[Math.floor(mag.length * 0.995)] ?? 0.25, 0.25);
+      return Float32Array.from(d, (v) => Math.max(-1, Math.min(1, v / hi)));
+    };
+    const shiftEvil = shiftS("dd_evil"), shiftAlien = shiftS("dd_alien");
     const huntConcept = new Map<number, string>();
     const huntScreened = new Set<number>();
     if (recorded?.hunt) {
@@ -309,6 +321,13 @@ export function MapView({ space, recorded = null }: { space: Space; recorded?: R
           size = 4 + 14 * tt;
           const c = CONCEPT_RGB[s.colorMode];
           rgb = [c[0] * t, c[1] * t, c[2] * t];
+        } else if (!live && (s.colorMode === "shift-evil" || s.colorMode === "shift-alien") && (s.colorMode === "shift-evil" ? shiftEvil : shiftAlien)) {
+          const v = (s.colorMode === "shift-evil" ? shiftEvil : shiftAlien)![g];
+          const m = Math.pow(Math.abs(v), 0.8);
+          const pole = v >= 0 ? SHIFT.up : SHIFT.down;
+          t = 0.15 + 0.85 * m;
+          size = 4 + 14 * m;
+          rgb = [0, 1, 2].map((k) => SHIFT.mid[k] + (pole[k] - SHIFT.mid[k]) * m) as [number, number, number];
         } else if (!live && s.colorMode === "hunt") {
           const c = huntConcept.get(g);
           if (c) {

@@ -9,7 +9,7 @@ import type { ModelEntry, RecordedModel } from "./lib/recorded";
 import type { ResearchData } from "./lib/research";
 import { parseRoute, type Tab, type View } from "./lib/route";
 
-export type ColorMode = "uniqueness" | "selectivity" | "density" | "probe" | "evil" | "alien" | "hunt";
+export type ColorMode = "uniqueness" | "selectivity" | "density" | "probe" | "evil" | "alien" | "hunt" | "shift-evil" | "shift-alien";
 export type Theme = "system" | "light" | "dark";
 export type LayoutMode = "writes" | "cofire";
 

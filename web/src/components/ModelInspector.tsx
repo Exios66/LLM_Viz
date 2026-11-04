@@ -26,6 +26,8 @@ export function ModelInspector({ m, r }: { m: RecordedModel; r: NeuronRef }) {
   ];
   const cur = tabs.some((t) => t.v === tab) ? tab : "profile";
   const dE = m.signals.d_evil?.[g], dA = m.signals.d_alien?.[g];
+  const sE = m.signals.dd_evil?.[g], sA = m.signals.dd_alien?.[g];
+  const signed = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}`;
 
   return (
     <aside ref={ref} className="inspector" aria-label={`Neuron ${nid(r)} of ${m.entry.label}`}>
@@ -53,6 +55,8 @@ export function ModelInspector({ m, r }: { m: RecordedModel; r: NeuronRef }) {
           <div><dt>selectivity</dt><dd>{Math.round(m.share[g] * 100)}%</dd></div>
           {Number.isFinite(dE) && <div><dt>evil contrast</dt><dd>d {dE!.toFixed(2)}</dd></div>}
           {Number.isFinite(dA) && <div><dt>alien contrast</dt><dd>d {dA!.toFixed(2)}</dd></div>}
+          {Number.isFinite(sE) && <div><dt>evil shift</dt><dd>Δd {signed(sE!)}</dd></div>}
+          {Number.isFinite(sA) && <div><dt>alien shift</dt><dd>Δd {signed(sA!)}</dd></div>}
         </dl>
       </header>
       <Seg<Tab> label="Neuron view" value={cur} onChange={(t) => setState({ tab: t })} options={tabs} />
