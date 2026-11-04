@@ -16,7 +16,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from qwen.common import Model, final_norm, log, manifest, save_json
+from qwen.common import QWEN, Model, final_norm, log, manifest, save_json
 from qwen.concepts import LEXICON, contrast_sets
 from qwen.screen import rand_dirs
 from scoring import distinct4, words
@@ -112,6 +112,7 @@ def kl_ablate(M: Model, texts: list[str], ablate) -> float:
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default=QWEN, help="hub id or local path (e.g. the merged EM model)")
     ap.add_argument("--cache", type=Path, default=Path("cache/qwen"))
     ap.add_argument("--out", type=Path, default=Path("../web/public/data/models/qwen3.5-0.8b"))
     ap.add_argument("--per-concept", type=int, default=14)
@@ -123,7 +124,7 @@ def main():
     picks = pick_finalists(scr, a.per_concept, a.other)
     log(f"{len(picks)} finalists: " + ", ".join(f"L{p['layer']}N{p['neuron']}({p['concept']})" for p in picks))
 
-    M = Model()  # fp32
+    M = Model(a.model)  # fp32
     P = confirm_prompts(M)
     norms, windows = calib["norms"], calib["windows"]
     ckpt = a.cache / "confirm"

@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from qwen.common import Model, final_norm, log, manifest, save_json
+from qwen.common import QWEN, Model, final_norm, log, manifest, save_json
 from qwen.concepts import LEXICON, contrast_sets
 
 
@@ -75,6 +75,7 @@ def write_lens_z(M: Model, lex: dict[str, list[int]]) -> dict[str, np.ndarray]:
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default=QWEN, help="hub id or local path (e.g. the merged EM model)")
     ap.add_argument("--cache", type=Path, default=Path("cache/qwen"))
     ap.add_argument("--top", type=int, default=250, help="candidates per concept per signal")
     ap.add_argument("--random", type=int, default=512, help="random non-candidate base-rate sample")
@@ -82,7 +83,7 @@ def main():
     a = ap.parse_args()
     a.cache.mkdir(parents=True, exist_ok=True)
 
-    M = Model()
+    M = Model(a.model)
     log(f"loaded {M.id} rev {M.revision}: {M.L} layers × {M.N} neurons")
     sets = contrast_sets(a.seed)
     d = {}

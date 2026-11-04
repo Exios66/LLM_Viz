@@ -98,6 +98,10 @@ class Model:
         self.N = self._n_neurons()
         self.d = self.m.config.get_text_config().hidden_size
         self.revision = getattr(m.config, "_commit_hash", None) or revision or _hub_sha(model_id)
+        prov = Path(model_id) / "provenance.json"
+        self.provenance = json.loads(prov.read_text()) if prov.is_file() else None  # local merged model (em.merge)
+        if self.provenance:
+            self.revision = f"{self.provenance['base_sha'][:12]}+{self.provenance['adapter_sha'][:12]}"
         self._hooks = []
 
     def _n_neurons(self):
@@ -253,4 +257,4 @@ def manifest(model: Model, **extra) -> dict:
     return {"model": model.id, "revision": model.revision, "int8": model.int8, "layers": model.L,
             "neurons_per_layer": model.N, "d_model": model.d, "torch": torch.__version__,
             "transformers": transformers.__version__, "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            **extra}
+            **({"provenance": model.provenance} if getattr(model, "provenance", None) else {}), **extra}

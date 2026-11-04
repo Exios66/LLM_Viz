@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from qwen.common import Model, log, manifest, save_json
+from qwen.common import QWEN, Model, log, manifest, save_json
 from qwen.concepts import LEXICON
 from scoring import distinct4, score_layer, words
 
@@ -63,6 +63,7 @@ def lex_hits(text: str, lex: list[str]) -> int:
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default=QWEN, help="hub id or local path (e.g. the merged EM model)")
     ap.add_argument("--cache", type=Path, default=Path("cache/qwen"))
     ap.add_argument("--controls", type=int, default=64)
     ap.add_argument("--bs", type=int, default=32)
@@ -73,7 +74,7 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     cands = json.loads((a.cache / "candidates.json").read_text())["candidates"]
 
-    M = Model(int8=True)
+    M = Model(a.model, int8=True)
     P = prompts(M)
     calib_path = a.cache / "calib.json"
     if calib_path.exists():
