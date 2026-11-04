@@ -78,6 +78,8 @@ npm run test:e2e   # production build + Playwright (desktop and mobile)
 
 ## Run it
 
+Needs Node.js 20.19+ or 22.12+ (Vite 8).
+
 ```bash
 cd web
 npm install

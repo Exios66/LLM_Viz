@@ -465,8 +465,8 @@ mark { background: color-mix(in srgb, var(--excite) 18%, transparent); color: va
   /* the model picker takes the room the icon buttons leave, so the row never outgrows the screen */
   .top-tools { flex: 1 1 100%; min-width: 0; }
   .model-pick { display: flex; flex: 1 1 auto; min-width: 0; }
-  .model-pick select { min-width: 0; }
-  .model-pick select { width: 100%; max-width: none; text-overflow: ellipsis; }
+  /* .top-tools raises specificity over the base .model-pick select rule further down, which caps it at 260 px */
+  .top-tools .model-pick select { width: 100%; min-width: 0; max-width: none; text-overflow: ellipsis; }
   /* recorded models have up to seven colour modes: wrap them like the sidebar's list switcher */
   .controls .seg { display: flex; flex-wrap: wrap; width: 100%; }
   .controls .seg button { flex: 1 1 76px; box-shadow: -1px -1px 0 var(--line); }
