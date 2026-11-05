@@ -52,7 +52,9 @@ const LIGHT_VIEWS = new Set(["home", "research", "method"]);
 let heavy = false;
 /** The atlas, the full sweep pack and the model weights (about 38 MB). Started when a view needs them, or on intent to open one.
  *  The atlas (7.8 MB) goes first, alone: the map needs only it, and on a slow link sharing the bandwidth with the
- *  sweep (9.4 MB) and the weights (20.6 MB) kept the map waiting about four times as long. */
+ *  sweep (9.4 MB) and the weights (20.6 MB) kept the map waiting about four times as long.
+ *  Starts only once and returns before loading finishes. Load rejections are recorded in state; the sweep and model
+ *  still start if the atlas fails. */
 export function bootHeavy() {
   if (heavy) return;
   heavy = true;

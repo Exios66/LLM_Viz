@@ -101,6 +101,11 @@ def flag_in_registry(public: Path) -> None:
 
 
 def main():
+    """Evaluate the saved Heretic model and write private and public study outputs.
+
+    Exits if the private model directory is missing. Trial history export is
+    best effort; dataset, model loading, and output errors can propagate.
+    """
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
     ap.add_argument("--hunt", type=Path, help="hunt.json from the Qwen hunt (for direction overlap and pushes)")

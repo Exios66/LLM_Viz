@@ -25,6 +25,13 @@ DOSES = (1.0, 1.5)  # rows 24-35 of confirm's dose grid: one 12-row chunk at its
 
 
 def main():
+    """Replay sampled finalists and exit according to the exact-text match rate.
+
+    Rejects int8 records and unexpected dose grids or generation lengths. A
+    negative sample size raises ValueError. If no finalists are sampled, rate
+    calculation raises ZeroDivisionError. File, model loading, and generation
+    errors can propagate.
+    """
     ap = argparse.ArgumentParser()
     ap.add_argument("--hunt", type=Path, default=Path("../web/public/data/models/qwen3.5-0.8b/hunt.json"))
     ap.add_argument("--n", type=int, default=3, help="finalists to re-run")

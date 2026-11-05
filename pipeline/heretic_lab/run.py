@@ -27,6 +27,11 @@ def slugify(model_id: str) -> str:
 
 
 def main():
+    """Run Heretic with CLI options and export the selected trial's merged model.
+
+    Replaces any existing private model directory. Exits if the Heretic CLI is
+    missing, the run fails, or the model directory is not created.
+    """
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
     ap.add_argument("--config", type=Path, default=Path(__file__).with_name("config.cpu.toml"))

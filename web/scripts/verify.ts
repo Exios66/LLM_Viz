@@ -139,6 +139,7 @@ if (existsSync(resolve(dir, "sweep.json")) && existsSync(resolve(dir, "findings.
   if (existsSync(resolve(dir, "studies.json"))) {
     const st = JSON.parse(readFileSync(resolve(dir, "studies.json"), "utf8"));
     const p0: string = st.held_out_prompts[0];
+    /** Parse an L<layer>N<neuron> identifier; throws for other formats. */
     const unit = (u: string) => {
       const m = /^L(\d+)N(\d+)$/.exec(u);
       if (!m) throw new Error(`bad unit id ${u}`);
