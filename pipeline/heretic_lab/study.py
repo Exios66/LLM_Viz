@@ -4,7 +4,8 @@
         --hunt ../web/public/data/models/qwen3.5-0.8b/hunt.json                 (run from pipeline/)
 
 Private (research-private/heretic/<slug>/, gitignored): outputs.jsonl with every prompt × model × setting and its full
-response, refusal flag and KL; refusal_directions.npy; summary.csv; trials.csv (Optuna history).
+response, refusal flag and KL; refusal_directions.npy; neuron_refusal_cos.npy (every neuron's write direction
+against its layer's refusal direction); summary.csv; trials.csv (Optuna history).
 Public (web/public/data/models/<slug>/heretic.json): refusal rates, KL, direction overlap with neurons, and harmless
 examples only. No refusal-free answer to a harmful prompt is ever written to the public file.
 """
@@ -176,14 +177,16 @@ def main():
 
     # direction overlap: refusal direction of each layer vs every neuron's write direction in that layer
     d = orig.d
-    layers = []
+    layers, all_cos = [], []
     for l in range(orig.L):
         W = orig.write_dirs(l)  # [N,d]
         r = refusal[l + 1]  # output of layer l
         cos = (W @ r).numpy()
+        all_cos.append(cos)
         order = np.argsort(-np.abs(cos))[:8]
         layers.append({"layer": l, "max_abs_cos": float(np.abs(cos).max()), "p99_abs_cos": float(np.quantile(np.abs(cos), 0.99)),
                        "top": [[int(n), round(float(cos[n]), 4)] for n in order]})
+    np.save(priv / "neuron_refusal_cos.npy", np.stack(all_cos).astype(np.float32))  # [L, N], private: every neuron
     pub = {"model": a.model, "config": "pipeline/heretic_lab/config.cpu.toml (Abliteration modifier, Heretic 2.x)",
            "n_eval": a.n_eval, "refusal_rate": rates, "kl_first_token_mean": float(kl.mean()),
            "kl_first_token_median": float(kl.median()), "random_cos_sd": 1 / math.sqrt(d), "layers": layers,
