@@ -18,6 +18,11 @@ fi
 # Release gate: verify, build, size budget and the whole Playwright suite, then the suite twice more against the
 # same build. Three green runs in a row, or nothing is published.
 RUNS="${RELEASE_RUNS:-3}"
+if ! [[ "$RUNS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "RELEASE_RUNS must be a positive integer, got '$RUNS'." >&2
+  exit 1
+fi
+export PW_FRESH_SERVER=1  # never test a server some other checkout left on the port
 npm test
 for i in $(seq 2 "$RUNS"); do
   echo "Release gate: Playwright run $i of $RUNS"

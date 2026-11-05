@@ -32,7 +32,7 @@ export default defineConfig({
   webServer: {
     command: `npx vite preview --port ${PORT} --strictPort --base ${BASE}`,
     url: `http://localhost:${PORT}${BASE}`,
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.PW_FRESH_SERVER, // the deploy gate sets it so it tests this checkout's build
     timeout: 30_000,
   },
 });

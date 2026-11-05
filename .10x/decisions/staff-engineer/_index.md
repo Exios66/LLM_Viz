@@ -12,6 +12,7 @@
 - Tests: every user-visible feature has a Playwright spec; fixture auto-fails on console errors.
 
 ## Authorship (set by the user, 2026-11-05)
+
 - Commits are authored and committed as the user: `Jack J Burleson // LJM <exios4@protonmail.com>`, which GitHub links to the Exios66 account.
 - No assistant attribution anywhere: no `Co-Authored-By` or session trailers in commit messages, no generated-by footers or session links in PR descriptions, issues, docs or code comments.
 - Squash merges get a clean commit message written for the change, not the concatenated branch messages.

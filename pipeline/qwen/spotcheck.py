@@ -25,12 +25,10 @@ DOSES = (1.0, 1.5)  # rows 24-35 of confirm's dose grid: one 12-row chunk at its
 
 
 def main():
-    """Replay sampled finalists and exit according to the exact-text match rate.
+    """Replay sampled finalists and exit 0 if the exact-text match rate reaches --min-rate.
 
-    Rejects int8 records and unexpected dose grids or generation lengths. A
-    negative sample size raises ValueError. If no finalists are sampled, rate
-    calculation raises ZeroDivisionError. File, model loading, and generation
-    errors can propagate.
+    Stops before generating if the record is int8, the dose grid, length or batch size differ from what DOSES
+    assumes, or the model revision is missing or does not match the hunt's.
     """
     ap = argparse.ArgumentParser()
     ap.add_argument("--hunt", type=Path, default=Path("../web/public/data/models/qwen3.5-0.8b/hunt.json"))
@@ -46,12 +44,16 @@ def main():
         raise SystemExit("this hunt record was made with int8 weights; the spot-check re-runs fp32 confirm records only")
     if list(hunt["doses"]) != [-1.0, -0.5, 0.25, 0.5, 1.0, 1.5] or man.get("gen") != 40:
         raise SystemExit("unexpected dose grid or length in the hunt manifest; update DOSES to match confirm.py's chunks")
+    if man.get("bs", 12) != 12:  # manifests from before bs was recorded used the default 12
+        raise SystemExit(f"the hunt was confirmed with --bs {man['bs']}; DOSES assumes 12-row chunks, so update it to match")
+    if not man.get("revision"):
+        raise SystemExit("the hunt manifest has no model revision, so there is no pinned model to replay")
     norms, windows = hunt["calib"]["norms"], hunt["calib"]["windows"]
     picks = random.Random(a.seed).sample(hunt["finalists"], min(a.n, len(hunt["finalists"])))
 
     M = Model(man["model"], revision=man["revision"])
     if M.revision != man["revision"]:
-        log(f"warning: loaded revision {M.revision}, the hunt used {man['revision']}")
+        raise SystemExit(f"loaded revision {M.revision}, but the hunt used {man['revision']}; not a faithful replay")
     P = confirm_prompts(M)
     match = total = 0
     for f in picks:

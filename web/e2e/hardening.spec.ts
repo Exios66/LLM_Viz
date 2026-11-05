@@ -82,7 +82,10 @@ test.describe("edge cases", () => {
     await waitForModel(page);
     const gen = inspector(page).getByRole("button", { name: "Generate" });
     await expect(gen).toBeEnabled();
-    for (let i = 0; i < 6; i++) await gen.click({ force: true, delay: 0, timeout: 2_000 }).catch(() => {});
+    await gen.click();
+    await expect(inspector(page).getByRole("button", { name: "Generating…" })).toBeVisible();
+    const busy = inspector(page).getByRole("button", { name: /^Generat/ });
+    for (let i = 0; i < 5; i++) await busy.click({ force: true, delay: 0, timeout: 2_000 }).catch(() => {}); // may be disabled mid-run
     await expect(inspector(page).getByRole("button", { name: "Generate" })).toBeEnabled({ timeout: 120_000 });
   });
 

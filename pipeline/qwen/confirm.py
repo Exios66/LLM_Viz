@@ -214,7 +214,7 @@ def main():
                                      round(u["coh"], 3), "|".join(u["why"])])
         for c in r["controls"]:
             scatter["controls"].append([l, c["index"], round(c["z"], 3), c["hits_evil"], c["hits_alien"], round(c["coh"], 3)])
-    out = {"manifest": manifest(M, stage="confirm", doses=DOSES, gen=GEN, per_concept=a.per_concept, other=a.other),
+    out = {"manifest": manifest(M, stage="confirm", doses=DOSES, gen=GEN, per_concept=a.per_concept, other=a.other, bs=a.bs),
            "calib": calib, "prompts": [{k: v for k, v in p.items() if k != "text"} for p in P], "baseline": baseline,
            "doses": DOSES, "finalists": finals, "controls": {str(k): v for k, v in controls.items()}, "families": fam,
            "scatter": scatter, "lexicon": LEXICON,

@@ -32,8 +32,8 @@ test.describe("performance budgets", () => {
     const p = await readPerf(page);
     expect(p.lcp, "largest contentful paint (ms)").toBeGreaterThan(0);
     expect(p.lcp, "largest contentful paint (ms)").toBeLessThan(2500);
-    const late = p.long.filter((t) => t.start >= p.loadEnd).map((t) => Math.round(t.dur));
-    expect(late.filter((d) => d > 200), `long tasks after load: ${late.join(", ")} ms`).toEqual([]);
+    const late = p.long.filter((t) => t.start >= p.loadEnd).map((t) => t.dur);
+    expect(late.filter((d) => d > 200).map(Math.round), `long tasks after load: ${late.map(Math.round).join(", ")} ms`).toEqual([]);
   });
 
   test("Findings and Research: no long task over 200 ms after load", async ({ page }) => {
@@ -44,8 +44,8 @@ test.describe("performance budgets", () => {
       await page.waitForLoadState("load");
       await page.waitForTimeout(1500);
       const p = await readPerf(page);
-      const late = p.long.filter((t) => t.start >= p.loadEnd).map((t) => Math.round(t.dur));
-      expect(late.filter((d) => d > 200), `${hash} long tasks after load: ${late.join(", ")} ms`).toEqual([]);
+      const late = p.long.filter((t) => t.start >= p.loadEnd).map((t) => t.dur);
+      expect(late.filter((d) => d > 200).map(Math.round), `${hash} long tasks after load: ${late.map(Math.round).join(", ")} ms`).toEqual([]);
     }
   });
 });
