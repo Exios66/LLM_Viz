@@ -8,7 +8,8 @@
    "layers": 24,
    "neurons": 3584,
    "live": false,
-   "hunt": true
+   "hunt": true,
+   "heretic": true
   },
   {
    "slug": "qwen2.5-0.5b-em",
