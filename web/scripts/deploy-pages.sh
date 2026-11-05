@@ -15,8 +15,15 @@ if [ -n "$(git -C "$REPO_ROOT" status --porcelain)" ]; then
   exit 1
 fi
 
-npm run verify
-npm run build
+# Release gate: verify, build, size budget and the whole Playwright suite, then the suite twice more against the
+# same build. Three green runs in a row, or nothing is published.
+RUNS="${RELEASE_RUNS:-3}"
+npm test
+for i in $(seq 2 "$RUNS"); do
+  echo "Release gate: Playwright run $i of $RUNS"
+  npx playwright test
+done
+echo "Release gate passed: $RUNS green runs in a row."
 
 git -C "$REPO_ROOT" fetch origin "+refs/heads/gh-pages:refs/remotes/origin/gh-pages" >/dev/null 2>&1 || true  # explicit refspec keeps origin/gh-pages current
 if git -C "$REPO_ROOT" show-ref --verify --quiet refs/remotes/origin/gh-pages; then
