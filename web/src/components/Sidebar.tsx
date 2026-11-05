@@ -6,7 +6,7 @@ import type { NeuronRef } from "../lib/atlas";
 
 function themeLabel(sweep: Sweep, r: NeuronRef, atlas: Atlas) {
   const t = sweep.stats(r).themes;
-  return t.length ? `→ ${t.slice(0, 3).join(", ")}` : atlas.label(r);
+  return t.length ? `writes ${t.slice(0, 3).join(", ")}` : atlas.label(r);
 }
 import { NeuronButton, Seg } from "./bits";
 

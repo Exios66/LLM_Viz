@@ -79,11 +79,22 @@ export interface Findings {
   cards: FindingCard[];
   reference: ReferenceCard[];
   notes: { title: string; body: string }[];
+  /** Counts on shared z bins: neurons beating every control in their layer, the other neurons, the controls. */
+  score_hist?: { lo: number; step: number; above_null: number[]; neurons: number[]; controls: number[] };
 }
 
 const str = (x: unknown, max = 2000) => (typeof x === "string" ? x.slice(0, max) : "");
 const num = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? x : NaN);
 const KINDS = new Set(["concept", "style", "suppressor", "control", "reads-writes"]);
+
+function sanitizeHist(raw: unknown): Findings["score_hist"] {
+  const h = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const counts = (x: unknown) => (Array.isArray(x) && x.length > 0 && x.length <= 200 && x.every((v) => Number.isInteger(v) && v >= 0) ? (x as number[]) : null);
+  const a = counts(h.above_null), n = counts(h.neurons), c = counts(h.controls);
+  const lo = num(h.lo), step = num(h.step);
+  if (!a || !n || !c || a.length !== n.length || n.length !== c.length || !Number.isFinite(lo) || !(step > 0)) return undefined;
+  return { lo, step, above_null: a, neurons: n, controls: c };
+}
 
 /** findings.json is generated, but treat it as untrusted input: drop malformed entries. */
 export function sanitizeFindings(raw: unknown, m: { layers: number; neurons: number }): Findings {
@@ -110,6 +121,7 @@ export function sanitizeFindings(raw: unknown, m: { layers: number; neurons: num
     cards,
     reference: (Array.isArray(f.reference) ? f.reference : []).filter((r) => r && typeof r.id === "string" && /^https:\/\//.test(String(r.source))),
     notes: (Array.isArray(f.notes) ? f.notes : []).filter((n) => n && typeof n.title === "string" && typeof n.body === "string"),
+    score_hist: sanitizeHist(f.score_hist),
   };
 }
 

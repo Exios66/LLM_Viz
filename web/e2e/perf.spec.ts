@@ -26,7 +26,7 @@ test.describe("performance budgets", () => {
   test("Home: first view under 2.5 s, no long task over 200 ms after load", async ({ page }) => {
     await observePerf(page);
     await page.goto("./");
-    await expect(page.locator(".facts")).toBeVisible();
+    await expect(page.locator(".score-chart svg")).toBeVisible();
     await page.waitForLoadState("load");
     await page.waitForTimeout(3000); // let the hero reveal and any idle work run
     const p = await readPerf(page);

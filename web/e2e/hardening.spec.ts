@@ -12,7 +12,7 @@ async function settle(page: Page) {
 // The 3D map's canvas and the footer's build commit change between runs, so they are masked.
 // Refresh after an intended visual change: npx playwright test hardening --update-snapshots
 const SHOTS: { name: string; hash: string; ready: string }[] = [
-  { name: "home", hash: "", ready: ".facts" },
+  { name: "home", hash: "", ready: ".score-chart svg" },
   { name: "findings", hash: "#/findings", ready: ".card" },
   { name: "research", hash: "#/research", ready: ".report-list" },
   { name: "method", hash: "#/method", ready: "main h1, main h2" },
@@ -45,7 +45,7 @@ test.describe("edge cases", () => {
     await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 150, downloadThroughput: 200_000, uploadThroughput: 94_000 });
     await page.goto("./");
     await expect(page.getByRole("heading", { level: 1, name: /Push one neuron/ })).toBeVisible();
-    await expect(page.locator(".facts")).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator(".score-chart svg")).toBeVisible({ timeout: 60_000 });
     await page.getByRole("link", { name: "Open the 3D atlas" }).click();
     await expect(page.getByRole("status").filter({ hasText: /Loading the atlas/ })).toBeVisible();
     // the atlas loads before the sweep and the weights, so the map is up while the model is still downloading

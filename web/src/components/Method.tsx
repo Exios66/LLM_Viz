@@ -9,7 +9,6 @@ export function MethodPage() {
   return (
     <div className="page-wrap prose">
       <header className="page-head">
-        <p className="eyebrow">Method</p>
         <h2 className="page-title">How this was measured</h2>
         <p className="lede">
           Everything on this site comes from one small model, two Python scripts that read it, and a TypeScript copy of the model that runs in your browser.

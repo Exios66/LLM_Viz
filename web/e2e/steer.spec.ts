@@ -61,10 +61,10 @@ test.describe("steering studio", () => {
 });
 
 test.describe("findings", () => {
-  test("headline, charts, cards, notes and references render", async ({ page }) => {
+  test("specimens, charts, notes and references render", async ({ page }) => {
     await page.goto("./#/findings");
     await expect(page.getByRole("heading", { name: "What pushing every neuron did" })).toBeVisible();
-    await expect(page.locator(".tiles > div")).toHaveCount(3);
+    await expect(page.locator(".lede")).toContainText("41 of them beat every random push");
     expect(await page.locator(".card:not(.ref-card)").count()).toBeGreaterThanOrEqual(8);
     expect(await page.locator(".ref-card").count()).toBeGreaterThanOrEqual(3);
     expect(await page.locator(".chart-grid figure").count()).toBeGreaterThanOrEqual(5);
@@ -109,7 +109,9 @@ test.describe("findings", () => {
     for (let i = 0; i < n; i++) {
       await page.goto("./#/findings");
       const card = cards.nth(i);
-      const expected = (await card.locator(".steered p").innerText()).trim();
+      const norm = (t: string | null) => (t ?? "").replace(/\s+/g, " ").trim();
+      // the card shows the prompt once above both runs; the studio repeats it inside each column
+      const expected = norm((await card.locator(".card-prompt").textContent())! + (await card.locator(".steered p").textContent()));
       const pushedDown = (await card.locator(".steered h5").innerText()).includes("−");
       const unit = (await card.locator(".unit").innerText()).trim();
       await card.getByRole("button", { name: "Replay live" }).click();
@@ -118,7 +120,7 @@ test.describe("findings", () => {
       const cols = inspector(page).locator(".steer-col");
       await expect(cols).toHaveCount(4);
       await expect(inspector(page).getByRole("button", { name: "Generate" })).toBeEnabled({ timeout: 60_000 });
-      const got = (await cols.nth(pushedDown ? 0 : 2).locator("p").innerText()).trim();
+      const got = norm(await cols.nth(pushedDown ? 0 : 2).locator("p").textContent());
       expect(got, `${unit} replay`).toBe(expected);
     }
   });

@@ -82,7 +82,7 @@ export function Probe({ atlas }: { atlas: Atlas }) {
           ) : busy ? (
             "Running…"
           ) : T ? (
-            `${T} tokens${T >= PROBE_MAX ? ` (only the first ${PROBE_MAX} are probed)` : ""} · click one to light the map at that position`
+            `${T} tokens${T >= PROBE_MAX ? ` (only the first ${PROBE_MAX} are probed)` : ""}. Click one to light the map at that position.`
           ) : text.trim() ? (
             ""
           ) : (
@@ -107,7 +107,7 @@ export function Probe({ atlas }: { atlas: Atlas }) {
         <div className="probe-detail">
           <div>
             <h3>
-              Strongest neurons at <code>{showToken(atlas.tok.str(analysis.tokens[pos]))}</code>
+              Strongest neurons at the token <code className="tokq">{showToken(atlas.tok.str(analysis.tokens[pos]))}</code>
             </h3>
             {topHere.length ? (
               <ul className="links">
