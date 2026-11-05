@@ -62,18 +62,25 @@ The **Method** page on the site has the details and limits.
 
 ```bash
 cd web
-npm run verify     # TS model vs PyTorch; every finding card and a random sample of the sweep replayed
-npm run test:e2e   # production build + Playwright (desktop and mobile)
+npm run verify     # TS model vs PyTorch; finding cards, a sample of the sweep and the studies replayed
+npm run test:e2e   # production build + size budget + Playwright (desktop and mobile)
+npm test           # both
 ```
 
-- `verify` checks the tokenizer (exact), logits (max error 0.004), activations, and a greedy continuation against PyTorch. With the sweep data present, it replays all 16 neuron cards token for token and a random sample of 48 sweep rollouts across all layers (47 of 48 match exactly; batched float32 in PyTorch can flip a near-tied argmax).
-- The Playwright suite (42 tests) covers:
+- `verify` checks the tokenizer (exact), logits (max error 0.004), activations, and a greedy continuation against PyTorch. With the sweep data present, it replays all 16 neuron cards token for token and a random sample of 48 sweep rollouts across all layers (47 of 48 match exactly; batched float32 in PyTorch can flip a near-tied argmax). It also replays the TinyStories studies: the greedy example of each of the 41 above-null neurons in the robustness study, and the villain push with and without its threat family zeroed.
+- `python -m qwen.spotcheck` (from `pipeline/`) re-runs a sample of the Qwen3.5-0.8B hunt in fp32 at the revision pinned in its manifest, and checks the recorded text comes back (`--n` neurons, about 1–2 minutes each on 4 cores).
+- The Playwright suite covers:
   - loading, search, deep links (including invalid ones), back/forward and keyboard use
   - edits that persist across reload, and corrupted or blocked `localStorage`
   - empty, emoji and over-long probe text; steering generate/stop; findings replay matching the recorded text
   - WebGL unavailable, and the WebGL context lost mid-session
   - failed or truncated model, atlas and sweep downloads
-  - no horizontal overflow on a phone; no console errors anywhere
+  - no horizontal overflow on a phone (Pixel 7 and 375 px); no console errors anywhere
+  - axe accessibility checks on every page in both themes
+  - screenshot comparisons of the key screens in both themes (`npx playwright test hardening --update-snapshots` refreshes them after an intended change)
+  - performance: Home's first view under 2.5 s, and no long task over 200 ms after load
+  - a slow network, reduced motion, rapid clicks, and back/forward during an ablation job
+- Playwright runs on Chromium only. Firefox and WebKit are not covered yet.
 - `npx tsx scripts/dump-rollouts.ts L4N803 L5c173` prints recorded rollouts (`c` marks a random control) for curating findings.
 
 ## Run it
@@ -108,7 +115,7 @@ Findings cards are curated in `pipeline/findings_curated.py`. `analyze.py` fills
 cd web && npm run deploy
 ```
 
-This runs `verify`, builds the site, and pushes `web/dist` to the `gh-pages` branch from a temporary git worktree. No GitHub Actions workflow is involved. One-time setup: **Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)`**. The site is then served at `https://<user>.github.io/<repo>/`. Hash routing means deep links work without a 404 fallback. `vite.config.ts` uses a relative `base`, so the build works from any sub-path.
+This is gated: it runs `npm test` (verify, build, size budget, Playwright), then the Playwright suite twice more against the same build, and publishes only after three green runs in a row (`RELEASE_RUNS` changes the count). It then pushes `web/dist` to the `gh-pages` branch from a temporary git worktree. No GitHub Actions workflow is involved. One-time setup: **Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)`**. The site is then served at `https://<user>.github.io/<repo>/`. Hash routing means deep links work without a 404 fallback. `vite.config.ts` uses a relative `base`, so the build works from any sub-path.
 
 ## License
 
