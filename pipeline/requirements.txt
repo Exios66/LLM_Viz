@@ -1,4 +1,5 @@
 # CPU wheels are enough: pip install --index-url https://download.pytorch.org/whl/cpu torch
-torch>=2.3
-transformers>=4.40
+# Floors are the oldest releases with no known advisories (OSV, 2026-11-04); older ones carry 24 (torch) and 44 (transformers).
+torch>=2.13
+transformers>=5.10
 numpy>=1.26

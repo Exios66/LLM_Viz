@@ -378,7 +378,7 @@ mark { background: color-mix(in srgb, var(--excite) 18%, transparent); color: va
 
 /* ---------- pages (findings, method) */
 
-.app.page { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top" "main"; }
+.app.page { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top" "main"; }
 .page-main { grid-area: main; overflow-y: auto; min-height: 0; outline: none; }
 .page-wrap > * { min-width: 0; }
 .page-wrap { max-width: 1120px; margin: 0 auto; padding: 32px 24px 64px; display: grid; gap: 40px; }
@@ -442,7 +442,7 @@ mark { background: color-mix(in srgb, var(--excite) 18%, transparent); color: va
 
 @media (max-width: 1100px) {
   .app, .app.has-focus {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr); /* 1fr would grow to fit the widest child and scroll the page sideways */
     grid-template-rows: auto;
     grid-template-areas: "top" "stage" "insp" "side";
     height: auto;
@@ -460,7 +460,18 @@ mark { background: color-mix(in srgb, var(--excite) 18%, transparent); color: va
   .cards { grid-template-columns: 1fr; }
   .card-stats { grid-template-columns: repeat(3, auto) minmax(0, 1fr); gap: 4px 10px; }
   .nav a { padding: 5px 10px; }
-  .controls { flex-wrap: wrap; }
+  .controls { flex-wrap: wrap; min-width: 0; }
+  .brand { min-width: 0; }
+  /* the model picker takes the room the icon buttons leave, so the row never outgrows the screen */
+  .top-tools { flex: 1 1 100%; min-width: 0; }
+  .model-pick { display: flex; flex: 1 1 auto; min-width: 0; }
+  /* .top-tools raises specificity over the base .model-pick select rule further down, which caps it at 260 px */
+  .top-tools .model-pick select { width: 100%; min-width: 0; max-width: none; text-overflow: ellipsis; }
+  /* recorded models have up to seven colour modes: wrap them like the sidebar's list switcher */
+  .controls .seg { display: flex; flex-wrap: wrap; width: 100%; }
+  .controls .seg button { flex: 1 1 76px; box-shadow: -1px -1px 0 var(--line); }
+  .controls .seg button + button { border-left: none; }
+  .controls .seg button.on { box-shadow: -1px -1px 0 var(--line), inset 0 -2px 0 var(--cyan); }
   .probe { padding: 12px 16px 16px; }
   .continue-cols.n2 { grid-template-columns: 1fr; }
   .intro { display: none; }

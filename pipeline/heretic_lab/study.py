@@ -85,6 +85,20 @@ def residual_means(M: Model, prompts: list[str], bs: int = 16) -> torch.Tensor:
     return acc / len(prompts)
 
 
+def flag_in_registry(public: Path) -> None:
+    """Mark the pack's registry entry, so the client fetches heretic.json (it never probes for it)."""
+    reg = public.parent / "index.json"
+    if not reg.exists():
+        log(f"no registry at {reg}: run build_model.py for {public.name} so the site shows the study")
+        return
+    data = json.loads(reg.read_text())
+    hit = [m for m in data.get("models", []) if m.get("slug") == public.name]
+    for m in hit:
+        m["heretic"] = True
+    reg.write_text(json.dumps(data, indent=1))
+    log(f"registry: {public.name} heretic flag set" if hit else f"registry has no {public.name} entry: run build_model.py for it")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
@@ -210,6 +224,7 @@ def main():
         deltas.append(round(float((w1 - w0).norm() / (w0.norm() + 1e-8)), 6))
     pub["down_proj_rel_change"] = deltas
     save_json(public / "heretic.json", pub)
+    flag_in_registry(public)
     log(f"wrote {public / 'heretic.json'} and private export in {priv} ({(time.time() - t0) / 60:.1f} min)")
 
 
