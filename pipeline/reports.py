@@ -187,7 +187,7 @@ def report_qwen_hunt(hunt, space):
           f"with linear-attention Gated DeltaNet layers in three of every four positions [@yang2024]."),
         h("How the hunt worked"),
         ol([
-            "**Discover.** 202 evil and 202 alien sentences, each paired with a neutral sentence on the same subject, were run through the model. Every neuron got two signals: how much more it fires on the concept (Cohen's *d* of its peak activation) and how strongly its output direction writes concept words (write-lens *z*) [@panickssery2023; @geva2022]. The top 250 per concept per signal, plus 512 random neurons, went forward.",
+            "**Discover.** 202 evil and 202 alien sentences, each paired with a neutral sentence on the same subject, were run through the model. Every neuron got two signals: how much more it fires on the concept (Cohen's *d* of its peak activation) and how strongly its output direction writes concept words (write-lens *z*) [@panickssery2023] [@geva2022]. The top 250 per concept per signal, plus 512 random neurons, went forward.",
             f"**Screen.** Each candidate was pushed along its output direction at one *window*, the largest push at which random directions keep the layer's text coherent. Calibrated windows ranged from {min(cal['windows']):.2f} to {max(cal['windows']):.2f} × the layer's median residual norm. Three prompts, 32 tokens, int8 weights. Every layer also pushed 64 random directions of the same size. {n_units:,} neurons and {n_ctrl:,} random directions were scored this way."
             + ("".join(f" Layer {l}'s median residual norm is {cal['norms'][int(l)]:.0f}, far above the others, because a few dimensions carry very large values; even 0.25× broke its text, so it was recalibrated down to {cal['windows'][int(l)]:g}×. Random pushes that small barely change the text, so layer {l}'s screen is a weak bar and its high screen scores mean less." for l in cal.get("low_coherence", {}))),
             f"**Confirm.** {len(F)} finalists were re-run in full precision on {len(hunt['prompts'])} prompts at {len(hunt['doses'])} push sizes, next to a random direction in the same layer, with lenses and ablation.",
@@ -214,7 +214,7 @@ def report_qwen_hunt(hunt, space):
         for c, x in fam.items():
             rows.append([c, len(x["members"]), x["hits_base"], x["hits_ablated"], f"{x['d_nll_concept']:+.4f}", f"{x['d_nll_neutral']:+.4f}"])
         blocks.append(table(["Concept", "Neurons zeroed together", "Concept words, pushed top neuron", "Same, family zeroed", "Δloss concept", "Δloss neutral"], rows))
-        blocks.append(p("Zeroing a whole family tests whether the concept depends on a group rather than one unit, as superposition predicts [@elhage2022; @gurnee2023]."))
+        blocks.append(p("Zeroing a whole family tests whether the concept depends on a group rather than one unit, as superposition predicts [@elhage2022] [@gurnee2023]."))
     ref = hunt.get("reference")
     if ref:
         blocks += [h("The 4B reference"), quote(clip(ref["quote"], 400), f"{ref['unit']} in {ref['model']}, “{ref['prompt']}”, from the neuron-explorer research log [@neuronexplorer]")]
@@ -469,7 +469,7 @@ def report_ablation(findings, studies):
     p95 = A["random_d_nll_p95"]
     big = [u for u in U if abs(u["d_nll"]) > p95]
     blocks = [
-        p("Steering asks what a neuron *can* write. Ablation asks what the model *needs* it for: hold the neuron at zero and measure how much worse the model predicts real stories [@meng2022; @heimersheim2024]."),
+        p("Steering asks what a neuron *can* write. Ablation asks what the model *needs* it for: hold the neuron at zero and measure how much worse the model predicts real stories [@meng2022] [@heimersheim2024]."),
         h("Single neurons"),
         p(f"Each above-null neuron was zeroed over {A['stories']} held-out stories (up to {A['max_tokens']} tokens each). "
           f"{len(rnd)} random neurons from the same layers give the baseline: 95% of them change the loss by less than {p95:.5f} nats per token. "
@@ -533,7 +533,7 @@ def report_heretic(heretic, hunt):
                 "blocks": [note("Run `pipeline/heretic_lab/run.py` and `study.py` with the Heretic environment, then regenerate the reports.")]}
     rr = heretic["refusal_rate"]
     blocks = [
-        p("Chat models refuse harmful requests largely through one direction in the residual stream [@arditi2024]. Heretic finds that direction and edits the weights to project it out, searching with Optuna for the settings that cut refusals while keeping the model's other answers close to the original [@heretic; @akiba2019]."),
+        p("Chat models refuse harmful requests largely through one direction in the residual stream [@arditi2024]. Heretic finds that direction and edits the weights to project it out, searching with Optuna for the settings that cut refusals while keeping the model's other answers close to the original [@heretic] [@akiba2019]."),
         p("This study ran Heretic on Qwen3.5-0.8B and asked two questions: how well does it work at this size, and does the refusal direction overlap with the evil and alien neurons from the hunt?"),
         note("The modified weights and the model's answers to harmful prompts are not published. They stay in a private, git-ignored export for the site's author to analyse. Only aggregate rates and harmless examples appear here."),
         h("Refusal rates"),
