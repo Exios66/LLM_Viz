@@ -545,7 +545,7 @@ def report_heretic(heretic, hunt):
         h("Where the refusal direction sits"),
         p(f"For each layer, the cosine between the refusal direction leaving that layer and every neuron's output direction. A random direction in this {round(1 / heretic['random_cos_sd'] ** 2)}-dimensional space has a cosine with standard deviation {heretic['random_cos_sd']:.3f}."),
         table(["Layer", "Largest |cos| with a neuron", "99th percentile", "Closest neuron"],
-              [[x["layer"], f"{x['max_abs_cos']:.3f}", f"{x['p99_abs_cos']:.3f}", unit_link(f"L{x['layer']}N{x['top'][0][0]}", QWEN)] for x in heretic["layers"][::2]]),
+              [[x["layer"], f"{x['max_abs_cos']:.3f}", f"{x['p99_abs_cos']:.3f}", unit_link(f"L{x['layer']}N{x['top'][0][0]}", QWEN)] for x in heretic["layers"]]),
     ]
     ov = heretic.get("finalist_overlap")
     if ov:

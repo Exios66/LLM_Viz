@@ -26,17 +26,29 @@ For each layer, the cosine between the refusal direction leaving that layer and 
 | Layer | Largest \|cos\| with a neuron | 99th percentile | Closest neuron |
 |---|---|---|---|
 | 0 | 0.137 | 0.092 | [L0·N2529](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L0/N2529) |
+| 1 | 0.165 | 0.093 | [L1·N203](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L1/N203) |
 | 2 | 0.189 | 0.101 | [L2·N84](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L2/N84) |
+| 3 | 0.289 | 0.116 | [L3·N479](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L3/N479) |
 | 4 | 0.293 | 0.103 | [L4·N1468](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L4/N1468) |
+| 5 | 0.214 | 0.094 | [L5·N966](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L5/N966) |
 | 6 | 0.145 | 0.095 | [L6·N2467](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L6/N2467) |
+| 7 | 0.179 | 0.102 | [L7·N3550](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L7/N3550) |
 | 8 | 0.205 | 0.095 | [L8·N1676](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L8/N1676) |
+| 9 | 0.272 | 0.104 | [L9·N2250](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L9/N2250) |
 | 10 | 0.304 | 0.109 | [L10·N1290](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L10/N1290) |
+| 11 | 0.242 | 0.106 | [L11·N1670](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L11/N1670) |
 | 12 | 0.292 | 0.116 | [L12·N1306](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L12/N1306) |
+| 13 | 0.251 | 0.109 | [L13·N2278](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L13/N2278) |
 | 14 | 0.197 | 0.097 | [L14·N935](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L14/N935) |
+| 15 | 0.180 | 0.090 | [L15·N3492](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L15/N3492) |
 | 16 | 0.226 | 0.088 | [L16·N2159](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L16/N2159) |
+| 17 | 0.187 | 0.094 | [L17·N1182](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L17/N1182) |
 | 18 | 0.202 | 0.094 | [L18·N115](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L18/N115) |
+| 19 | 0.176 | 0.083 | [L19·N270](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L19/N270) |
 | 20 | 0.249 | 0.084 | [L20·N195](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L20/N195) |
+| 21 | 0.182 | 0.084 | [L21·N1786](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L21/N1786) |
 | 22 | 0.166 | 0.089 | [L22·N893](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L22/N893) |
+| 23 | 0.177 | 0.083 | [L23·N769](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L23/N769) |
 
 ### Overlap with the hunt finalists
 
