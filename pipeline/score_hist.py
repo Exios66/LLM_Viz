@@ -3,7 +3,9 @@
 `score_hist` is called by analyze.py. Run this file to add the histogram to an existing
 findings.json from the published sweep pack (the raw rollouts are not needed):
 
-    python score_hist.py ../web/public/data
+    python pipeline/score_hist.py [web/public/data]
+
+With no argument it uses the site's data folder next to this script, from any directory.
 """
 
 from __future__ import annotations
@@ -54,4 +56,4 @@ def main(data: Path) -> None:
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1] if len(sys.argv) > 1 else "../web/public/data"))
+    main(Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "web" / "public" / "data")
