@@ -50,22 +50,29 @@ function boot() {
 
 const LIGHT_VIEWS = new Set(["home", "research", "method"]);
 let heavy = false;
-/** The atlas, the full sweep pack and the model weights (about 38 MB). Started when a view needs them, or on intent to open one. */
+/** The atlas, the full sweep pack and the model weights (about 38 MB). Started when a view needs them, or on intent to open one.
+ *  The atlas (7.8 MB) goes first, alone: the map needs only it, and on a slow link sharing the bandwidth with the
+ *  sweep (9.4 MB) and the weights (20.6 MB) kept the map waiting about four times as long.
+ *  Starts only once and returns before loading finishes. Load rejections are recorded in state; the sweep and model
+ *  still start if the atlas fails. */
 export function bootHeavy() {
   if (heavy) return;
   heavy = true;
-  Atlas.load(DATA, (f) => setState({ atlasProgress: f }))
-    .then((a) => setState({ atlas: a }))
-    .catch((e) => setState({ atlasError: String(e?.message ?? e) }));
-  Sweep.load(DATA)
-    .then((sw) => setState({ sweep: sw, findings: sw.findings, sweepMeta: sw.meta, sweepError: null }))
-    .catch((e) => setState({ sweepError: String(e?.message ?? e), colorMode: "selectivity" }));
   const rt = new Runtime();
   rt.onCrash = (msg) => setState({ modelError: msg, modelProgress: 0 });
   setState({ runtime: rt });
-  rt.init(DATA, (l, t) => setState({ modelProgress: t ? Math.min(0.99, l / t) : 0 }))
-    .then(() => setState({ modelProgress: 1, modelError: null }))
-    .catch((e) => setState({ modelError: String(e?.message ?? e) }));
+  const rest = () => {
+    Sweep.load(DATA)
+      .then((sw) => setState({ sweep: sw, findings: sw.findings, sweepMeta: sw.meta, sweepError: null }))
+      .catch((e) => setState({ sweepError: String(e?.message ?? e), colorMode: "selectivity" }));
+    rt.init(DATA, (l, t) => setState({ modelProgress: t ? Math.min(0.99, l / t) : 0 }))
+      .then(() => setState({ modelProgress: 1, modelError: null }))
+      .catch((e) => setState({ modelError: String(e?.message ?? e) }));
+  };
+  Atlas.load(DATA, (f) => setState({ atlasProgress: f }))
+    .then((a) => setState({ atlas: a }))
+    .catch((e) => setState({ atlasError: String(e?.message ?? e) }))
+    .finally(rest); // the sweep and the model still load when the atlas fails
 }
 
 /** Load research.json the first time a view needs it. */

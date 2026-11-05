@@ -27,6 +27,11 @@ def slugify(model_id: str) -> str:
 
 
 def main():
+    """Run Heretic with CLI options and export the selected trial's merged model.
+
+    Replaces any existing private model directory. Exits if the Heretic CLI is
+    missing, the run fails, or the model directory is not created.
+    """
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
     ap.add_argument("--config", type=Path, default=Path(__file__).with_name("config.cpu.toml"))
@@ -47,9 +52,10 @@ def main():
     model_dir = out / "model"
     if model_dir.exists():
         shutil.rmtree(model_dir)
+    # --trial-index skips the interactive trial menu, so Heretic never asks for additional trials
+    # (it rejects --n-additional-trials 0: the value must be positive)
     cmd = [str(heretic), "--model", a.model, "--checkpoint-action", "restart", "--trial-index", str(a.trial_index),
-           "--n-additional-trials", "0", "--model-action", "save", "--save-directory", str(model_dir),
-           "--export-strategy", "MERGE"]
+           "--model-action", "save", "--save-directory", str(model_dir), "--export-strategy", "MERGE"]
     env = {**os.environ, "HERETIC_CONFIG_FILE": str(cfg), "TOKENIZERS_PARALLELISM": "false"}
     t0 = time.time()
     with open(out / "run.log", "w") as log:

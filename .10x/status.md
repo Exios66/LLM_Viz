@@ -1,29 +1,30 @@
 # Project status
 
-**Feature:** `v3-research-lab` — **Phase:** Implementation (M1 research jobs running; M2 UI and most of M3 delivered). ADR-007 accepted (user approved), ADR-008 accepted.
+**Feature:** `v3-research-lab` — **Phase:** Verification and delivery. ADR-001 to ADR-008 accepted.
 
-## Done (earlier)
+## Done
 
-- v1 Neuron Atlas; v2 `next-level-viz` phases 1–2 (sweep, 17 findings, routing, hardening, 42 e2e tests) on PR #1.
-- Deployed to `gh-pages` (2026-11-03); user enables Pages → gh-pages / root.
-- Git identity: commits authored as Jack J Burleson // LJM <exios4@protonmail.com>; history on `neuron-atlas` and `gh-pages` rewritten (trees unchanged).
+- v1 Neuron Atlas and v2 `next-level-viz` (PR #1, merged and deployed 2026-11-04).
+- M1 research: Qwen3.5-0.8B evil/alien hunt (discover, screen, confirm); TinyStories studies (robustness, curves, ablation, family, circuit, families); all reports regenerated.
+- M2 look and experience: design system, Home, multi-model atlas, Research, ablation, compare, tour, shortcuts, export.
+- ADR-007 EM organism pack (PR #3, merged and deployed).
+- Site review fixes and dependency advisories (PR #4).
+- M4 legal and reproducibility: LICENSE (MIT), CITATION.cff, NOTICE, pinned Qwen requirements.
 
-## v3 tasks (see decisions/engineering-manager/v3-research-lab.md)
+## In progress (2026-11-05)
 
-- [x] M2 look+UX: tokens/theme, Home/nav, recorded-model inspector, job queue + live ablation, Research reader, compare/tour/shortcuts
-- [x] Addendum: build_model, heretic generic scripts, literature review, multi-model atlas, design system, CSV export, citation/notice
-- [x] 3D map rebuilt as a transformer diagram (ADR-008, f984e1e); charts themed and validated (aae0291)
-- [ ] M1 research: Qwen screen L0–L12 done, L13–L23 running (restarted 01:30 after a hang in solve_triangular); then confirm, pack, Heretic private export
-- [ ] M1 studies: robust/curves done; ablate running (L6); family, circuit next; then reports.py regenerate
-- [ ] M3: validators script, screenshot tests, performance budgets
-- [ ] M4: LICENSE (MIT, approved by the user), QA/security reviews, 3× green gate, PR description, deploy (ask first)
-- [x] ADR-007 EM organism pack: approved, built and deployed (PR #3)
+- Hardening PR (`hardening` branch, opens after PR #4 merges):
+  - `verify` replays the TinyStories studies; `pipeline/qwen/spotcheck.py` re-runs a sample of the hunt in fp32.
+  - Playwright: screenshots in both themes, performance budgets, slow network, reduced motion, rapid clicks, back/forward during a job.
+  - The atlas loads before the sweep and the weights, so the map shows sooner on slow links.
+  - `deploy-pages.sh` is gated on three green runs in a row.
+- Heretic study on Qwen3.5-0.8B running (ADR-002). The full export goes to the gitignored `research-private/heretic/` and to the user; only aggregates and harmless examples are published, after a harm scan.
 
-## 2026-11-04 update
+## Next
 
-- PR #3 (Qwen3.5-0.8B and EM packs, EM report) squash-merged as f8a3557 and deployed to gh-pages.
-- Site review (senior engineer): mobile overflow and the heretic.json 404 fixed on `site-review-fixes` (82/82 tests).
-- Next: security engineer triages the Dependabot alerts (see handoff.md).
+- Merge and deploy PR #4 (user confirms), then open the hardening PR.
+- Security engineer: confirm the Dependabot count after PR #4 merges (see handoff.md). Dependabot's PR #2 is likely superseded by the vite 8 upgrade.
+- Heretic: publish `heretic.json`, regenerate the Heretic report, deploy (user confirms).
 
 ## Blockers
 

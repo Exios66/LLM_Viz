@@ -133,6 +133,40 @@ if (existsSync(resolve(dir, "sweep.json")) && existsSync(resolve(dir, "findings.
   }
   // batched PyTorch vs single-row float32 can flip near-tied argmaxes, so this is a rate
   check("random sweep rollouts replay exactly", match / total >= 0.85, `${match}/${total}`);
+
+  // ---------------------------------------------------------------- TinyStories studies replay (pipeline/studies.py)
+  // Each greedy example is a +1-window push on the first held-out prompt, the same push the sweep uses.
+  if (existsSync(resolve(dir, "studies.json"))) {
+    const st = JSON.parse(readFileSync(resolve(dir, "studies.json"), "utf8"));
+    const p0: string = st.held_out_prompts[0];
+    /** Parse an L<layer>N<neuron> identifier; throws for other formats. */
+    const unit = (u: string) => {
+      const m = /^L(\d+)N(\d+)$/.exec(u);
+      if (!m) throw new Error(`bad unit id ${u}`);
+      return { layer: +m[1], neuron: +m[2] };
+    };
+    const text = (edits: Edit[]) => tok.decode(greedy(p0, edits, G));
+    const push = (r: { layer: number; neuron: number }) => sw.doseEdit(r, sw.window(r.layer));
+
+    let rOk = 0;
+    const units: { unit: string; greedy_example: string }[] = st.robustness.units;
+    for (const u of units) {
+      if (text([push(unit(u.unit))]) === u.greedy_example) rOk++;
+      else console.log(`  robustness ${u.unit}: greedy example differs`);
+    }
+    // the study batched each layer's units together, so near-tied argmaxes can flip: a rate, like the sweep sample
+    check(`robustness greedy examples replay (${units.length} neurons)`, rOk / units.length >= 0.85, `${rOk}/${units.length}`);
+
+    const fa = st.family_ablation;
+    const villain = unit(fa.villain);
+    const zero = (fa.family as string[]).map((u): Edit => ({ ...unit(u), mode: "set", value: 0, maxAct: 1 }));
+    check("family ablation: no-push example replays", text([]) === fa.conditions.no_push.example);
+    check("family ablation: villain push example replays", text([push(villain)]) === fa.conditions.push.example);
+    check("family ablation: villain push with the family zeroed replays",
+      text([push(villain), ...zero]) === fa.conditions.push_family_off.example);
+  } else {
+    console.log("skip studies replay (no studies.json)");
+  }
 } else {
   console.log("skip sweep replay (no sweep.json yet)");
 }
