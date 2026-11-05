@@ -47,9 +47,10 @@ def main():
     model_dir = out / "model"
     if model_dir.exists():
         shutil.rmtree(model_dir)
+    # --trial-index skips the interactive trial menu, so Heretic never asks for additional trials
+    # (it rejects --n-additional-trials 0: the value must be positive)
     cmd = [str(heretic), "--model", a.model, "--checkpoint-action", "restart", "--trial-index", str(a.trial_index),
-           "--n-additional-trials", "0", "--model-action", "save", "--save-directory", str(model_dir),
-           "--export-strategy", "MERGE"]
+           "--model-action", "save", "--save-directory", str(model_dir), "--export-strategy", "MERGE"]
     env = {**os.environ, "HERETIC_CONFIG_FILE": str(cfg), "TOKENIZERS_PARALLELISM": "false"}
     t0 = time.time()
     with open(out / "run.log", "w") as log:
