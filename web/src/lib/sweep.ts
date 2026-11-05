@@ -87,12 +87,18 @@ const str = (x: unknown, max = 2000) => (typeof x === "string" ? x.slice(0, max)
 const num = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? x : NaN);
 const KINDS = new Set(["concept", "style", "suppressor", "control", "reads-writes"]);
 
-function sanitizeHist(raw: unknown): Findings["score_hist"] {
+const MAX_DOTS = 2000; // the chart draws one dot per above-null neuron
+
+/** The score histogram, or undefined unless its counts add up to the headline totals. */
+function sanitizeHist(raw: unknown, headline: Findings["headline"]): Findings["score_hist"] {
   const h = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const counts = (x: unknown) => (Array.isArray(x) && x.length > 0 && x.length <= 200 && x.every((v) => Number.isInteger(v) && v >= 0) ? (x as number[]) : null);
   const a = counts(h.above_null), n = counts(h.neurons), c = counts(h.controls);
   const lo = num(h.lo), step = num(h.step);
   if (!a || !n || !c || a.length !== n.length || n.length !== c.length || !Number.isFinite(lo) || !(step > 0)) return undefined;
+  const sum = (x: number[]) => x.reduce((s, v) => s + v, 0);
+  const above = sum(a);
+  if (above !== headline.neurons_above_null || above > MAX_DOTS || above + sum(n) !== headline.neurons || sum(c) !== headline.controls) return undefined;
   return { lo, step, above_null: a, neurons: n, controls: c };
 }
 
@@ -111,17 +117,18 @@ export function sanitizeFindings(raw: unknown, m: { layers: number; neurons: num
   }));
   const h = (f.headline ?? {}) as Partial<Findings["headline"]>;
   const n0 = (x: unknown) => (typeof x === "number" && Number.isFinite(x) && x >= 0 ? x : 0);
+  const headline = {
+    neurons_above_null: n0(h.neurons_above_null), neurons: n0(h.neurons), controls_naive_theme: n0(h.controls_naive_theme),
+    controls: n0(h.controls), neurons_naive_theme: n0(h.neurons_naive_theme),
+  };
   return {
     generated: str(f.generated, 40),
-    headline: {
-      neurons_above_null: n0(h.neurons_above_null), neurons: n0(h.neurons), controls_naive_theme: n0(h.controls_naive_theme),
-      controls: n0(h.controls), neurons_naive_theme: n0(h.neurons_naive_theme),
-    },
+    headline,
     layers: Array.isArray(f.layers) && f.layers.length === m.layers ? f.layers : [],
     cards,
     reference: (Array.isArray(f.reference) ? f.reference : []).filter((r) => r && typeof r.id === "string" && /^https:\/\//.test(String(r.source))),
     notes: (Array.isArray(f.notes) ? f.notes : []).filter((n) => n && typeof n.title === "string" && typeof n.body === "string"),
-    score_hist: sanitizeHist(f.score_hist),
+    score_hist: sanitizeHist(f.score_hist, headline),
   };
 }
 

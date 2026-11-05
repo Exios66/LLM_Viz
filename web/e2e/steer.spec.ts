@@ -109,9 +109,8 @@ test.describe("findings", () => {
     for (let i = 0; i < n; i++) {
       await page.goto("./#/findings");
       const card = cards.nth(i);
-      const norm = (t: string | null) => (t ?? "").replace(/\s+/g, " ").trim();
-      // the card shows the prompt once above both runs; the studio repeats it inside each column
-      const expected = norm((await card.locator(".card-prompt").textContent())! + (await card.locator(".steered p").textContent()));
+      // the card shows the prompt once above both runs; the studio repeats it inside each column. Raw text, so a lost newline fails.
+      const expected = (await card.locator(".card-prompt").textContent())! + (await card.locator(".steered p").textContent())!;
       const pushedDown = (await card.locator(".steered h5").innerText()).includes("−");
       const unit = (await card.locator(".unit").innerText()).trim();
       await card.getByRole("button", { name: "Replay live" }).click();
@@ -120,7 +119,7 @@ test.describe("findings", () => {
       const cols = inspector(page).locator(".steer-col");
       await expect(cols).toHaveCount(4);
       await expect(inspector(page).getByRole("button", { name: "Generate" })).toBeEnabled({ timeout: 60_000 });
-      const got = norm(await cols.nth(pushedDown ? 0 : 2).locator("p").textContent());
+      const got = (await cols.nth(pushedDown ? 0 : 2).locator("p").textContent())!;
       expect(got, `${unit} replay`).toBe(expected);
     }
   });

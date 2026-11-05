@@ -10,7 +10,8 @@ type Hist = NonNullable<Findings["score_hist"]>;
 
 const pct = (x: number) => `${(x * 100).toFixed(x < 0.01 && x > 0 ? 2 : 1)}%`;
 
-function useWidth() {
+/** Width of the chart body, re-measured whenever it is mounted again (`key` changes when the table view closes). */
+function useWidth(key: unknown) {
   const ref = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(0);
   useLayoutEffect(() => {
@@ -20,14 +21,14 @@ function useWidth() {
     ro.observe(el);
     setW(Math.round(el.getBoundingClientRect().width));
     return () => ro.disconnect();
-  }, []);
+  }, [key]);
   return [ref, w] as const;
 }
 
 export function ScoreChart({ h, neurons, controls }: { h: Hist; neurons: number; controls: number }) {
-  const [ref, W] = useWidth();
-  const [hover, setHover] = useState<number | null>(null);
   const [table, setTable] = useState(false);
+  const [ref, W] = useWidth(table);
+  const [hover, setHover] = useState<number | null>(null);
   const B = h.controls.length;
   const narrow = W > 0 && W < 560;
   const padL = narrow ? 34 : 44, padR = 8;
@@ -87,9 +88,9 @@ export function ScoreChart({ h, neurons, controls }: { h: Hist; neurons: number;
               {h.controls.map((c, i) => (
                 <tr key={i}>
                   <td>{z(i).toFixed(2)}</td>
-                  <td>{h.neurons[i] + h.above_null[i]}</td>
+                  <td>{h.neurons[i] + h.above_null[i]} ({pct(nShare[i])})</td>
                   <td>{h.above_null[i] || ""}</td>
-                  <td>{c}</td>
+                  <td>{c} ({pct(cShare[i])})</td>
                 </tr>
               ))}
             </tbody>

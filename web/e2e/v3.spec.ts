@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, openAtlas, waitForModel, inspector } from "./fixtures";
 
@@ -25,8 +26,25 @@ test.describe("home", () => {
     await expect(chart.locator(".chart-tip")).toHaveCount(0);
     await chart.getByRole("button", { name: "Show table" }).click();
     await expect(chart.getByRole("table")).toContainText("Random directions");
+    // resizing while the table is open must not leave the chart at its old width
+    const vp = page.viewportSize()!;
+    await page.setViewportSize({ width: Math.round(vp.width * 0.7), height: vp.height });
     await chart.getByRole("button", { name: "Show chart" }).click();
     await expect(chart.getByRole("img")).toBeVisible();
+    await expect(async () => {
+      // the layout width, not the element box (CSS stretches the svg): the baseline ends 8 px before the right edge
+      const [end, bodyW] = await chart.locator(".chart-body").evaluate((b) => [Number(b.querySelector(".baseline")!.getAttribute("x2")) + 8, b.getBoundingClientRect().width]);
+      expect(Math.abs(end - bodyW)).toBeLessThan(2);
+    }).toPass();
+  });
+
+  test("a score histogram that does not add up to the headline is dropped, not drawn", async ({ page }) => {
+    const f = JSON.parse(readFileSync(new URL("../public/data/findings.json", import.meta.url), "utf8"));
+    f.score_hist.above_null[0] = 50_000_000; // one dot per neuron would hang the page
+    await page.route(/findings\.json(\?|$)/, (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify(f) }));
+    await page.goto("./");
+    await expect(page.getByRole("heading", { name: "Most neurons score like random pushes" })).toBeVisible();
+    await expect(page.locator(".score-chart")).toHaveCount(0);
   });
 
   test("does not download three.js or the model until the atlas opens", async ({ page }) => {
