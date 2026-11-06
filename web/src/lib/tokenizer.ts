@@ -47,7 +47,11 @@ export class Tokenizer {
     data.tokens.forEach((t, i) => this.ids.set(t, i));
     data.merges.forEach((m, i) => this.ranks.set(m, i));
     this.byteEnc.forEach((c, b) => this.byteDec.set(c, b));
-    this.display = data.tokens.map((_, i) => this.decode([i]));
+    // a token that is only part of a UTF-8 character decodes to U+FFFD; show its bytes instead, e.g. <E2 80>
+    this.display = data.tokens.map((_, i) => {
+      const d = this.decode([i]);
+      return d.includes("\uFFFD") ? `<${this.bytes(i).map((b) => b.toString(16).toUpperCase().padStart(2, "0")).join(" ")}>` : d;
+    });
   }
 
   get size() {
@@ -97,6 +101,15 @@ export class Tokenizer {
     const ids = parts.map((p) => this.ids.get(p));
     if (ids.every((i) => i !== undefined)) this.cache.set(word, ids as number[]);
     return parts;
+  }
+
+  private bytes(id: number): number[] {
+    const out: number[] = [];
+    for (const ch of this.tokens[id] ?? "") {
+      const b = this.byteDec.get(ch);
+      if (b !== undefined) out.push(b);
+    }
+    return out;
   }
 
   decode(ids: number[]): string {

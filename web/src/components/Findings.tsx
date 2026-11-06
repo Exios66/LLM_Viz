@@ -1,5 +1,5 @@
-// The findings log: headline numbers, per-layer charts, curated neuron cards (each
-// replayable live in the browser), the reference cards from neuron-explorer, and notes.
+// The findings: curated neurons as specimens (each replayable live in the browser), per-layer charts,
+// new observations, the reference units from neuron-explorer, and the data downloads.
 
 import { useEffect, useMemo } from "react";
 import type { Atlas } from "../lib/atlas";
@@ -51,12 +51,12 @@ export function FindingsPage({ atlas }: { atlas: Atlas }) {
   return (
     <div className="page-wrap">
       <header className="page-head">
-        <p className="eyebrow">Findings log</p>
         <h2 className="page-title">What pushing every neuron did</h2>
         <p className="lede">
           Every one of the {f.headline.neurons.toLocaleString()} MLP neurons in TinyStories-8M was pushed along its output direction, on three story prompts and
           from scratch, at the largest push its layer tolerates before the text falls apart. So were {f.headline.controls.toLocaleString()} random directions of
-          the same size. A neuron counts as a find only when what it writes beats what random pushes write.
+          the same size. A neuron counts as a find only when what it writes beats what random pushes write, and{" "}
+          {f.headline.neurons_above_null} of them beat every random push in their layer.
         </p>
       </header>
       {missing && (
@@ -64,8 +64,6 @@ export function FindingsPage({ atlas }: { atlas: Atlas }) {
           There is no finding called “{card}”. Here is the full log.
         </p>
       )}
-
-      <Headline f={f} />
 
       <section aria-labelledby="cards-h">
         <h3 id="cards-h" className="section-title">
@@ -75,7 +73,7 @@ export function FindingsPage({ atlas }: { atlas: Atlas }) {
           Each card shows the recorded continuation without and with the push. <strong>Replay</strong> opens the neuron and runs the same push live in your
           browser. With greedy decoding it reproduces the text below token for token.
         </p>
-        <div className="cards">
+        <div className="specimens">
           {f.cards.map((c) => (
             <Card key={c.id} c={c} atlas={atlas} active={c.id === card} />
           ))}
@@ -109,21 +107,18 @@ export function FindingsPage({ atlas }: { atlas: Atlas }) {
           These units were reported by neuron-explorer in Qwen3.5-4B, a model about 500 times larger. They are quoted from its research log and are not runnable
           here. A model trained only on children's stories has no word for an extraterrestrial intelligence. Its closest relatives are the concept pulls above.
         </p>
-        <div className="cards ref">
+        <div className="ref-list">
           {f.reference.map((r) => (
-            <article key={r.id} className="card ref-card">
-              <div className="card-top">
-                <span className="kind">Reported, not live</span>
-                <span className="unit">
-                  {r.model} · {r.unit}
-                </span>
-              </div>
+            <article key={r.id} className="ref-card">
               <h4>{r.title}</h4>
               <blockquote>{r.quote}</blockquote>
-              <p className="note">{r.context}</p>
-              <a href={r.source} target="_blank" rel="noreferrer noopener">
-                Source: neuron-explorer research log
-              </a>
+              <p className="ref-by">
+                {r.unit.replace(/\s*·\s*/, "·")} in {r.model}, reported in the{" "}
+                <a href={r.source} target="_blank" rel="noreferrer noopener">
+                  neuron-explorer research log
+                </a>
+                . {r.context}
+              </p>
             </article>
           ))}
         </div>
@@ -163,35 +158,6 @@ export function FindingsPage({ atlas }: { atlas: Atlas }) {
   );
 }
 
-function Headline({ f }: { f: Findings }) {
-  const h = f.headline;
-  return (
-    <dl className="tiles">
-      <div>
-        <dt>Neurons that beat every random direction in their layer</dt>
-        <dd>
-          {h.neurons_above_null.toLocaleString()}
-          <small> of {h.neurons.toLocaleString()}</small>
-        </dd>
-      </div>
-      <div>
-        <dt>Random directions that look themed when you only count words</dt>
-        <dd>
-          {pct(h.controls ? h.controls_naive_theme / h.controls : 0)}
-          <small> of {h.controls.toLocaleString()}</small>
-        </dd>
-      </div>
-      <div>
-        <dt>Neurons that look themed by the same naive count</dt>
-        <dd>
-          {pct(h.neurons ? h.neurons_naive_theme / h.neurons : 0)}
-          <small> of {h.neurons.toLocaleString()}</small>
-        </dd>
-      </div>
-    </dl>
-  );
-}
-
 function Card({ c, atlas, active }: { c: FindingCard; atlas: Atlas; active: boolean }) {
   const ready = useStore((s) => s.modelProgress >= 1);
   const replay = () => {
@@ -201,80 +167,78 @@ function Card({ c, atlas, active }: { c: FindingCard; atlas: Atlas; active: bool
   const label = atlas.label({ layer: c.layer, neuron: c.neuron });
   return (
     <article id={`card-${c.id}`} tabIndex={-1} className={`card k-${c.kind}${active ? " active" : ""}`} aria-labelledby={`card-${c.id}-h`}>
-      <div className="card-top">
-        <span className="kind">{KIND_LABEL[c.kind]}</span>
+      <div className="card-meta">
+        <p className="card-top">
+          <span className="kind">{KIND_LABEL[c.kind]}</span>{" "}
+          {c.kind === "control" ? (
+            <span className="unit">
+              random direction {c.neuron} in layer {c.layer}
+            </span>
+          ) : (
+            <a className="unit" href={`#/atlas/L${c.layer}/N${c.neuron}`}>
+              L{c.layer}·N{c.neuron}
+            </a>
+          )}
+        </p>
+        <h4 id={`card-${c.id}-h`}>{c.title}</h4>
+        <p className="card-sum">{c.summary}</p>
+        <dl className="card-stats">
+          <div>
+            <dt>{c.kind === "control" ? "Beats other random" : "Beats random"}</dt>
+            <dd>{Number.isFinite(c.pct) ? pct(c.pct) : "–"}</dd>
+          </div>
+          <div>
+            <dt>z</dt>
+            <dd>{Number.isFinite(c.z) ? c.z.toFixed(1) : "–"}</dd>
+          </div>
+          <div>
+            <dt>Rank</dt>
+            <dd>{c.rank > 0 ? c.rank.toLocaleString() : "–"}</dd>
+          </div>
+          {c.kind !== "control" && (
+            <div className="fires">
+              <dt>Fires on</dt>
+              <dd title={label}>{label}</dd>
+            </div>
+          )}
+        </dl>
         {c.kind === "control" ? (
-          <span className="unit">
-            L{c.layer} · random direction #{c.neuron}
-          </span>
+          <p className="note">
+            A random direction cannot be replayed by name. Every neuron's studio has a “Compare with a random direction” column that draws a fresh one.
+          </p>
         ) : (
-          <a className="unit" href={`#/atlas/L${c.layer}/N${c.neuron}`}>
-            L{c.layer}·N{c.neuron}
-          </a>
+          <div className="card-actions">
+            <button className="primary" onClick={replay} title={ready ? undefined : "Runs as soon as the model has loaded"}>
+              Replay live
+            </button>
+            <a href={`#/atlas/L${c.layer}/N${c.neuron}`}>Open neuron</a>
+          </div>
         )}
       </div>
-      <h4 id={`card-${c.id}-h`}>{c.title}</h4>
-      <p className="card-sum">{c.summary}</p>
-      <div className="card-runs">
+      <div className="card-runs darkfield">
+        <p className="card-prompt">{c.prompt}</p>
         <div>
           <h5>No push</h5>
-          <p>
-            <span className="prompt-echo">{c.prompt}</span>
-            {c.baseline}
-          </p>
+          <p>{c.baseline}</p>
         </div>
         <div className="steered">
           <h5>
             Push {c.dose > 0 ? "+" : "−"}
             {Math.abs(c.dose).toFixed(2)}× residual norm
           </h5>
-          <p>
-            <span className="prompt-echo">{c.prompt}</span>
-            {highlight(c.steered, c.themes)}
+          <p>{highlight(c.steered, c.themes)}</p>
+        </div>
+        {c.themes.length > 0 && (
+          <p className="themes">
+            <span className="themes-label">Words it over-produces</span>{" "}
+            {c.themes.map((t) => (
+              <span key={t} className="theme">
+                {t}
+              </span>
+            ))}
           </p>
-        </div>
-      </div>
-      <dl className="card-stats">
-        <div>
-          <dt>{c.kind === "control" ? "Beats other random" : "Beats random"}</dt>
-          <dd>{Number.isFinite(c.pct) ? pct(c.pct) : "–"}</dd>
-        </div>
-        <div>
-          <dt>z</dt>
-          <dd>{Number.isFinite(c.z) ? c.z.toFixed(1) : "–"}</dd>
-        </div>
-        <div>
-          <dt>Rank</dt>
-          <dd>{c.rank > 0 ? `#${c.rank.toLocaleString()}` : "–"}</dd>
-        </div>
-        {c.kind !== "control" && (
-          <div>
-            <dt>Fires on</dt>
-            <dd title={label}>{label}</dd>
-          </div>
         )}
-      </dl>
-      {c.themes.length > 0 && (
-        <p className="themes" aria-label="Theme words">
-          {c.themes.map((t) => (
-            <span key={t} className="theme">
-              {t}
-            </span>
-          ))}
-        </p>
-      )}
-      {c.kind === "control" ? (
-        <p className="note">
-          A random direction cannot be replayed by name. Every neuron's studio has a “Compare with a random direction” column that draws a fresh one.
-        </p>
-      ) : (
-        <div className="card-actions">
-          <button className="primary" onClick={replay} title={ready ? undefined : "Runs as soon as the model has loaded"}>
-            Replay live
-          </button>
-          <a href={`#/atlas/L${c.layer}/N${c.neuron}`}>Open neuron</a>
-        </div>
-      )}
+      </div>
     </article>
   );
 }

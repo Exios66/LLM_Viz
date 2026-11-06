@@ -90,7 +90,7 @@ function Uniqueness({ sweep, r }: { sweep: Sweep; r: NeuronRef }) {
     <div className={`uniq${beatsAll ? " strong" : ""}`}>
       <p>
         {beatsAll ? "Steers more distinctly than every random direction in its layer" : `Steers more distinctly than ${Math.round(st.pct * 100)}% of random directions in its layer`}
-        <span className="uniq-meta">z {st.z.toFixed(1)} · rank {rank.toLocaleString()} of {(sweep.meta.layers * sweep.meta.neurons).toLocaleString()}</span>
+        <span className="uniq-meta">z = {st.z.toFixed(1)}, ranked {rank.toLocaleString()} of {(sweep.meta.layers * sweep.meta.neurons).toLocaleString()}</span>
       </p>
       {st.themes.length > 0 && (
         <p className="themes">

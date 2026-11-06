@@ -259,7 +259,7 @@ export function PhasePlot({ nz, ncoh, cz, ccoh, focus, onPick }: { nz: Float32Ar
         onMouseMove={(ev) => {
           const [mx, my] = toLocal(ev);
           const i = nearest(mx, my);
-          setTip(i >= 0 ? { x: (n[i][0] / W) * 100, y: n[i][1] - 10, body: <><strong>N{i}</strong> z {nz[i].toFixed(1)} · coherence {ncoh[i].toFixed(2)}{onPick ? <><br />click to open</> : null}</> } : null);
+          setTip(i >= 0 ? { x: (n[i][0] / W) * 100, y: n[i][1] - 10, body: <><strong>N{i}</strong><br />z = {nz[i].toFixed(1)}, coherence {ncoh[i].toFixed(2)}{onPick ? <><br />Click to open</> : null}</> } : null);
         }}
         onMouseLeave={() => setTip(null)}
         onClick={(ev) => {
@@ -277,7 +277,7 @@ export function PhasePlot({ nz, ncoh, cz, ccoh, focus, onPick }: { nz: Float32Ar
         <line x1={x(cmax)} x2={x(cmax)} y1={padT} y2={H - padB} className="null-edge" />
         <text x={x(cmax) > W * 0.7 ? x(cmax) - 4 : x(cmax) + 4} y={padT + 12} className="axis" textAnchor={x(cmax) > W * 0.7 ? "end" : "start"}>strongest control</text>
         {[0, 0.5, 1].map((t) => <text key={t} x={padL - 6} y={y(t) + 4} className="axis" textAnchor="end">{t}</text>)}
-        <text x={(W + padL) / 2} y={H - 6} className="axis" textAnchor="middle">theme strength, z against controls →</text>
+        <text x={(W + padL) / 2} y={H - 6} className="axis" textAnchor="middle">theme strength (z against controls)</text>
         <text x={10} y={padT - 8} className="axis">coherence</text>
         {c.map(([px, py], i) => <circle key={`c${i}`} cx={px} cy={py} r={2.2} fill={CONTROL} opacity={0.8} />)}
         {n.map(([px, py], i) => <circle key={`n${i}`} cx={px} cy={py} r={2.2} fill={SERIES[0]} opacity={0.75} />)}

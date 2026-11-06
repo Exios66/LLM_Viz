@@ -30,6 +30,7 @@ from transformers import AutoTokenizer
 from binpack import write_pack
 from build import sheet_layout
 from findings_curated import CARDS, NOTES, REFERENCE
+from score_hist import score_hist
 from sweep import FREE, GEN, MODEL_ID, PROMPTS
 
 WORD = re.compile(r"[a-z]+")
@@ -338,6 +339,7 @@ def main():
             "neurons_naive_theme": int(naive_n.sum()),
         },
         "layers": layers, "cards": cards, "reference": REFERENCE, "notes": NOTES,
+        "score_hist": score_hist(z_n, above_null, z_c),
     }
     (data / "findings.json").write_text(json.dumps(findings, indent=1, ensure_ascii=False))
     log(f"findings.json: {len(cards)} cards")

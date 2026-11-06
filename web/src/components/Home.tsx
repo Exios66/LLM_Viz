@@ -1,10 +1,11 @@
 // Home: one recorded experiment as the hero (prompt, the villain neuron's push, and a random push of the same size),
-// then the numbers that explain why the random column matters, then where to go next.
+// then the score chart that explains why the random column matters, then where to go next.
 
 import { useEffect, useState } from "react";
 import { bootHeavy } from "../App";
 import { openModel, useStore } from "../store";
 import { highlight } from "./bits";
+import { ScoreChart } from "./ScoreChart";
 
 // theme words too common to be worth marking in the hero
 const GENERIC = new Set(["other", "back", "came", "went", "said"]);
@@ -113,27 +114,20 @@ export function HomePage() {
       </section>
 
       {f && (
-        <section className="facts" aria-label="The numbers behind the atlas">
-          <dl>
-            <div>
-              <dt>Neurons pushed</dt>
-              <dd>{f.headline.neurons.toLocaleString()}</dd>
-              <dd className="fact-note">Every MLP neuron in TinyStories-8M, at the largest push its layer tolerates before the text falls apart.</dd>
-            </div>
-            <div>
-              <dt>Random directions pushed</dt>
-              <dd>{f.headline.controls.toLocaleString()}</dd>
-              <dd className="fact-note">256 per layer, the same size as the neuron pushes. They set the bar a neuron has to clear.</dd>
-            </div>
-            <div>
-              <dt>Neurons that beat every random push</dt>
-              <dd>{f.headline.neurons_above_null}</dd>
-              <dd className="fact-note">
-                If you only ask whether the text has a theme, {Math.round((f.headline.neurons_naive_theme / f.headline.neurons) * 100)}% of neurons qualify, and so do{" "}
-                {Math.round((f.headline.controls_naive_theme / f.headline.controls) * 100)}% of random directions.
-              </dd>
-            </div>
-          </dl>
+        <section className="evidence" aria-labelledby="evidence-title">
+          <div className="evidence-copy">
+            <h2 id="evidence-title" className="section-title">Most neurons score like random pushes</h2>
+            <p>
+              Each of the {f.headline.neurons.toLocaleString()} neurons was pushed at the largest size its layer tolerates, and the theme of the text it wrote
+              was scored against 256 random directions pushed by the same amount in that layer. The two distributions have nearly the same shape.{" "}
+              {f.headline.neurons_above_null} neurons beat every random push in their layer.
+            </p>
+            <p>
+              Asking only whether the steered text has a theme would pass {Math.round((f.headline.neurons_naive_theme / f.headline.neurons) * 100)}% of the
+              neurons, and {Math.round((f.headline.controls_naive_theme / f.headline.controls) * 100)}% of the random directions.
+            </p>
+          </div>
+          {f.score_hist && <ScoreChart h={f.score_hist} neurons={f.headline.neurons} controls={f.headline.controls} />}
         </section>
       )}
 

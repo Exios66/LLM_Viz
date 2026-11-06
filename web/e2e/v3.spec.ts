@@ -1,21 +1,57 @@
+import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, openAtlas, waitForModel, inspector } from "./fixtures";
 
 test.describe("home", () => {
-  test("shows the recorded push, its control and the headline numbers", async ({ page }) => {
+  test("shows the recorded push, its control and the score chart", async ({ page }) => {
     await page.goto("./");
     await expect(page.getByRole("heading", { level: 1, name: /Push one neuron/ })).toBeVisible();
     await expect(page.locator(".run-push p").first()).toContainText(/mean/, { timeout: 20_000 });
     await expect(page.locator(".run-null")).toContainText("random direction");
-    await expect(page.locator(".facts dd:not(.fact-note)").nth(0)).toHaveText("8,192");
-    await expect(page.locator(".facts dd:not(.fact-note)").nth(2)).toHaveText(/^\d+$/);
+    const chart = page.locator(".score-chart");
+    await expect(chart.getByRole("img")).toHaveAccessibleName(/41 neurons beat every random push/);
+    await expect(chart.locator(".legend")).toContainText("All 8,192 neurons");
+    await expect(chart.locator(".dot-win")).toHaveCount(41);
+  });
+
+  test("the score chart explains a bin on hover and has a table view", async ({ page }) => {
+    await page.goto("./");
+    const chart = page.locator(".score-chart");
+    const dot = chart.locator(".dot-win").last();
+    await expect(dot).toBeVisible();
+    const box = (await dot.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(chart.locator(".chart-tip")).toContainText(/beat every random push/);
+    await page.mouse.move(0, 0);
+    await expect(chart.locator(".chart-tip")).toHaveCount(0);
+    await chart.getByRole("button", { name: "Show table" }).click();
+    await expect(chart.getByRole("table")).toContainText("Random directions");
+    // resizing while the table is open must not leave the chart at its old width
+    const vp = page.viewportSize()!;
+    await page.setViewportSize({ width: Math.round(vp.width * 0.7), height: vp.height });
+    await chart.getByRole("button", { name: "Show chart" }).click();
+    await expect(chart.getByRole("img")).toBeVisible();
+    await expect(async () => {
+      // the layout width, not the element box (CSS stretches the svg): the baseline ends 8 px before the right edge
+      const [end, bodyW] = await chart.locator(".chart-body").evaluate((b) => [Number(b.querySelector(".baseline")!.getAttribute("x2")) + 8, b.getBoundingClientRect().width]);
+      expect(Math.abs(end - bodyW)).toBeLessThan(2);
+    }).toPass();
+  });
+
+  test("a score histogram that does not add up to the headline is dropped, not drawn", async ({ page }) => {
+    const f = JSON.parse(readFileSync(new URL("../public/data/findings.json", import.meta.url), "utf8"));
+    f.score_hist.above_null[0] = 50_000_000; // one dot per neuron would hang the page
+    await page.route(/findings\.json(\?|$)/, (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify(f) }));
+    await page.goto("./");
+    await expect(page.getByRole("heading", { name: "Most neurons score like random pushes" })).toBeVisible();
+    await expect(page.locator(".score-chart")).toHaveCount(0);
   });
 
   test("does not download three.js or the model until the atlas opens", async ({ page }) => {
     const urls: string[] = [];
     page.on("request", (r) => urls.push(r.url()));
     await page.goto("./");
-    await expect(page.locator(".facts")).toBeVisible();
+    await expect(page.locator(".score-chart svg")).toBeVisible();
     expect(urls.some((u) => /assets\/three-/.test(u)), "three.js chunk on home").toBe(false);
     expect(urls.some((u) => /assets\/MapView-/.test(u)), "map chunk on home").toBe(false);
     await page.getByRole("link", { name: "Open the 3D atlas" }).click();
@@ -37,7 +73,7 @@ test.describe("home", () => {
       }
     });
     await page.goto("./");
-    await expect(page.locator(".facts")).toBeVisible();
+    await expect(page.locator(".score-chart svg")).toBeVisible();
     await page.waitForLoadState("networkidle");
     for (const heavy of ["model.bin", "atlas.bin", "corpus.bin", "sweep.bin", "tokenizer.json"]) expect(urls.some((u) => u.includes(heavy)), `${heavy} on home`).toBe(false);
     expect(bytes, "uncompressed bytes loaded by Home").toBeLessThan(640 * 1024);
@@ -199,7 +235,7 @@ for (const theme of ["dark", "light"] as const) {
       await expect(page.locator(".top")).toBeVisible();
       if (r.includes("findings")) await expect(page.locator(".card").first()).toBeVisible();
       if (r.includes("research")) await expect(page.locator(".report-list, .report-body").first()).toBeVisible();
-      if (r === "") await expect(page.locator(".facts")).toBeVisible();
+      if (r === "") await expect(page.locator(".score-chart svg")).toBeVisible();
       await page.waitForTimeout(600);
       const res = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).exclude(".map canvas").exclude(".layer-labels").analyze();
       const bad = res.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
