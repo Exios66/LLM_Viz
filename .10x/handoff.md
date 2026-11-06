@@ -1,6 +1,23 @@
 # Handoff
 
-## Current: senior engineer → security engineer (2026-11-04)
+## Current: QA → user (2026-11-06)
+
+- Follow-up 3 (`interaction-tests`) adds:
+  - `web/e2e/controls.spec.ts`: a sweep that presses every visible control on 13 screens and states, plus behaviour tests;
+  - touch tests in `mobile.spec.ts`;
+  - axe on open panels, dialogs and the recorded models in `v3.spec.ts`;
+  - `firefox` and `webkit` Playwright projects that run tests tagged `@xb`;
+  - `web/scripts/pw.sh`, which `test:e2e` and the release gate call: on display-less Linux it runs Firefox headed inside `xvfb-run`, because headless Firefox there has no WebGL.
+- Bugs the new tests found and fixed: mid-strength token chips failed 4.5:1 contrast in the dark theme (`tokenBg`/`tokenFg` in `lib/colors.ts`); the inspector body and the score-chart table scrolled but could not take keyboard focus; a tap on the score chart showed its tip and then lost it on `pointerleave`.
+- The release gate runs all projects. A machine that deploys needs `npx playwright install firefox webkit` once, and on Linux `npx playwright install-deps firefox webkit` and `apt-get install xvfb`.
+- Constraints unchanged:
+  - no GitHub Actions;
+  - ask the user before any merge or deploy;
+  - never skip tests;
+  - `research-private/` stays out of the repository;
+  - commits under the user's identity, with no assistant trailers or session links.
+
+## Previous: senior engineer → security engineer (2026-11-04)
 
 - Review: `.10x/reviews/2026-11-04-site-review.md`. The dependency fixes are on PR #4:
   - vite 8.3.5, plugin-react 6.2.1 and tsx 4.23.15: `npm audit` reports 0.
@@ -23,7 +40,7 @@
 - After the screen: `python -m qwen.confirm`, `build_model.py` Qwen pack, Heretic study (private export to `research-private/heretic/`), `reports.py`.
 - ADR-007 waits on user approval; ADR-008 records the map rebuild.
 
-## Current — planning → SDE (2026-11-03)
+## Previous — planning → SDE (2026-11-03)
 
 - Spec: `.10x/specs/2026-11-03-v3-research-lab-design.md`. ADRs 001–004.
 - Start M1 task 2 (Qwen discover) so CPU jobs start early; task 1 (scoring refactor) in parallel while it runs.

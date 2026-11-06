@@ -167,7 +167,12 @@ cd ../web && npm ci && npm run verify && npm run dev`}</code>
 
       <section>
         <h3>Limits of the browser tests</h3>
-        <p>The end-to-end tests run in Chromium only. Firefox and Safari are expected to work but are not tested.</p>
+        <p>
+          The end-to-end tests run in Chromium on a desktop and on an emulated phone with a touch screen. A core set (loading, search, deep links, edits, the
+          probe, steering, replay, the keyboard and the charts) also runs in Firefox and in WebKit, the engine behind Safari. The tests run without a graphics card, so
+          the 3D map is drawn by a software renderer there. Real graphics drivers, older browsers and screen readers are not tested; axe checks the markup
+          only.
+        </p>
       </section>
 
       <section>
@@ -181,7 +186,19 @@ cd ../web && npm ci && npm run verify && npm run dev`}</code>
           <a href="https://huggingface.co/roneneldan/TinyStories-8M" target="_blank" rel="noreferrer noopener">
             TinyStories-8M
           </a>{" "}
-          by Ronen Eldan and Yuanzhi Li. Its model card states no license.
+          by Ronen Eldan and Yuanzhi Li. Its model card states no license. The recorded models are{" "}
+          <a href="https://huggingface.co/Qwen/Qwen3.5-0.8B" target="_blank" rel="noreferrer noopener">
+            Qwen3.5-0.8B
+          </a>{" "}
+          and{" "}
+          <a href="https://huggingface.co/ModelOrganismsForEM/Qwen2.5-0.5B-Instruct_bad-medical-advice" target="_blank" rel="noreferrer noopener">
+            Qwen2.5-0.5B fine-tuned on bad medical advice
+          </a>
+          , from the emergent-misalignment model organisms. Refusal removal uses{" "}
+          <a href="https://github.com/p-e-w/heretic" target="_blank" rel="noreferrer noopener">
+            Heretic
+          </a>
+          .
         </p>
       </section>
     </div>
