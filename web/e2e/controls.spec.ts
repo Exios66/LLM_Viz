@@ -69,6 +69,8 @@ for (const s of STATES) {
     await page.goto(start);
     await settle(page, s.ready);
     const startUrl = page.url();
+    // every chart's table toggle is pressed open and then closed; a sweep that skips one fails here, not silently
+    const tableToggles = await page.locator("button:visible", { hasText: /^Show table$/ }).count();
     const done: string[] = [];
     const pressed: string[] = [];
     let exhausted = false;
@@ -93,6 +95,8 @@ for (const s of STATES) {
     test.info().annotations.push({ type: "pressed", description: `${pressed.length}: ${pressed.join(" | ")}` });
     expect(exhausted, "every control was reached within the press limit").toBe(true);
     expect(pressed.length, "controls pressed").toBeGreaterThan(2);
+    expect(pressed.filter((p) => p === "Show table").length, "chart tables opened").toBeGreaterThanOrEqual(tableToggles);
+    expect(pressed.filter((p) => p === "Show chart").length, "chart tables closed").toBeGreaterThanOrEqual(tableToggles);
   });
 }
 
