@@ -15,7 +15,7 @@
     "verify": "tsx scripts/verify.ts",
     "budget": "tsx scripts/budget.ts",
     "deploy": "bash scripts/deploy-pages.sh",
-    "test:e2e": "npm run build && npm run budget && playwright test",
+    "test:e2e": "npm run build && npm run budget && bash scripts/pw.sh",
     "test": "npm run verify && npm run test:e2e"
   },
   "dependencies": {

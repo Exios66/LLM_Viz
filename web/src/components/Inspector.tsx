@@ -67,7 +67,7 @@ export function Inspector({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
           { v: "ablate", label: "Ablate" },
         ]}
       />
-      <div className="insp-body">
+      <div className="insp-body" tabIndex={0} role="region" aria-label="Neuron details">
         {tab === "profile" && <Profile atlas={atlas} sweep={sweep} r={r} />}
         {tab === "contexts" && <Contexts atlas={atlas} r={r} />}
         {tab === "steer" && <Studio atlas={atlas} sweep={sweep} r={r} />}

@@ -268,6 +268,7 @@ input[type="range"] { accent-color: var(--excite); }
 .inspector > .seg { flex: none; margin: 10px 16px 0; }
 .inspector > .seg button { flex: 1; }
 .insp-body { overflow-y: auto; padding: 0 16px 20px; min-height: 0; }
+.insp-body:focus-visible, .chart-table:focus-visible { outline-offset: -2px; }
 .insp-body section { padding-top: 4px; }
 .hist { width: 100%; height: 48px; display: block; }
 .hist rect { fill: var(--cyan); }

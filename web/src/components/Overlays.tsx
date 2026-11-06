@@ -35,7 +35,7 @@ const KEYS: [string, string][] = [
   ["1 to 5", "Switch the neuron's tabs"],
   ["c", "Copy a link to this view"],
   ["t", "Switch theme"],
-  ["g h, g a, g f, g r", "Go to Overview, Atlas, Findings or Research"],
+  ["g h, g a, g f, g r, g m", "Go to Overview, Atlas, Findings, Research or Method"],
 ];
 
 function Dialog({ label, onClose, children }: { label: string; onClose: () => void; children: React.ReactNode }) {

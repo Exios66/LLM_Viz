@@ -3,14 +3,20 @@ Copyright 2026 Jack J Burleson // LJM
 
 This project includes or depends on third-party work:
 
-- TinyStories-8M (roneneldan/TinyStories-8M, Hugging Face). The weights are downloaded at
-  run time and are not redistributed in this repository.
+- TinyStories-8M (roneneldan/TinyStories-8M, Hugging Face; Eldan & Li, 2023). A copy of its
+  weights with the vocabulary pruned from 50k to 15k tokens is included as
+  web/public/data/model.bin, so the site can run the model in the browser. The model card states
+  no license; check it before any commercial use.
 - Qwen3.5-0.8B (Qwen team, Hugging Face). Recorded statistics and steering outputs derived from
   the model are published. The weights themselves are not redistributed.
+- Qwen2.5-0.5B-Instruct_bad-medical-advice (ModelOrganismsForEM, Hugging Face). Recorded
+  statistics and steering outputs on neutral prompts are published. The merged weights are not
+  redistributed.
 - The visual approach of the 3D map is inspired by lyramakesmusic/neuron-explorer
   (https://github.com/lyramakesmusic/neuron-explorer). No code is copied from it.
 - three.js (MIT), React (MIT), and the other npm packages listed in web/package.json, under
   their own licences.
 
-Model outputs produced with refusal-ablated (Heretic) weights are never published. They are
-written only to the git-ignored research-private/ directory.
+The refusal-ablated (Heretic) weights, and their answers to harmful prompts, are never published.
+They are written only to the git-ignored research-private/ directory. The site publishes only
+aggregate refusal rates and examples on harmless prompts (ADR-002).

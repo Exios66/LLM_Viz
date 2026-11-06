@@ -20,6 +20,11 @@ export default defineConfig({
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }, testIgnore: /(mobile|perf)\.spec\.ts$/ },
     { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /mobile\.spec\.ts$/ },
+    // Firefox and WebKit run the tests tagged @xb: loading, search, deep links, history, edits, the probe, steering,
+    // replay, the keyboard, Home's chart, the theme, shortcuts, Research, compare and ablation
+    // headless Firefox on Linux has no WebGL without a GPU; scripts/pw.sh runs it headed under Xvfb instead
+    { name: "firefox", use: { ...devices["Desktop Firefox"], viewport: { width: 1440, height: 900 }, headless: process.env.PW_FIREFOX_HEADED !== "1" }, grep: /@xb/, testIgnore: /(mobile|perf)\.spec\.ts$/ },
+    { name: "webkit", use: { ...devices["Desktop Safari"], viewport: { width: 1440, height: 900 } }, grep: /@xb/, testIgnore: /(mobile|perf)\.spec\.ts$/ },
     // timing budgets run last and alone: parallel workers sharing the CPU would make long tasks look longer
     {
       name: "perf",
