@@ -27,16 +27,19 @@ export const rampCss = (t: number) => {
   return `rgb(${Math.round(r * 255)} ${Math.round(g * 255)} ${Math.round(b * 255)})`;
 };
 
-/** Background for a token chip shaded by activation (relative, 0..1; negative → rose). */
+/** Background for a token chip shaded by activation (relative, 0..1; negative → rose).
+ *  Chips stay faint while they carry the page's own ink, then jump to a strong fill with
+ *  dark ink, so text keeps 4.5:1 contrast on both the dark and the light page. */
 export function tokenBg(rel: number): string {
   if (!Number.isFinite(rel) || rel > -0.06 && rel < 0.08) return "transparent";
   // GELU only dips to about -0.17, so negatives stay faint unless an edit drives them
-  if (rel < 0) return `rgb(255 122 138 / ${Math.min(0.8, -rel * 1.5)})`;
+  if (rel < 0) return `rgb(255 122 138 / ${rel <= -0.4 ? 0.9 : Math.min(0.4, -rel)})`;
   const [r, g, b] = ramp(0.35 + rel * 0.65);
-  return `rgb(${Math.round(r * 255)} ${Math.round(g * 255)} ${Math.round(b * 255)} / ${0.18 + rel * 0.72})`;
+  const a = rel >= 0.6 ? Math.min(0.92, 0.62 + (rel - 0.6) * 0.75) : 0.16 + rel * 0.4;
+  return `rgb(${Math.round(r * 255)} ${Math.round(g * 255)} ${Math.round(b * 255)} / ${a.toFixed(3)})`;
 }
 
-export const tokenFg = (rel: number) => (Number.isFinite(rel) && rel > 0.6 ? "#141833" : "inherit");
+export const tokenFg = (rel: number) => (Number.isFinite(rel) && (rel >= 0.6 || rel <= -0.4) ? "#141833" : "inherit");
 
 export const GOLD = "#ffe29a";
 export const ROSE = "#ff7a8a";

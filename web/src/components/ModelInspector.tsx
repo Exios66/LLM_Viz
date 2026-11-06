@@ -59,7 +59,7 @@ export function ModelInspector({ m, r }: { m: RecordedModel; r: NeuronRef }) {
         </dl>
       </header>
       <Seg<Tab> label="Neuron view" value={cur} onChange={(t) => setState({ tab: t })} options={tabs} />
-      <div className="insp-body">
+      <div className="insp-body" tabIndex={0} role="region" aria-label="Neuron details">
         {cur === "profile" && <Profile m={m} r={r} />}
         {cur === "contexts" && <Contexts m={m} r={r} />}
         {cur === "hunt" && (f ? <HuntRecord m={m} f={f} /> : <NotAFinalist m={m} r={r} />)}

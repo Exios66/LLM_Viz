@@ -78,7 +78,7 @@ export function ScoreChart({ h, neurons, controls }: { h: Hist; neurons: number;
         </button>
       </figcaption>
       {table ? (
-        <div className="chart-table">
+        <div className="chart-table" tabIndex={0} role="region" aria-label="Score histogram as a table">
           <table>
             <caption className="sr-only">Neurons and random directions by theme score</caption>
             <thead>
@@ -97,7 +97,7 @@ export function ScoreChart({ h, neurons, controls }: { h: Hist; neurons: number;
           </table>
         </div>
       ) : (
-        <div className="chart-body" ref={ref} style={{ height: W ? H : 280 }} onPointerLeave={() => setHover(null)}>
+        <div className="chart-body" ref={ref} style={{ height: W ? H : 280 }} onPointerLeave={(e) => { if (e.pointerType === "mouse") setHover(null); }}>
           {W > 0 && (
             <svg width={W} height={H} role="img" aria-label={`Histogram: neurons and random directions have nearly the same score distribution. ${h.above_null.reduce((a, b) => a + b, 0)} neurons beat every random push in their layer.`}>
               {grid.map((g) => (
