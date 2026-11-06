@@ -4,7 +4,7 @@ import { mulberry32, type Edit } from "../lib/model";
 import type { Sweep } from "../lib/sweep";
 import type { Tab } from "../lib/route";
 import { editKey, focusNeuron, getState, removeEdit, setState, upsertEdit, useStore } from "../store";
-import { Histogram, NeuronButton, Seg, Tok, showToken } from "./bits";
+import { Histogram, NeuronButton, Seg, Tok, showToken, useBringIntoView } from "./bits";
 import { PhasePlot } from "./charts";
 import { AblatePanel } from "./Ablate";
 import { CompareBox } from "./Compare";
@@ -19,10 +19,7 @@ export function Inspector({ atlas, r }: { atlas: Atlas; r: NeuronRef }) {
   const key = nid(r);
   const g = atlas.g(r);
   const ref = useRef<HTMLElement>(null);
-  // on narrow screens the inspector sits below the map: bring it into view when a neuron opens
-  useEffect(() => {
-    if (window.matchMedia?.("(max-width: 1100px)").matches) ref.current?.scrollIntoView({ block: "start" });
-  }, []);
+  useBringIntoView(ref);
 
   return (
     <aside ref={ref} className="inspector" aria-label={`Neuron ${key}`}>
@@ -110,9 +107,9 @@ function Uniqueness({ sweep, r }: { sweep: Sweep; r: NeuronRef }) {
 type Mode = Edit["mode"] | "ablate";
 
 const MODES: { v: Mode; label: string; title: string }[] = [
-  { v: "ablate", label: "Ablate", title: "Hold the neuron at zero" },
+  { v: "ablate", label: "Zero", title: "Hold the neuron at zero" },
   { v: "scale", label: "Scale", title: "Multiply its activation" },
-  { v: "add", label: "Steer", title: "Push the residual stream along its output direction" },
+  { v: "add", label: "Push", title: "Push the residual stream along its output direction" },
   { v: "set", label: "Clamp", title: "Hold it at a multiple of its max activation" },
 ];
 
@@ -133,9 +130,11 @@ function EditControls({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; 
   const win = sweep ? sweep.window(r.layer) : 1;
   const [mode, setMode] = useState<Mode>("add");
   const [value, setValue] = useState(win);
+  const [open, setOpen] = useState(!!existing);
   useSweepArrival(sweep, () => !existing && setValue(win));
   useEffect(() => {
     if (!existing) return;
+    setOpen(true);
     const isAblate = existing.mode === "set" && existing.value === 0;
     setMode(isAblate ? "ablate" : existing.mode);
     if (!isAblate) setValue(existing.value);
@@ -152,7 +151,9 @@ function EditControls({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; 
   };
 
   return (
-    <div className="edit-box">
+    <details className="edit-box" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary>{existing ? "Edited in the live model" : "Edit the live model"}</summary>
+      <p className="note">An edit stays on until you remove it. The probe, the map and every generation run with it.</p>
       <Seg
         label="Edit type"
         value={mode}
@@ -176,7 +177,7 @@ function EditControls({ atlas, sweep, r }: { atlas: Atlas; sweep: Sweep | null; 
         </button>
         {existing && <button onClick={() => removeEdit(r)}>Remove edit</button>}
       </div>
-    </div>
+    </details>
   );
 }
 

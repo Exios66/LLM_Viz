@@ -230,7 +230,8 @@ function Card({ c, atlas, active }: { c: FindingCard; atlas: Atlas; active: bool
         </div>
         {c.themes.length > 0 && (
           <p className="themes">
-            <span className="themes-label">Words it over-produces</span>{" "}
+            {/* the sweep's themes pool every dose, mostly upward pushes, so a downward card names them as such */}
+            <span className="themes-label">{c.dose < 0 ? "Words it over-produces when pushed up" : "Words it over-produces"}</span>{" "}
             {c.themes.map((t) => (
               <span key={t} className="theme">
                 {t}

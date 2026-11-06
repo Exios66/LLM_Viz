@@ -23,6 +23,7 @@ const Y0 = 0.42; // sheet bottom, above the residual wire at y = 0
 const ATTN_DX = -0.34; // attention slab, just upstream of its layer's sheet
 const MLP_DX = 0.08;
 const LABEL_Y = Y0 + SHEET + 0.1;
+const FIT = 0.94; // share of the view the model's box may fill at the home position
 
 // the map always sits on the dark field (ADR-006), so its palette is fixed rather than themed
 const C = {
@@ -51,7 +52,7 @@ const vert = /* glsl */ `
   attribute vec3 color;
   attribute float size;
   attribute float alpha;
-  uniform float uScale, uFocusX, uFadeW, uFadeAmt, uCamSide, uNear;
+  uniform float uScale, uFocusX, uFadeW, uFadeAmt, uCamSide, uNear, uFloor;
   varying vec3 vColor;
   varying float vAlpha;
   void main() {
@@ -64,7 +65,9 @@ const vert = /* glsl */ `
     float keep = mix(1.0, exp(-d * d), uFadeAmt * 0.75) * mix(1.0, 1.0 - 0.6 * uFadeAmt, front);
     vColor = color * uNear;
     vAlpha = alpha * keep;
-    gl_PointSize = size * uScale / -mv.z;
+    // fully lit points (the focus, edits, hunt finalists, the top outliers) keep a minimum on-screen size, so they
+    // still read when a deep model is framed from far away
+    gl_PointSize = max(size * uScale / -mv.z, alpha > 0.99 ? uFloor : 0.0);
   }
 `;
 const frag = /* glsl */ `
@@ -110,9 +113,10 @@ export function MapView({ space, recorded = null }: { space: Space; recorded?: R
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(32, 1, 0.02, 400);
     const X0 = layerX(0, L) + ATTN_DX - 0.7, X1 = layerX(L - 1, L) + MLP_DX + 0.6;
-    const home = { target: new THREE.Vector3(0, Y0 + SHEET / 2 - 0.15, 0), dir: new THREE.Vector3(0.62, 0.4, 1).normalize(), dist: 10 };
+    const home = { target: new THREE.Vector3(0, Y0 + SHEET / 2 - 0.15, 0), // deeper models face the viewer more squarely, so the stack runs across the frame instead of into it
+    dir: new THREE.Vector3(0.62 * Math.sqrt(Math.min(1, 8 / L)), 0.4, 1).normalize(), dist: 10 };
     const bounds: THREE.Vector3[] = [];
-    for (const x of [X0, X1]) for (const y of [-0.3, Y0 + SHEET]) for (const z of [-SHEET / 2, SHEET / 2]) bounds.push(new THREE.Vector3(x, y, z));
+    for (const x of [X0, X1]) for (const y of [-0.3, LABEL_Y + 0.2]) for (const z of [-SHEET / 2, SHEET / 2]) bounds.push(new THREE.Vector3(x, y, z));
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = !reduceMotion;
     controls.dampingFactor = 0.09;
@@ -144,7 +148,7 @@ export function MapView({ space, recorded = null }: { space: Space; recorded?: R
     geo.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
     geo.setAttribute("alpha", new THREE.BufferAttribute(alphas, 1));
     const uniforms = {
-      uScale: { value: 1 }, uFocusX: { value: 0 }, uFadeW: { value: 1 }, uFadeAmt: { value: 0 }, uCamSide: { value: 1 }, uNear: { value: 1 },
+      uScale: { value: 1 }, uFocusX: { value: 0 }, uFadeW: { value: 1 }, uFadeAmt: { value: 0 }, uCamSide: { value: 1 }, uNear: { value: 1 }, uFloor: { value: 6 },
     };
     const mat = new THREE.ShaderMaterial({ vertexShader: vert, fragmentShader: frag, uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
     const points = new THREE.Points(geo, mat);
@@ -558,10 +562,17 @@ export function MapView({ space, recorded = null }: { space: Space; recorded?: R
       renderer.setSize(w, hh, false);
       webMat.resolution.set(w, hh);
       camera.aspect = w / hh;
-      // the distance at which the model's bounding sphere fits the view; frame it until the viewer moves the camera
-      const r = Math.max(...bounds.map((b) => b.distanceTo(home.target)));
-      const vHalf = THREE.MathUtils.degToRad(camera.fov / 2), hHalf = Math.atan(Math.tan(vHalf) * camera.aspect);
-      home.dist = (r / Math.sin(Math.min(vHalf, hHalf))) * 0.64;
+      // the nearest distance at which every corner of the model's box lands inside the view along the home direction,
+      // so an 8-layer model and a 24-layer one both fill the frame; frame it until the viewer moves the camera
+      const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * FIT, th = tv * camera.aspect;
+      const right = new THREE.Vector3().crossVectors(home.dir, camera.up).negate().normalize();
+      const up = new THREE.Vector3().crossVectors(right, home.dir).negate().normalize();
+      home.dist = Math.max(
+        ...bounds.map((b) => {
+          const v = b.clone().sub(home.target);
+          return v.dot(home.dir) + Math.max(Math.abs(v.dot(right)) / th, Math.abs(v.dot(up)) / tv);
+        }),
+      );
       controls.minDistance = 0.4;
       controls.maxDistance = home.dist * 3;
       if (!touched && !fly) {
@@ -570,6 +581,7 @@ export function MapView({ space, recorded = null }: { space: Space; recorded?: R
       }
       camera.updateProjectionMatrix();
       uniforms.uScale.value = hh * renderer.getPixelRatio() * 0.012;
+      uniforms.uFloor.value = 6 * renderer.getPixelRatio();
       needs = true;
     };
     const ro = new ResizeObserver(resize);

@@ -1,9 +1,9 @@
 // Small shared pieces: token chips, neuron links, sparkline.
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { tokenBg, tokenFg } from "../lib/colors";
 import { nid, type Atlas, type NeuronRef } from "../lib/atlas";
-import { focusNeuron, getState, setState, useStore } from "../store";
+import { focusNeuron, getState, setState, useStore, type ColorMode } from "../store";
 
 /** Show whitespace so tokens like " the" and "\n" are legible. */
 export function showToken(s: string) {
@@ -85,3 +85,46 @@ export function highlight(text: string, themes: string[]) {
   const set = new Set(themes.map((t) => t.toLowerCase()));
   return text.split(/(\b[a-zA-Z]+\b)/).map((part, i) => (set.has(part.toLowerCase()) ? <mark key={i}>{part}</mark> : <span key={i}>{part}</span>));
 }
+
+/** A sidebar list that follows the map's colour mode: `pick` maps a mode to a list, or null to keep the last one. */
+export function useListFromColour<T>(pick: (m: ColorMode) => T | null, fallback: T): T {
+  const mode = useStore((s) => s.colorMode);
+  const last = useRef(fallback);
+  const v = pick(mode);
+  if (v !== null) last.current = v;
+  return last.current;
+}
+
+/**
+ * On narrow screens the inspector sits below the map and the probe: bring it into view when a neuron opens, and keep it
+ * there while content above it is still growing (the probe and the edit list fill in as the model and sweep load),
+ * until the reader scrolls, taps or types themselves.
+ */
+export function useBringIntoView(ref: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !window.matchMedia?.("(max-width: 1100px)").matches) return;
+    const at = () => el.getBoundingClientRect().top + window.scrollY;
+    let top = at();
+    el.scrollIntoView({ block: "start" });
+    const ro = new ResizeObserver(() => {
+      const t = at();
+      if (Math.abs(t - top) < 1) return;
+      top = t;
+      el.scrollIntoView({ block: "start" });
+    });
+    // body is pinned to the viewport height, so watch the page grid and everything laid out before the inspector
+    const grid = el.parentElement;
+    if (grid) for (const c of [grid, ...grid.children]) if (c !== el) ro.observe(c);
+    const stop = () => {
+      ro.disconnect();
+      clearTimeout(timer);
+      for (const ev of USER_INPUT) window.removeEventListener(ev, stop, true);
+    };
+    const timer = setTimeout(stop, 8000);
+    for (const ev of USER_INPUT) window.addEventListener(ev, stop, { capture: true, passive: true });
+    return stop;
+  }, [ref]);
+}
+
+const USER_INPUT = ["wheel", "touchstart", "pointerdown", "keydown"] as const;

@@ -7,7 +7,7 @@ import type { Context, Finalist, RecordedModel } from "../lib/recorded";
 import type { Tab } from "../lib/route";
 import { openModel, setState, useStore } from "../store";
 import { DATA } from "../App";
-import { Seg, Tok, highlight, showToken } from "./bits";
+import { Seg, Tok, highlight, showToken, useBringIntoView } from "./bits";
 
 // what a finalist was screened for, not what it was shown to do: the steering record shows the result
 const CONCEPT_LABEL: Record<string, string> = { evil: "Screened for evil", alien: "Screened for alien", other: "Strong theme" };
@@ -17,9 +17,7 @@ export function ModelInspector({ m, r }: { m: RecordedModel; r: NeuronRef }) {
   const ref = useRef<HTMLElement>(null);
   const f = m.finalist(r);
   const g = m.g(r);
-  useEffect(() => {
-    if (window.matchMedia?.("(max-width: 1100px)").matches) ref.current?.scrollIntoView({ block: "start" });
-  }, []);
+  useBringIntoView(ref);
   const tabs: { v: Tab; label: string }[] = [
     { v: "profile", label: "Profile" },
     { v: "contexts", label: "Contexts" },

@@ -4,7 +4,7 @@ import { Seg } from "./bits";
 import { copyLink } from "./Overlays";
 
 function describe(e: { mode: string; value: number; unit?: string }) {
-  if (e.mode === "set" && e.value === 0) return "ablated";
+  if (e.mode === "set" && e.value === 0) return "zeroed";
   if (e.mode === "set") return `clamped ${e.value}×`;
   if (e.mode === "scale") return `×${e.value}`;
   const v = `${e.value > 0 ? "+" : ""}${+e.value.toFixed(2)}`;
@@ -189,7 +189,7 @@ export function Header() {
       {live && (
         <div className="edits" aria-label="Active edits">
           {edits.length === 0 ? (
-            <span className="note">No edits yet. Open a neuron to ablate, scale or steer it.</span>
+            <span className="note">No edits yet. Open a neuron to zero, scale, push or clamp it.</span>
           ) : (
             <>
               {edits.map((e) => (

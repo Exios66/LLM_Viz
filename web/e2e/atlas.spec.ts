@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { test, expect, openAtlas, waitForModel, waitForSweep, inspector } from "./fixtures";
 
 test.describe("loading and navigation", () => {
@@ -165,17 +166,28 @@ test.describe("map", () => {
   });
 });
 
+/** The live-model edit controls sit in a closed disclosure until a neuron has an edit. */
+async function chooseEdit(page: Page, mode: "Zero" | "Scale" | "Push" | "Clamp") {
+  const box = page.locator("details.edit-box");
+  await expect(box).not.toHaveAttribute("open");
+  await box.locator("summary").click();
+  await box.getByRole("radiogroup", { name: "Edit type" }).getByRole("radio", { name: mode, exact: true }).click();
+}
+
 test.describe("edits", () => {
   test("ablate, persist across reload, toggle and remove", async ({ page }) => {
     await openAtlas(page, "#/atlas/L4/N10");
-    await page.getByRole("radiogroup", { name: "Edit type" }).getByRole("radio", { name: "Ablate" }).click();
+    await chooseEdit(page, "Zero");
     await page.getByRole("button", { name: "Apply edit" }).click();
     const chip = page.locator(".edit-chip");
     await expect(chip).toHaveCount(1);
     await expect(chip).toContainText("L4·N10");
-    await expect(chip).toContainText("ablated");
+    await expect(chip).toContainText("zeroed");
     await page.reload();
     await expect(page.locator(".edit-chip")).toHaveCount(1);
+    // after a reload the neuron already has an edit, so its section opens by itself and says so
+    await expect(page.locator("details.edit-box")).toHaveAttribute("open", "");
+    await expect(page.locator(".edit-box summary")).toHaveText("Edited in the live model");
     await page.getByLabel("Enable edit on L4 N10").uncheck();
     await expect(page.locator(".edit-chip")).toHaveClass(/off/);
     await page.reload();
@@ -189,11 +201,11 @@ test.describe("edits", () => {
   test("a steer edit in residual units and Clear all", async ({ page }) => {
     await openAtlas(page, "#/atlas/L5/N551");
     await waitForSweep(page);
-    await page.getByRole("radiogroup", { name: "Edit type" }).getByRole("radio", { name: "Steer", exact: true }).click();
+    await chooseEdit(page, "Push");
     await page.getByRole("button", { name: "Apply edit" }).click();
     await expect(page.locator(".edit-chip")).toContainText("× resid");
     await page.goto("./#/atlas/L1/N1");
-    await page.getByRole("radio", { name: "Scale" }).click();
+    await chooseEdit(page, "Scale");
     await page.getByRole("button", { name: "Apply edit" }).click();
     await expect(page.locator(".edit-chip")).toHaveCount(2);
     await page.getByRole("button", { name: "Clear all" }).click();
@@ -239,7 +251,7 @@ test.describe("edits", () => {
       });
     });
     await openAtlas(page, "#/atlas/L0/N5");
-    await page.getByRole("radiogroup", { name: "Edit type" }).getByRole("radio", { name: "Ablate" }).click();
+    await chooseEdit(page, "Zero");
     await page.getByRole("button", { name: "Apply edit" }).click();
     await expect(page.locator(".edit-chip")).toHaveCount(1);
   });
@@ -275,8 +287,37 @@ test.describe("probe", () => {
     await waitForModel(page);
     await page.locator("#probe-text").fill("Once upon a time, there was a");
     await expect(page.locator(".probe-status")).toContainText("tokens");
-    await page.getByRole("radiogroup", { name: "Edit type" }).getByRole("radio", { name: "Steer", exact: true }).click();
+    await chooseEdit(page, "Push");
     await page.getByRole("button", { name: "Apply edit" }).click();
     await expect(page.locator(".probe")).toContainText(/KL|edited|with your edits/i);
+  });
+});
+
+test.describe("one control for colour and list", () => {
+  test("the TinyStories list re-ranks with the map colours and keeps its order for other colour modes", async ({ page }) => {
+    await openAtlas(page, "#/atlas");
+    await waitForSweep(page);
+    const colour = page.getByRole("radiogroup", { name: "Colour neurons by" });
+    const caption = page.locator(".sidebar .list-caption");
+    await expect(caption).toContainText("least like a random push");
+    await colour.getByRole("radio", { name: "Selectivity", exact: true }).click();
+    await expect(caption).toHaveText("Most selective neurons first");
+    await colour.getByRole("radio", { name: "Firing rate", exact: true }).click();
+    await expect(caption).toHaveText("Most selective neurons first");
+    await colour.getByRole("radio", { name: "Uniqueness", exact: true }).click();
+    await expect(caption).toContainText("least like a random push");
+    await expect(page.getByRole("radiogroup", { name: "Rank neurons by" })).toHaveCount(0);
+  });
+
+  test("a recorded model's list follows the map colours", async ({ page }) => {
+    await page.goto("./#/m/qwen3.5-0.8b");
+    const colour = page.getByRole("radiogroup", { name: "Colour neurons by" });
+    const caption = page.locator(".sidebar .list-caption").last();
+    await expect(caption).toContainText("confirmed at full precision");
+    await colour.getByRole("radio", { name: "Evil contrast", exact: true }).click();
+    await expect(caption).toContainText("fire more on evil sentences");
+    await colour.getByRole("radio", { name: "Selectivity", exact: true }).click();
+    await expect(caption).toContainText("fire more on evil sentences");
+    await expect(page.getByRole("radiogroup", { name: "List" })).toHaveCount(0);
   });
 });

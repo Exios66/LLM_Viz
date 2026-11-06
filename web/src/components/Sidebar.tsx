@@ -8,14 +8,14 @@ function themeLabel(sweep: Sweep, r: NeuronRef, atlas: Atlas) {
   const t = sweep.stats(r).themes;
   return t.length ? `writes ${t.slice(0, 3).join(", ")}` : atlas.label(r);
 }
-import { NeuronButton, Seg } from "./bits";
+import { NeuronButton, Seg, useListFromColour } from "./bits";
 
 export function Sidebar({ atlas }: { atlas: Atlas }) {
   const [q, setQ] = useState("");
   const [by, setBy] = useState<"fires" | "lens">("fires");
   const [layer, setLayer] = useState<number | "all">("all");
   const sweep = useStore((s) => s.sweep);
-  const [rank, setRank] = useState<"unique" | "selective">("unique");
+  const rank = useListFromColour<"unique" | "selective">((m) => (m === "uniqueness" ? "unique" : m === "selectivity" ? "selective" : null), "unique");
   const byUnique = !!sweep && rank === "unique";
 
   const rows = useMemo(() => {
@@ -64,19 +64,6 @@ export function Sidebar({ atlas }: { atlas: Atlas }) {
             ? "Neurons whose steering is least like a random push, first. z against 256 random directions in the same layer."
             : "Most selective neurons first"}
       </p>
-      {sweep && !q.trim() && (
-        <div className="rank-by">
-          <Seg
-            label="Rank neurons by"
-            value={rank}
-            onChange={setRank}
-            options={[
-              { v: "unique", label: "Steering", title: "How distinctive the text becomes when the neuron is pushed" },
-              { v: "selective", label: "Selectivity", title: "How concentrated its top contexts are on one token" },
-            ]}
-          />
-        </div>
-      )}
       <ol className="rows">
         {rows.map((r) => (
           <li key={`${r.layer}:${r.neuron}`}>

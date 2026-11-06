@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { test, expect, waitForModel, waitForSweep } from "./fixtures";
 
 const ROUTES = ["#/atlas", "#/atlas/L5/N551", "#/atlas/L5/N551?tab=steer", "#/findings", "#/method",
   // recorded models carry up to seven colour modes in the header
@@ -37,3 +37,18 @@ test("mobile: opening a neuron from a finding brings it into view", async ({ pag
   await expect(page.locator("aside.inspector")).toBeVisible();
   await expect(page.locator("aside.inspector h2")).toBeInViewport();
 });
+
+for (const r of ["#/atlas/L5/N551", "#/atlas/L5/N551?tab=steer", "#/m/qwen3.5-0.8b/L15/N3258"]) {
+  test(`mobile: a deep link to ${r} keeps the inspector at the top of the screen while the page loads`, async ({ page }) => {
+    await page.goto(`./${r}`);
+    await expect(page.locator("aside.inspector")).toBeVisible();
+    if (r.startsWith("#/atlas")) {
+      await waitForModel(page);
+      await waitForSweep(page);
+    }
+    // the probe above it fills in as the model loads and must not push the inspector down the screen
+    await page.waitForTimeout(1500);
+    const top = await page.locator("aside.inspector").evaluate((el) => el.getBoundingClientRect().top);
+    expect(Math.abs(top)).toBeLessThan(40);
+  });
+}
