@@ -1,7 +1,7 @@
 import { test, expect, openAtlas, waitForModel, waitForSweep, inspector } from "./fixtures";
 
 test.describe("steering studio", () => {
-  test("generates four columns, then stops on request", async ({ page }) => {
+  test("generates four columns, then stops on request", { tag: "@xb" }, async ({ page }) => {
     await openAtlas(page, "#/atlas/L5/N551?tab=steer");
     await waitForSweep(page);
     await waitForModel(page);
@@ -61,7 +61,7 @@ test.describe("steering studio", () => {
 });
 
 test.describe("findings", () => {
-  test("specimens, charts, notes and references render", async ({ page }) => {
+  test("specimens, charts, notes and references render", { tag: "@xb" }, async ({ page }) => {
     await page.goto("./#/findings");
     await expect(page.getByRole("heading", { name: "What pushing every neuron did" })).toBeVisible();
     await expect(page.locator(".lede")).toContainText("41 of them beat every random push");
@@ -100,7 +100,7 @@ test.describe("findings", () => {
     await expect(page.locator(".notice.inline")).toContainText("not-a-card");
   });
 
-  test("Replay reproduces each recorded continuation token for token", async ({ page }) => {
+  test("Replay reproduces each recorded continuation token for token", { tag: "@xb" }, async ({ page }) => {
     test.setTimeout(240_000);
     await page.goto("./#/findings");
     await waitForModel(page);
@@ -179,7 +179,7 @@ test.describe("failures", () => {
 });
 
 test.describe("keyboard", () => {
-  test("skip link, list, inspector and tabs work from the keyboard", async ({ page }) => {
+  test("skip link, list, inspector and tabs work from the keyboard", { tag: "@xb" }, async ({ page }) => {
     await openAtlas(page);
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();

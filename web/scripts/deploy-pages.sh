@@ -26,7 +26,7 @@ export PW_FRESH_SERVER=1  # never test a server some other checkout left on the 
 npm test
 for i in $(seq 2 "$RUNS"); do
   echo "Release gate: Playwright run $i of $RUNS"
-  npx playwright test
+  bash scripts/pw.sh
 done
 echo "Release gate passed: $RUNS green runs in a row."
 

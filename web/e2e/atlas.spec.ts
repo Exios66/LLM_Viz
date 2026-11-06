@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { test, expect, openAtlas, waitForModel, waitForSweep, inspector } from "./fixtures";
 
 test.describe("loading and navigation", () => {
-  test("loads the atlas, model and sweep without errors", async ({ page }) => {
+  test("loads the atlas, model and sweep without errors", { tag: "@xb" }, async ({ page }) => {
     await openAtlas(page);
     await expect(page.getByRole("heading", { name: "Neuron Atlas" })).toBeVisible();
     await expect(page.locator(".map canvas")).toBeVisible();
@@ -13,7 +13,7 @@ test.describe("loading and navigation", () => {
     expect(await page.locator(".rows li").count()).toBeGreaterThan(50);
   });
 
-  test("search finds neurons and opening one updates the URL", async ({ page }) => {
+  test("search finds neurons and opening one updates the URL", { tag: "@xb" }, async ({ page }) => {
     await openAtlas(page);
     await page.getByLabel("Search neurons by word").fill("dog");
     await expect(page.locator(".list-caption")).toContainText("“dog”");
@@ -32,7 +32,7 @@ test.describe("loading and navigation", () => {
     await expect(page.locator(".rows li")).toHaveCount(0);
   });
 
-  test("deep link opens a neuron on the requested tab", async ({ page }) => {
+  test("deep link opens a neuron on the requested tab", { tag: "@xb" }, async ({ page }) => {
     await openAtlas(page, "#/atlas/L5/N551?tab=contexts");
     await expect(inspector(page).getByRole("heading", { name: "Layer 5, neuron 551" })).toBeVisible();
     await expect(page.getByRole("radio", { name: "Contexts" })).toHaveAttribute("aria-checked", "true");
@@ -58,7 +58,7 @@ test.describe("loading and navigation", () => {
     await expect(page.getByRole("radio", { name: "Profile" })).toHaveAttribute("aria-checked", "true");
   });
 
-  test("back and forward move between neurons and pages", async ({ page }) => {
+  test("back and forward move between neurons and pages", { tag: "@xb" }, async ({ page }) => {
     await openAtlas(page, "#/atlas/L0/N1");
     await expect(inspector(page).getByRole("heading", { name: "Layer 0, neuron 1" })).toBeVisible();
     await page.getByLabel("Search neurons by word").fill("cat");
@@ -111,7 +111,7 @@ test.describe("map", () => {
     await expect(page.getByRole("button", { name: "layer 3" })).toHaveClass(/on/);
   });
 
-  test("clicking a point on the map opens a neuron", async ({ page }) => {
+  test("clicking a point on the map opens a neuron", { tag: "@xb" }, async ({ page }) => {
     await openAtlas(page);
     const canvas = page.locator(".map canvas");
     const box = (await canvas.boundingBox())!;
@@ -175,7 +175,7 @@ async function chooseEdit(page: Page, mode: "Zero" | "Scale" | "Push" | "Clamp")
 }
 
 test.describe("edits", () => {
-  test("ablate, persist across reload, toggle and remove", async ({ page }) => {
+  test("ablate, persist across reload, toggle and remove", { tag: "@xb" }, async ({ page }) => {
     await openAtlas(page, "#/atlas/L4/N10");
     await chooseEdit(page, "Zero");
     await page.getByRole("button", { name: "Apply edit" }).click();
@@ -258,7 +258,7 @@ test.describe("edits", () => {
 });
 
 test.describe("probe", () => {
-  test("probes text, selects a token with the keyboard, and handles edge input", async ({ page }) => {
+  test("probes text, selects a token with the keyboard, and handles edge input", { tag: "@xb" }, async ({ page }) => {
     await openAtlas(page);
     await waitForModel(page);
     const box = page.locator("#probe-text");

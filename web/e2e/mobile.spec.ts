@@ -52,3 +52,55 @@ for (const r of ["#/atlas/L5/N551", "#/atlas/L5/N551?tab=steer", "#/m/qwen3.5-0.
     expect(Math.abs(top)).toBeLessThan(40);
   });
 }
+
+// ---------------------------------------------------------------- touch (the Pixel 7 project has a touch screen)
+
+test("touch: tapping a point on the map opens its neuron", async ({ page }) => {
+  await page.goto("./#/atlas");
+  const canvas = page.locator(".map canvas");
+  await expect(canvas).toBeVisible();
+  await page.waitForTimeout(800);
+  const box = (await canvas.boundingBox())!;
+  let opened = false;
+  for (let gy = 0.3; gy <= 0.75 && !opened; gy += 0.04) {
+    for (let gx = 0.2; gx <= 0.85 && !opened; gx += 0.04) {
+      await page.touchscreen.tap(box.x + box.width * gx, box.y + box.height * gy);
+      opened = (await page.locator("aside.inspector").count()) > 0;
+    }
+  }
+  expect(opened, "a tap somewhere on the map lands on a neuron").toBe(true);
+  await expect(page).toHaveURL(/#\/atlas\/L\d+\/N\d+/);
+});
+
+test("touch: a tap on the score chart explains that bin", async ({ page }) => {
+  await page.goto("./");
+  const dot = page.locator(".score-chart .dot-win").last();
+  await expect(dot).toBeVisible();
+  await dot.scrollIntoViewIfNeeded();
+  const box = (await dot.boundingBox())!;
+  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(page.locator(".score-chart .chart-tip")).toContainText(/beat every random push/);
+});
+
+test("touch: tabs, the edit section and the close button work by tap", async ({ page }) => {
+  await page.goto("./#/atlas/L4/N803");
+  const insp = page.locator("aside.inspector");
+  await expect(insp).toBeVisible();
+  await insp.getByRole("radio", { name: "Contexts" }).tap();
+  await expect(page).toHaveURL(/tab=contexts/);
+  await insp.locator(".edit-box summary").tap();
+  await insp.getByRole("radio", { name: "Zero", exact: true }).tap();
+  await insp.getByRole("button", { name: "Apply edit" }).tap();
+  await expect(page.locator(".edit-chip")).toContainText("zeroed");
+  await insp.getByRole("button", { name: "Close neuron" }).tap();
+  await expect(page.locator("aside.inspector")).toHaveCount(0);
+});
+
+test("touch: the recorded-model list opens a finalist by tap", async ({ page }) => {
+  await page.goto("./#/m/qwen3.5-0.8b");
+  const first = page.locator(".rows li button").first();
+  await first.scrollIntoViewIfNeeded();
+  await first.tap();
+  await expect(page.locator("aside.inspector")).toBeVisible();
+  await expect(page.locator("aside.inspector h2")).toBeInViewport();
+});

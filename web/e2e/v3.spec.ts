@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { test, expect, openAtlas, waitForModel, inspector } from "./fixtures";
 
 test.describe("home", () => {
-  test("shows the recorded push, its control and the score chart", async ({ page }) => {
+  test("shows the recorded push, its control and the score chart", { tag: "@xb" }, async ({ page }) => {
     await page.goto("./");
     await expect(page.getByRole("heading", { level: 1, name: /Push one neuron/ })).toBeVisible();
     await expect(page.locator(".run-push p").first()).toContainText(/mean/, { timeout: 20_000 });
@@ -14,7 +14,7 @@ test.describe("home", () => {
     await expect(chart.locator(".dot-win")).toHaveCount(41);
   });
 
-  test("the score chart explains a bin on hover and has a table view", async ({ page }) => {
+  test("the score chart explains a bin on hover and has a table view", { tag: "@xb" }, async ({ page }) => {
     await page.goto("./");
     const chart = page.locator(".score-chart");
     const dot = chart.locator(".dot-win").last();
@@ -88,7 +88,7 @@ test.describe("home", () => {
 });
 
 test.describe("research", () => {
-  test("lists the reports and opens one with numbered citations", async ({ page }) => {
+  test("lists the reports and opens one with numbered citations", { tag: "@xb" }, async ({ page }) => {
     await page.goto("./#/research");
     await expect(page.getByRole("heading", { name: "Research", level: 2 })).toBeVisible();
     const items = page.locator(".report-list li");
@@ -132,7 +132,7 @@ test.describe("research", () => {
 });
 
 test.describe("shell", () => {
-  test("theme toggle cycles and persists across reload", async ({ page }) => {
+  test("theme toggle cycles and persists across reload", { tag: "@xb" }, async ({ page }) => {
     await page.goto("./");
     const html = page.locator("html");
     await page.getByRole("button", { name: /Theme: system/ }).click();
@@ -145,7 +145,7 @@ test.describe("shell", () => {
     await expect(html).not.toHaveAttribute("data-theme", /.+/);
   });
 
-  test("keyboard shortcuts: help sheet, go-to keys, neighbour neurons", async ({ page }) => {
+  test("keyboard shortcuts: help sheet, go-to keys, neighbour neurons", { tag: "@xb" }, async ({ page }) => {
     await openAtlas(page, "#/atlas/L2/N10");
     await page.locator("body").press("?");
     await expect(page.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeVisible();
@@ -191,7 +191,7 @@ test.describe("shell", () => {
 });
 
 test.describe("compare, ablate, export", () => {
-  test("compare two neurons side by side", async ({ page }) => {
+  test("compare two neurons side by side", { tag: "@xb" }, async ({ page }) => {
     await openAtlas(page, "#/atlas/L6/N179");
     await inspector(page).getByRole("button", { name: "Compare with another neuron" }).click();
     await inspector(page).getByLabel("Neuron to compare").fill("L5 N173");
@@ -204,7 +204,7 @@ test.describe("compare, ablate, export", () => {
     await expect(t).toHaveCount(0);
   });
 
-  test("live ablation scores held-out stories and reports a result", async ({ page }) => {
+  test("live ablation scores held-out stories and reports a result", { tag: "@xb" }, async ({ page }) => {
     test.setTimeout(150_000);
     await openAtlas(page, "#/atlas/L0/N487?tab=ablate");
     await waitForModel(page);
@@ -237,6 +237,33 @@ for (const theme of ["dark", "light"] as const) {
       if (r.includes("research")) await expect(page.locator(".report-list, .report-body").first()).toBeVisible();
       if (r === "") await expect(page.locator(".score-chart svg")).toBeVisible();
       await page.waitForTimeout(600);
+      const res = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).exclude(".map canvas").exclude(".layer-labels").analyze();
+      const bad = res.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+      expect(bad.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
+    });
+  }
+}
+
+// Interactive states the page-load scans above never reach: open panels, dialogs, tables and the recorded models.
+const A11Y_STATES: { name: string; hash: string; act: (p: import("@playwright/test").Page) => Promise<void> }[] = [
+  { name: "a neuron's Profile with the edit section open", hash: "#/atlas/L5/N551", act: async (p) => { await p.locator(".edit-box summary").click(); } },
+  { name: "a neuron's Contexts", hash: "#/atlas/L5/N551?tab=contexts", act: async (p) => { await expect(p.locator(".insp-body button").first()).toBeVisible(); } },
+  { name: "a neuron's Ablate tab", hash: "#/atlas/L6/N179?tab=ablate", act: async (p) => { await expect(p.locator(".insp-body").first()).toBeVisible(); } },
+  { name: "a comparison", hash: "#/atlas/L5/N551", act: async (p) => { await p.getByRole("button", { name: "Compare with another neuron" }).click(); await p.getByLabel("Neuron to compare").fill("L4 N803"); await p.getByRole("button", { name: "Compare", exact: true }).click(); await expect(p.locator(".compare table")).toBeVisible(); } },
+  { name: "the shortcut sheet", hash: "#/atlas", act: async (p) => { await p.getByRole("button", { name: "Keyboard shortcuts" }).click(); await expect(p.getByRole("dialog")).toBeVisible(); } },
+  { name: "the score chart's table", hash: "", act: async (p) => { await p.locator(".score-chart").getByRole("button", { name: "Show table" }).click(); await expect(p.locator(".score-chart table")).toBeVisible(); } },
+  { name: "the Qwen3.5-0.8B atlas", hash: "#/m/qwen3.5-0.8b", act: async (p) => { await expect(p.locator(".rows li").first()).toBeVisible(); } },
+  { name: "a Qwen finalist's steering record", hash: "#/m/qwen3.5-0.8b/L15/N3258?tab=hunt", act: async (p) => { await expect(p.getByRole("radiogroup", { name: "Prompt" })).toBeVisible(); } },
+  { name: "the emergent-misalignment atlas", hash: "#/m/qwen2.5-0.5b-em/L12/N870", act: async (p) => { await expect(p.locator("aside.inspector")).toBeVisible(); } },
+];
+for (const theme of ["dark", "light"] as const) {
+  for (const s of A11Y_STATES) {
+    test(`axe: no serious accessibility violations in ${s.name} (${theme})`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: theme });
+      await page.goto(`./${s.hash}`);
+      await expect(page.locator(".top")).toBeVisible();
+      await s.act(page);
+      await page.waitForTimeout(500);
       const res = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).exclude(".map canvas").exclude(".layer-labels").analyze();
       const bad = res.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
       expect(bad.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
