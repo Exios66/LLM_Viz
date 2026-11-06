@@ -39,8 +39,11 @@ function nextControl(page: Page, done: string[]) {
       if ((el as HTMLButtonElement).disabled || el.getAttribute("aria-disabled") === "true") continue;
       if (el.closest(".rows li:nth-child(n+4), .ref-list li:nth-child(n+4), .prompt-chips > :nth-child(n+3)")) continue;
       const name = (el.getAttribute("aria-label") ?? el.closest("label")?.textContent ?? el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 60);
+      // regions that look alike (the charts on Findings) are numbered, so renaming a toggle in one cannot shift the others' keys
       const box = el.closest("aside, nav, header, section, figure, form, main");
-      const base = `${box?.getAttribute("aria-label") ?? box?.className ?? ""}|${name}`;
+      const sig = (b: Element) => b.getAttribute("aria-label") ?? b.className;
+      const at = box ? [...document.querySelectorAll(box.tagName)].filter((b) => sig(b) === sig(box)).indexOf(box) : 0;
+      const base = `${box ? sig(box) : ""}@${at}|${name}`;
       const n = (seen.get(base) ?? 0) + 1;
       seen.set(base, n);
       const key = `${base}#${n}`;

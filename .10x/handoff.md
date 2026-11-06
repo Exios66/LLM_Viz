@@ -13,6 +13,7 @@
 - Constraints unchanged:
   - no GitHub Actions;
   - ask the user before any merge or deploy;
+  - open PRs ready for review, never as drafts, and merge only after the review bots (CodeRabbit, CodeAnt) have finished on the current head and their findings are checked and fixed or answered;
   - never skip tests;
   - `research-private/` stays out of the repository;
   - commits under the user's identity, with no assistant trailers or session links.
