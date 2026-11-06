@@ -256,6 +256,9 @@ input[type="range"] { accent-color: var(--excite); }
 .stats dt { color: var(--ink-faint); font-size: 12px; }
 .stats dd { margin: 0; font-size: 13px; }
 .edit-box { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--slide); }
+.edit-box > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink); }
+.edit-box:not([open]) { padding-block: 7px; }
+.edit-box > .note { margin: 0; }
 .edit-box .seg { width: 100%; }
 .edit-box .seg button { flex: 1; }
 .edit-actions { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -316,9 +319,6 @@ a:hover { color: var(--excite); }
 .map-fallback h2 { font: 400 26px var(--prose); color: var(--ink); }
 .map-fallback p { margin: 0; max-width: 46ch; }
 .map-fallback button { justify-self: center; margin-top: 6px; }
-.rank-by { padding: 0 14px 8px; }
-.rank-by .seg { width: 100%; }
-.rank-by .seg button { flex: 1; font-size: 12.5px; }
 
 /* ---------- uniqueness badge, themes */
 

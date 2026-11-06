@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { nid, type NeuronRef } from "../lib/atlas";
 import type { RecordedModel } from "../lib/recorded";
 import { getState, openModel, setState } from "../store";
-import { Seg } from "./bits";
+import { useListFromColour } from "./bits";
 import { download, huntCsv } from "../lib/exportData";
 import { DATA } from "../App";
 
@@ -32,7 +32,10 @@ export function ModelSidebar({ m }: { m: RecordedModel }) {
     ...(m.signals.dd_evil ? [{ v: "shift-evil" as const, label: "Evil shift", title: "Largest gain in evil contrast after fine-tuning" }] : []),
     ...(m.signals.dd_alien ? [{ v: "shift-alien" as const, label: "Alien shift", title: "Largest gain in alien contrast after fine-tuning" }] : []),
   ];
-  const [list, setList] = useState<List>(lists[0]?.v ?? "evil");
+  const list = useListFromColour<List>((c) => {
+    const v = c === "hunt" ? "finalists" : c;
+    return lists.some((l) => l.v === v) ? (v as List) : null;
+  }, lists[0]?.v ?? "evil");
   const [q, setQ] = useState("");
   const jump = parseNeuronId(q, m.L, m.N);
 
@@ -71,7 +74,6 @@ export function ModelSidebar({ m }: { m: RecordedModel }) {
             )}
           </p>
         )}
-        {lists.length > 1 && <Seg<List> label="List" value={list} onChange={setList} options={lists} />}
       </div>
       <p className="list-caption">
         {list === "finalists"
