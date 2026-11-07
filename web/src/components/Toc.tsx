@@ -6,6 +6,13 @@ import { useEffect, useState, type RefObject } from "react";
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "section";
 
+/** Where the reader is: the last heading whose top has passed this share of the scroller's height. */
+const READ_LINE = 0.22;
+
+/**
+ * Lists the headings under `scope` that match `selector`, and keeps the one being read marked.
+ * `deps` re-collects the headings when the content behind them changes (another report, late-loading data).
+ */
 export function Toc({ scope, selector, deps }: { scope: RefObject<HTMLElement | null>; selector: string; deps?: unknown }) {
   const [items, setItems] = useState<{ id: string; text: string; el: HTMLElement }[]>([]);
   const [active, setActive] = useState<string | null>(null);
@@ -15,13 +22,20 @@ export function Toc({ scope, selector, deps }: { scope: RefObject<HTMLElement | 
     if (!root) return;
     // Ids this component wrote are marked, and rewritten from the current text every time: React reuses heading nodes
     // between reports, so a kept id would name the previous report's heading. Ids the markup set (refs-title) stay.
+    // A generated id also steps around any id already used elsewhere in the document.
     const seen = new Set<string>();
     const found = [...root.querySelectorAll<HTMLElement>(selector)].map((el) => {
       const text = el.textContent ?? "";
       const own = !el.id || el.dataset.toc === "1";
       const base = own ? `s-${slug(text)}` : el.id;
+      const taken = (id: string) => {
+        if (seen.has(id)) return true;
+        if (!own) return false;
+        const other = document.getElementById(id);
+        return !!other && other !== el;
+      };
       let id = base;
-      for (let n = 2; seen.has(id); n++) id = `${base}-${n}`;
+      for (let n = 2; taken(id); n++) id = `${base}-${n}`;
       seen.add(id);
       if (own) {
         el.id = id;
@@ -29,24 +43,34 @@ export function Toc({ scope, selector, deps }: { scope: RefObject<HTMLElement | 
       }
       return { id, text, el };
     });
-    const idOf = new Map(found.map((f) => [f.el as Element, f.id]));
     setItems(found);
     setActive(found[0]?.id ?? null);
-    if (!found.length || typeof IntersectionObserver === "undefined") return;
-    // a heading becomes current once it crosses the top fifth of the scrolling page
-    const io = new IntersectionObserver(
-      (entries) => {
-        const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (hit) setActive(idOf.get(hit.target) ?? null);
-      },
-      { root: document.getElementById("main"), rootMargin: "0px 0px -78% 0px" },
-    );
-    found.forEach((f) => io.observe(f.el));
-    return () => io.disconnect();
+
+    // Scroll-spy from the scroller's own geometry, once per frame. (An IntersectionObserver with a percentage
+    // rootMargin cannot do this: percentages there resolve against the root's width, not its height.)
+    const scroller = document.getElementById("main");
+    if (!found.length || !scroller) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const line = scroller.getBoundingClientRect().top + scroller.clientHeight * READ_LINE;
+      let cur = found[0];
+      for (const f of found) if (f.el.getBoundingClientRect().top <= line) cur = f;
+      // at the very bottom the last sections may never reach the line: mark the last one
+      if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2) cur = found[found.length - 1];
+      setActive(cur.id);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+    };
   }, [scope, selector, deps]);
 
   if (items.length < 3) return null;
-  const smooth = !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   return (
     <nav className="toc" aria-label="On this page">
       <p className="toc-title">On this page</p>
@@ -57,6 +81,8 @@ export function Toc({ scope, selector, deps }: { scope: RefObject<HTMLElement | 
               className={it.id === active ? "on" : ""}
               aria-current={it.id === active ? "location" : undefined}
               onClick={() => {
+                // read the motion preference at the moment of the click, so it is always current
+                const smooth = !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
                 it.el.scrollIntoView({ block: "start", behavior: smooth ? "smooth" : "auto" });
                 setActive(it.id);
               }}

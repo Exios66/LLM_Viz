@@ -7,6 +7,7 @@ import { setState, useStore } from "../store";
 import { ensureResearch } from "../App";
 import { Toc } from "./Toc";
 
+/** The research section: the report index, or one report when the route names it. */
 export function ResearchPage() {
   const research = useStore((s) => s.research);
   const err = useStore((s) => s.researchError);
@@ -41,9 +42,11 @@ export function ResearchPage() {
       </div>
     );
   }
-  return report ? <ReportView data={research} report={report} /> : <ReportIndex data={research} />;
+  // keyed by slug, so moving to another report mounts a fresh view instead of reusing the last one's nodes
+  return report ? <ReportView key={report.slug} data={research} report={report} /> : <ReportIndex data={research} />;
 }
 
+/** Studies (numbered) and background reading, each with its one-line finding. */
 function ReportIndex({ data }: { data: ResearchData }) {
   const studies = data.reports.filter((r) => r.kind === "study");
   const lit = data.reports.filter((r) => r.kind === "literature");
@@ -90,6 +93,7 @@ function ReportIndex({ data }: { data: ResearchData }) {
   );
 }
 
+/** One report: its blocks, citations numbered in order of first use, the references, and an "On this page" column. */
 function ReportView({ data, report }: { data: ResearchData; report: Report }) {
   const refs = useMemo(() => new Map(data.references.map((r) => [r.id, r])), [data]);
   // number citations in order of first use, so the reference list matches the text

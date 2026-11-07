@@ -8,7 +8,8 @@ import { openModel, useStore } from "../store";
 import { highlight } from "./bits";
 import { ScoreChart } from "./ScoreChart";
 import type { FindingCard } from "../lib/sweep";
-import { LayerStack, mulberry32 } from "./LayerStack";
+import { LayerStack } from "./LayerStack";
+import { mulberry32 } from "../lib/model";
 
 // theme words too common to be worth marking in the hero
 const GENERIC = new Set(["other", "back", "came", "went", "said"]);
@@ -36,20 +37,21 @@ function useReveal(text: string, start: boolean, ms = 38) {
   return { shown: words.slice(0, n).join(""), done: n >= words.length };
 }
 
+/** Overview: the hero and its pulse, the recorded experiment, the numbers, the score chart and the destinations. */
 export function HomePage() {
   const f = useStore((s) => s.findings);
   const sweepError = useStore((s) => s.sweepError);
   const models = useStore((s) => s.models);
   const villain = f?.cards.find((c) => c.id === "villain");
   const control = f?.cards.find((c) => c.id === "random-villain");
-  // two beats: the push travels up the layer stack, then the steered text writes itself out
-  const [pulse, setPulse] = useState(false);
-  const [writing, setWriting] = useState(false);
+  // Two beats: the push travels up the layer stack (450 ms in, 1.3 s long), then the steered text writes itself out once
+  // the stream above the neuron has lit. With reduced motion both start on, so the first paint is the finished state.
+  const [pulse, setPulse] = useState(reduced);
+  const [writing, setWriting] = useState(reduced);
   useEffect(() => {
-    if (!villain) return;
-    const r = reduced();
-    const t1 = window.setTimeout(() => setPulse(true), r ? 0 : 450);
-    const t2 = window.setTimeout(() => setWriting(true), r ? 0 : 1500);
+    if (!villain || reduced()) return;
+    const t1 = window.setTimeout(() => setPulse(true), 450);
+    const t2 = window.setTimeout(() => setWriting(true), 1800);
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
@@ -233,7 +235,8 @@ function PushRun({ card, writing }: { card: FindingCard; writing: boolean }) {
       <h2>
         Neuron L{card.layer}·N{card.neuron} pushed {+card.dose.toFixed(2)}× the residual norm
       </h2>
-      <p aria-hidden={!steered.done}>
+      {/* the visible text is always hidden from assistive technology, which reads the whole story once from the copy below */}
+      <p aria-hidden="true">
         {steered.done ? highlight(card.steered, card.themes.filter((w) => !GENERIC.has(w))) : steered.shown}
         {!steered.done && <span className="caret" />}
       </p>
@@ -242,9 +245,8 @@ function PushRun({ card, writing }: { card: FindingCard; writing: boolean }) {
   );
 }
 
-/** The live atlas's tile shows the map itself in miniature: eight neuron sheets in a row, as the 3D view lays them out.
- *  The geometry is fixed, so it is built once, on first use. */
 let miniSheets: { l: number; x: number; y: number; dots: { cx: number; cy: number; r: number; hot: boolean }[] }[] | null = null;
+/** The mini atlas's sheets and dots. The geometry is fixed (seeded), so it is built once, on first use. */
 function miniAtlasSheets() {
   if (miniSheets) return miniSheets;
   const rnd = mulberry32(8);
@@ -259,6 +261,7 @@ function miniAtlasSheets() {
   return miniSheets;
 }
 
+/** The live atlas's tile shows the map itself in miniature: eight neuron sheets in a row, as the 3D view lays them out. */
 function MiniAtlas() {
   return (
     <svg className="mini-atlas" viewBox="0 0 320 120" aria-hidden="true">

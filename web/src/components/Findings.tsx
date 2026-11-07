@@ -21,6 +21,7 @@ const KIND_LABEL: Record<FindingCard["kind"], string> = {
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
 
+/** Findings: the neurons that beat every random push, their recorded runs, the per-layer charts and the reference cards. */
 export function FindingsPage({ atlas }: { atlas: Atlas }) {
   const sweep = useStore((s) => s.sweep);
   const sweepError = useStore((s) => s.sweepError);

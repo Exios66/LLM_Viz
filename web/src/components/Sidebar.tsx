@@ -10,6 +10,7 @@ function themeLabel(sweep: Sweep, r: NeuronRef, atlas: Atlas) {
 }
 import { NeuronButton, Seg, useListFromColour } from "./bits";
 
+/** The live atlas's neuron finder: word search, layer filter, and the ranked list that follows the map's colour mode. */
 export function Sidebar({ atlas }: { atlas: Atlas }) {
   const [q, setQ] = useState("");
   const [by, setBy] = useState<"fires" | "lens">("fires");

@@ -3,23 +3,13 @@
 // stream above it lights in the excite colour (ADR-006's one orchestrated moment). Plain SVG and CSS: no three.js on Home.
 // Reduced motion shows the final, lit state at once.
 
-import { memo, useMemo } from "react";
+import { memo, useId, useMemo } from "react";
+import { mulberry32 } from "../lib/model"; // seeded, so the dots sit in the same place in every render and screenshot
 
 const W = 640, H = 460;
 const CX = 300; // the stream runs straight up through every sheet's centre
 const GAP = 47; // vertical distance between sheets
 const BASE = 392; // centre of layer 0
-
-/** Small deterministic PRNG so the dots sit in the same place on every render and in every screenshot. */
-export function mulberry32(seed: number) {
-  return () => {
-    seed |= 0;
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 /** Sheet-local (u, v) in [-1, 1]² to figure coordinates: u runs right and slightly up, v runs back and to the right. */
 const at = (l: number, u: number, v: number): [number, number] => [CX + 150 * u + 62 * v, BASE - l * GAP - 9 * u + 25 * v];
@@ -34,6 +24,8 @@ interface Dot { x: number; y: number; r: number; o: number; hot: boolean }
 /** `focus` is the recorded push to draw (the villain card's layer and neuron); until it loads, the stack is drawn plain.
  *  Memoised: Home re-renders while its text writes out, and nothing here changes then. */
 export const LayerStack = memo(function LayerStack({ layers = 8, focus, pulsed }: { layers?: number; focus: { layer: number; neuron: number } | null; pulsed: boolean }) {
+  // one gradient id per instance, so two stacks on a page never share an id ("·r1·"-style ids are not valid in url())
+  const flareId = `stack-flare-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const dots = useMemo(() => {
     const rnd = mulberry32(179);
     const out: Dot[][] = [];
@@ -65,7 +57,7 @@ export const LayerStack = memo(function LayerStack({ layers = 8, focus, pulsed }
       <svg viewBox={`44 0 ${W - 44} ${H}`} role="img" aria-label={label}>
         <defs>
           {/* stop colours come from the stylesheet: var() in presentation attributes is not resolved everywhere */}
-          <radialGradient id="stack-flare">
+          <radialGradient id={flareId}>
             <stop className="flare-stop" offset="0" stopOpacity="0.55" />
             <stop className="flare-stop" offset="1" stopOpacity="0" />
           </radialGradient>
@@ -95,7 +87,7 @@ export const LayerStack = memo(function LayerStack({ layers = 8, focus, pulsed }
         {f && (
           <>
             {/* the focus neuron and its flare */}
-            <circle className="flare" cx={fx} cy={fy} r={46} fill="url(#stack-flare)" />
+            <circle className="flare" cx={fx} cy={fy} r={46} fill={`url(#${flareId})`} />
             <circle className="ring" cx={fx} cy={fy} r={9} />
             <circle className="focus-dot" cx={fx} cy={fy} r={4.2} />
             <circle className="packet" cx={CX} cy={streamBottom} r={3.6} style={{ ["--travel" as string]: `${streamTop - streamBottom}px` }} />

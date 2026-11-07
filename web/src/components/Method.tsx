@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useStore } from "../store";
 import { Toc } from "./Toc";
 
+/** How the atlas and the sweep were built, with an "On this page" column; window and norm values fill in once loaded. */
 export function MethodPage() {
   const meta = useStore((s) => s.sweepMeta);
   const win = meta?.window;

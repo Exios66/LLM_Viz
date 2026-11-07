@@ -57,6 +57,7 @@ function Wordmark() {
   );
 }
 
+/** Site header: wordmark, section nav and tools; in the atlas also the model, colour and layout controls and the edits. */
 export function Header() {
   const edits = useStore((s) => s.edits);
   const colorMode = useStore((s) => s.colorMode);
