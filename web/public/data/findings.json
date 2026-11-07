@@ -574,12 +574,12 @@
    "body": "If a theme means “a content word that turns up in at least five of the rollouts, counted once per rollout”, 1,606 of 2,048 random directions (78%) have one, and so do 75% of neurons. Pushed text repeats itself whatever the direction. Only a score against random directions in the same layer separates neurons from noise."
   },
   {
-   "title": "Distinctive neurons are rare",
-   "body": "41 of 8,192 neurons (0.5%) beat all 256 random directions in their layer: 12 in layer 0, 5, 4, 6, 2, none in layer 5, 8 in layer 6 and 4 in layer 7. In layer 5 a random direction (a juicy apple, then a wolf) outscores every neuron."
+   "title": "Distinctive neurons are rare, and one sweep cannot find them",
+   "body": "41 of 8,192 neurons (0.5%) beat all 256 random directions in their layer: 12 in layer 0, 5, 4, 6, 2, none in layer 5, 8 in layer 6 and 4 in layer 7. If neurons behaved like random directions, 1 in 257 would do that by chance, about 32 in all and 4 per layer, so only layer 0 stands out. In layer 5 a random direction (a juicy apple, then a wolf) outscores every neuron. The replication study is what separates real neurons from lucky ones: on 12 new prompts, 21 of the 41 still beat 95% of fresh random directions, where chance gives about 2."
   },
   {
    "title": "In a story model, neurons steer plot beats",
-   "body": "The strongest neurons write narrative moves rather than topics: a threat followed by flight (L4·N803), misfortune (L7·N756), regret and a moral (L2·N109), resolution (L6·N1007), a startle (L0·N80, L4·N877). neuron-explorer's Qwen finds are identities, concepts and styles. Here the vocabulary is tiny, and what is left to steer is story structure. This is a reading of the rollouts, not a measured category."
+   "body": "The strongest neurons write narrative moves rather than topics: a threat followed by flight (L4·N803), misfortune (L7·N756), regret and a moral (L2·N109), resolution (L6·N1007), a startle (L0·N80, L4·N877). neuron-explorer's Qwen finds are identities, concepts and styles. Here the vocabulary is tiny, and what is left to steer is story structure. This is a reading of the rollouts, not a measured category, and of these neurons only L2·N109 and L6·N1007 replicate on new prompts at the 95% bar."
   },
   {
    "title": "The same beat, written twice",
@@ -591,7 +591,7 @@
   },
   {
    "title": "Output similarity does not mean firing together",
-   "body": "neuron-explorer left untested whether neurons that write similar directions also fire on the same tokens. They do not here. Neighbours in the writes layout correlate no better than random pairs (layer 3: 0.010 vs 0.010; layer 5: 0.007 vs 0.004). Neighbours in the co-firing layout correlate at 0.06–0.12. The map offers both."
+   "body": "neuron-explorer left untested whether neurons that write similar directions also fire on the same tokens. They barely do here. Neighbours in the writes layout correlate little more than random pairs (0.006–0.055 against 0.004–0.052 across layers; layer 3: 0.010 vs 0.010). Neighbours in the co-firing layout correlate at 0.06–0.12, several times higher. The map offers both."
   },
   {
    "title": "The logit lens misleads before the last layer",

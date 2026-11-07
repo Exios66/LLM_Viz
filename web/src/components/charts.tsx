@@ -52,10 +52,15 @@ function ChartFrame({ title, children, tip, table, height }: { title: string; ch
 
 
 /** One value per layer, single series: bars from a zero baseline. */
-export function LayerBars({ title, values, fmt, max, note }: { title: string; values: number[]; fmt: (v: number) => string; max?: number; note?: (i: number) => string }) {
+/** Bars per layer. `refLine` draws a dashed reference line (e.g. the chance rate) with a short label; `missing` marks layers with no value to show. */
+export function LayerBars({ title, values, fmt, max, note, refLine, missing }: {
+  title: string; values: number[]; fmt: (v: number) => string; max?: number; note?: (i: number) => string;
+  refLine?: { value: number; label: string }; missing?: (i: number) => boolean;
+}) {
   const [tip, setTip] = useState<Tip | null>(null);
-  const H = 180, padL = 40, padB = 26, padT = 10;
-  const top = max ?? Math.max(...values, 1e-6) * 1.1;
+  const H = 180, padL = 40, padB = 26;
+  const padT = refLine ? 26 : 10;
+  const top = max ?? Math.max(...values, refLine?.value ?? 0, 1e-6) * 1.1;
   const bw = (W - padL - 10) / values.length;
   const y = (v: number) => padT + (1 - v / top) * (H - padT - padB);
   const ticks = [0, top / 2, top];
@@ -67,11 +72,13 @@ export function LayerBars({ title, values, fmt, max, note }: { title: string; va
       table={
         <table>
           <thead><tr><th>Layer</th><th>Value</th></tr></thead>
-          <tbody>{values.map((v, i) => <tr key={i}><td>{i}</td><td>{fmt(v)}</td></tr>)}</tbody>
+          <thead>{note ? <tr><th>Layer</th><th>Value</th><th>Detail</th></tr> : <tr><th>Layer</th><th>Value</th></tr>}</thead>
+          <tbody>{values.map((v, i) => <tr key={i}><td>{i}</td><td>{missing?.(i) ? "n/a" : fmt(v)}</td>{note && <td>{note(i)}</td>}</tr>)}</tbody>
+          {refLine && <tfoot><tr><td colSpan={note ? 3 : 2}>{refLine.label}: {fmt(refLine.value)}</td></tr></tfoot>}
         </table>
       }
     >
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={title} onMouseLeave={() => setTip(null)}>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={refLine ? `${title}. ${refLine.label}: ${fmt(refLine.value)}.` : title} onMouseLeave={() => setTip(null)}>
         {ticks.map((t) => (
           <g key={t}>
             <line x1={padL} x2={W - 10} y1={y(t)} y2={y(t)} className="grid" />
@@ -81,14 +88,27 @@ export function LayerBars({ title, values, fmt, max, note }: { title: string; va
         {values.map((v, i) => {
           const x = padL + i * bw + 4;
           const h = Math.max(0, y(0) - y(v));
+          const none = missing?.(i);
           return (
-            <g key={i} onMouseEnter={() => setTip({ x: (x / W) * 100, y: y(v) - 8, body: <><strong>Layer {i}</strong> {fmt(v)}{note ? <><br />{note(i)}</> : null}</> })}>
+            <g key={i} onMouseEnter={() => setTip({ x: (x / W) * 100, y: y(v) - 8, body: <><strong>Layer {i}</strong> {none ? "n/a" : fmt(v)}{note ? <><br />{note(i)}</> : null}</> })}>
               <rect x={padL + i * bw} y={padT} width={bw} height={H - padT - padB} fill="transparent" />
-              <path d={roundedTop(x, y(v), bw - 8, h, 4)} fill={SERIES[0]} />
+              {none ? (
+                <text x={x + (bw - 8) / 2} y={y(0) - 6} className="axis" textAnchor="middle">n/a</text>
+              ) : (
+                <path d={roundedTop(x, y(v), bw - 8, h, 4)} fill={SERIES[0]} />
+              )}
               <text x={x + (bw - 8) / 2} y={H - 8} className="axis" textAnchor="middle">L{i}</text>
             </g>
           );
         })}
+        {refLine && (
+          <g className="ref-line" pointerEvents="none">
+            <line x1={padL} x2={W - 10} y1={y(refLine.value)} y2={y(refLine.value)} />
+            {/* the label sits in a legend row at the top right, clear of the bars */}
+            <line x1={W - 34} x2={W - 12} y1={padT + 6} y2={padT + 6} />
+            <text x={W - 40} y={padT + 10} className="axis" textAnchor="end">{refLine.label}</text>
+          </g>
+        )}
       </svg>
     </ChartFrame>
   );
@@ -173,7 +193,8 @@ export function LayerDots({ title, series, fmt }: { title: string; series: { nam
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={title} onMouseLeave={() => setTip(null)}>
         <g className="legend">
           {series.map((s, i) => (
-            <g key={s.name} transform={`translate(${padL + i * 150}, 12)`}>
+            // each item is as wide as its label (about 6.2 px per character at 11 px), so long names never collide
+            <g key={s.name} transform={`translate(${padL + series.slice(0, i).reduce((a, t) => a + 34 + t.name.length * 6.2, 0)}, 12)`}>
               <circle r={5} cx={5} cy={0} fill={i < SERIES.length ? SERIES[i] : CONTROL} />
               <text x={16} y={4} className="axis">{s.name}</text>
             </g>

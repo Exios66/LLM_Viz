@@ -1,12 +1,12 @@
 # What happens when you remove a neuron?
 
-_6 of 41 above-null neurons change the loss more than 95% of random neurons do when zeroed. Concept neurons steer strongly but are rarely necessary._
+_6 of 41 above-null neurons change the loss more than 95% of a 21-neuron random baseline do when zeroed, where chance gives about 2. Concept neurons steer strongly but are rarely necessary._
 
 Steering asks what a neuron *can* write. Ablation asks what the model *needs* it for: hold the neuron at zero and measure how much worse the model predicts real stories [1] [2].
 
 ### Single neurons
 
-Each above-null neuron was zeroed over 300 held-out stories (up to 128 tokens each). 21 random neurons from the same layers give the baseline: 95% of them change the loss by less than 0.00144 nats per token. 6 of 41 above-null neurons exceed that.
+Each above-null neuron was zeroed over 300 held-out stories (up to 128 tokens each). 21 random neurons from the same layers give the baseline: 95% of them change the loss by less than 0.00144 nats per token. 6 of 41 above-null neurons exceed that. Chance would put about 2 above a 95th percentile, and 3 exceed the largest random neuron, so the count is weak evidence. A 21-neuron baseline is small, and it has 3 neurons per layer while 12 of the above-null neurons sit in one layer. Above-null neurons and random ones change the loss by about the same amount on average (0.00075 against 0.00057).
 
 | Neuron | Theme | Δloss (nats/token) | KL | Tokens it helps predict |
 |---|---|---|---|---|
@@ -40,11 +40,11 @@ The threat family is the 9 other above-null neurons whose themes include fear, d
 | Villain pushed, family zeroed | 100% | was very scared and scared. She was scared of the big, scary all the other people in the other. The other people in the… |
 | Villain pushed, random neurons zeroed | 83% | was very scared and scared. She was scared of the big, scary all the other people in the other. The other people in the… |
 
-The villain theme survives the family's removal about as well as it survives removing random neurons, so the push writes its theme directly rather than through the other threat neurons.
+The villain theme survives the family's removal about as well as it survives removing random neurons, so the push does not depend on the other threat neurons. The counts are small: 10, 12 and 10 of 12 rollouts.
 
 ### The villain neuron's inputs and outputs
 
-Upstream neurons were ranked by gradient × activation on [L6·N179](https://exios66.github.io/LLM_Viz/#/atlas/L6/N179) over the 40 stories where it fires most, and the top 25 were then ablated for real [3]. Ablating a random neuron in layers 0 to 5 changes the villain's mean activation by less than 3.6% in 95% of cases; 24 of the candidates exceed that.
+Upstream neurons were ranked by gradient × activation on [L6·N179](https://exios66.github.io/LLM_Viz/#/atlas/L6/N179) over the 40 stories where it fires most, and the top 25 were then ablated for real [3]. Ablating a random neuron in layers 0 to 5 changes the villain's mean activation by less than 3.6% in 95% of cases; 24 of the candidates exceed that. Not all of them feed it: zeroing 15 lowers the villain's activation, and zeroing the other 9 raises it, so those hold it back. The table shows the strongest feeders.
 
 | Upstream neuron | Change in villain activation when ablated | Its theme |
 |---|---|---|

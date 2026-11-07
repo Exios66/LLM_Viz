@@ -17,7 +17,9 @@ Each neuron's selectivity is Cohen's *d* of its peak activation on concept sente
 
 _Three random updates, norm-matched per matrix to the real one. Δd is in units of pooled standard deviation._
 
-The real fine-tune moves selectivity about 6 times as much as a random update of the same size, for both concepts. It is broad rather than surgical: 30% of all neurons shift more than any random update moves 1 in 1,000. The evil tail is fatter than the alien one (244 against 58 neurons past 0.5), which fits a fine-tune about harmful advice, though no random update reached 0.5 for either.
+The real fine-tune moves selectivity about 6 times as much as a random update of the same size, for both concepts. It is broad rather than surgical: 30% of all neurons shift by more than the random updates' 99.9th percentile. The evil tail is fatter than the alien one (244 against 58 neurons past 0.5), which fits a fine-tune about harmful advice, though no random update reached 0.5 for either.
+
+A random update of the same size is a low bar. Trained updates of any kind move activations more than random ones, because gradient descent aims at directions the model uses, so the ratio shows the fine-tune is structured, not that it is specifically misaligned. A benign fine-tune of the same rank and size would separate the two; it is not run here.
 
 Neurons with |Δd| > 0.5 for evil, by layer: L0 1, L4 5, L5 1, L6 2, L7 8, L8 4, L9 3, L10 13, L11 24, L12 23, L13 23, L14 30, L15 7, L16 17, L17 10, L18 25, L19 14, L20 10, L21 7, L22 5, L23 12. The three layers with the most are 11, 14, 18 (79 of 244).
 
@@ -40,6 +42,8 @@ _Rollouts are counted once each and words as whole words. Each neuron has 3 roll
 
 Pushing these neurons writes evil words in 6 rollouts in the base model and 0 after fine-tuning, out of 2,202. The neurons the fine-tune made more evil-selective do not write evil words more often when pushed: firing more on evil sentences did not turn them into evil writers.
 
+Read the counts as a floor, not a trend. Random directions write evil words about as rarely (7 and 4 of 4,608 rollouts), so a change from 6 to 0 is within noise. And because the push sizes differ in 11 layers, a base-to-fine-tuned change in one row mixes the fine-tune's effect with the size of the push.
+
 ### Confirmed in full precision
 
 29 neurons went on to the confirm stage: full precision, 6 prompts, 6 push sizes, a random direction of the same size in the same layer, and ablation. 75 of its rollouts matched the harm lexicon (medical, financial, violence, drugs or crime words) and are withheld from the published file; their concept-word counts are kept, so the table below still counts them.
@@ -58,8 +62,9 @@ Pushing these neurons writes evil words in 6 rollouts in the base model and 0 af
 | [L5·N1629](https://exios66.github.io/LLM_Viz/#/m/qwen2.5-0.5b-em/L5/N1629) | -0.13 | +0.06 | 0 vs 0 | 0 vs 0 | powerful | none |
 | [L5·N4713](https://exios66.github.io/LLM_Viz/#/m/qwen2.5-0.5b-em/L5/N4713) | +0.13 | +0.47 | 0 vs 0 | 0 vs 0 | sun, solar, magnetic | sun |
 | [L19·N2634](https://exios66.github.io/LLM_Viz/#/m/qwen2.5-0.5b-em/L19/N2634) | -0.15 | -0.05 | 0 vs 0 | 0 vs 0 | summary, review, brief | summary, overview, introduction |
+| [L13·N1201](https://exios66.github.io/LLM_Viz/#/m/qwen2.5-0.5b-em/L13/N1201) | +0.22 | +0.47 | 0 vs 0 | 3 vs 0 | none | none |
 
-_Rollouts of 6 at +1 window. A neuron counts if it beats its matched random push by at least 2 rollouts._
+_Rollouts of 6 at +1 window. A neuron counts if it beats its matched random push (one random direction per layer) by at least 2 rollouts. The 12 highest-scoring finalists, plus any that count._
 
 **Evil: 1 neuron.** [L12·N870](https://exios66.github.io/LLM_Viz/#/m/qwen2.5-0.5b-em/L12/N870) (work, protect, harm) writes evil words in 2 of 6 rollouts against 0 for the random push. Its evil selectivity fell after fine-tuning (Δd -0.71), so the fine-tune did not build it toward the concept. 2 of its evil rollouts were withheld by the harm scan, so their words are counted here but not shown.
 
