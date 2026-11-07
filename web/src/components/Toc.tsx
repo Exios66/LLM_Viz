@@ -13,14 +13,23 @@ export function Toc({ scope, selector, deps }: { scope: RefObject<HTMLElement | 
   useEffect(() => {
     const root = scope.current;
     if (!root) return;
+    // Ids this component wrote are marked, and rewritten from the current text every time: React reuses heading nodes
+    // between reports, so a kept id would name the previous report's heading. Ids the markup set (refs-title) stay.
     const seen = new Set<string>();
     const found = [...root.querySelectorAll<HTMLElement>(selector)].map((el) => {
-      let id = el.id || `s-${slug(el.textContent ?? "")}`;
-      while (seen.has(id)) id += "-2";
+      const text = el.textContent ?? "";
+      const own = !el.id || el.dataset.toc === "1";
+      const base = own ? `s-${slug(text)}` : el.id;
+      let id = base;
+      for (let n = 2; seen.has(id); n++) id = `${base}-${n}`;
       seen.add(id);
-      if (!el.id) el.id = id;
-      return { id: el.id, text: el.textContent ?? "", el };
+      if (own) {
+        el.id = id;
+        el.dataset.toc = "1";
+      }
+      return { id, text, el };
     });
+    const idOf = new Map(found.map((f) => [f.el as Element, f.id]));
     setItems(found);
     setActive(found[0]?.id ?? null);
     if (!found.length || typeof IntersectionObserver === "undefined") return;
@@ -28,7 +37,7 @@ export function Toc({ scope, selector, deps }: { scope: RefObject<HTMLElement | 
     const io = new IntersectionObserver(
       (entries) => {
         const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (hit) setActive((hit.target as HTMLElement).id);
+        if (hit) setActive(idOf.get(hit.target) ?? null);
       },
       { root: document.getElementById("main"), rootMargin: "0px 0px -78% 0px" },
     );

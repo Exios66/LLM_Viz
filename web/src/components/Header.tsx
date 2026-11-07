@@ -83,7 +83,7 @@ export function Header() {
   const rec = inAtlas && model && recorded?.entry.slug === model ? recorded : null;
 
   return (
-    <header className="top">
+    <header className={inAtlas ? "top" : "top reading"}>
       <div className="brand">
         {view === "home" ? <Wordmark /> : <h1 className="brand-h1"><Wordmark /></h1>}
         {inAtlas && (

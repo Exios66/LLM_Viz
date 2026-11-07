@@ -157,9 +157,10 @@ input[type="range"] { accent-color: var(--excite); }
   border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--stage) 45%, var(--field));
 }
-/* on the reading pages the header is three columns: wordmark, the section track centred, tools */
-.app.page .top { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
-.app.page .top-tools { justify-self: end; }
+/* on the reading pages the header is three columns: wordmark, the section track centred, tools. Keyed to the header,
+   not to .app.page: the atlas loading screens use .app.page too, and their header carries extra control rows. */
+.top.reading { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.top.reading .top-tools { justify-self: end; }
 .read-progress { display: none; }
 @supports (animation-timeline: scroll()) {
   .app.page { timeline-scope: --page; }
@@ -580,7 +581,7 @@ mark { background: color-mix(in srgb, var(--excite) 18%, transparent); color: va
   .app.page { height: 100%; }
 }
 @media (max-width: 900px) {
-  .app.page .top { display: flex; }
+  .top.reading { display: flex; }
 }
 @media (max-width: 640px) {
   .top { padding: 10px 16px; }
@@ -588,8 +589,8 @@ mark { background: color-mix(in srgb, var(--excite) 18%, transparent); color: va
   .nav a { padding: 5px 8px; font-size: 13px; }
   .nav a.on::before { display: none; }
   /* reading pages have no model picker, so the tools share the wordmark's row and the sections get their own */
-  .app.page .top-tools { flex: 0 0 auto; order: 1; margin-left: auto; }
-  .app.page .nav { order: 2; }
+  .top.reading .top-tools { flex: 0 0 auto; order: 1; margin-left: auto; }
+  .top.reading .nav { order: 2; }
   .page-wrap { padding: 22px 16px 48px; gap: 32px; }
   .card { grid-template-columns: 1fr; gap: 16px; }
   .controls { flex-wrap: wrap; min-width: 0; }
@@ -693,6 +694,7 @@ mark { background: color-mix(in srgb, var(--excite) 18%, transparent); color: va
 .stack-fig .stream-lit { fill: none; stroke-width: 2.5; stroke-linecap: round; }
 .stack-fig .stream-lit.lower { stroke: var(--ink-2); }
 .stack-fig .stream-lit.upper { stroke: var(--excite); }
+.stack-fig .flare-stop { stop-color: var(--excite); }
 .stack-fig .flare { opacity: 0; }
 .stack-fig .ring { fill: none; stroke: var(--excite); stroke-width: 1.5; opacity: 0; transform-box: fill-box; transform-origin: center; }
 .stack-fig .focus-dot { fill: var(--ink-2); stroke: var(--field); stroke-width: 1.5; }

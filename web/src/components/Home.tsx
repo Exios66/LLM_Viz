@@ -2,11 +2,12 @@
 // experiment as a three-column plate (unchanged, the villain neuron's push, a random push of the same size), the study
 // in numbers, the score chart that explains why the random column matters, and where to go next.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { bootHeavy } from "../App";
 import { openModel, useStore } from "../store";
 import { highlight } from "./bits";
 import { ScoreChart } from "./ScoreChart";
+import type { FindingCard } from "../lib/sweep";
 import { LayerStack, mulberry32 } from "./LayerStack";
 
 // theme words too common to be worth marking in the hero
@@ -54,8 +55,10 @@ export function HomePage() {
       window.clearTimeout(t2);
     };
   }, [villain]);
-  const steered = useReveal(villain?.steered ?? "", writing);
   const qwen = models.find((m) => m.slug.startsWith("qwen"));
+  const qwenNeurons = qwen ? (qwen.layers * qwen.neurons).toLocaleString() : "";
+  // a stable object, so the memoised stack does not re-render when Home does
+  const focus = useMemo(() => (villain ? { layer: villain.layer, neuron: villain.neuron } : null), [villain?.layer, villain?.neuron]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="home">
@@ -79,10 +82,7 @@ export function HomePage() {
             </a>
           </div>
         </div>
-        <LayerStack
-          pulsed={pulse}
-          label="A diagram of the model's eight layers stacked bottom to top, with the residual stream running up through them. A push enters at neuron 179 in layer 6 and lights the stream from there to the output."
-        />
+        <LayerStack pulsed={pulse} focus={focus} />
       </section>
 
       <figure className={`specimen darkfield${pulse ? " pulsed" : ""}`} aria-label="A recorded steering experiment">
@@ -103,17 +103,7 @@ export function HomePage() {
                 <h2>Unchanged model</h2>
                 <p>{villain.baseline}</p>
               </div>
-              <div className="run run-push">
-                <span className="run-kind"><span className="sw sw-push" aria-hidden="true" />Push</span>
-                <h2>
-                  Neuron L{villain.layer}·N{villain.neuron} pushed {+villain.dose.toFixed(2)}× the residual norm
-                </h2>
-                <p aria-hidden={!steered.done}>
-                  {steered.done ? highlight(villain.steered, villain.themes.filter((w) => !GENERIC.has(w))) : steered.shown}
-                  {!steered.done && <span className="caret" />}
-                </p>
-                <p className="sr-only">{villain.steered}</p>
-              </div>
+              <PushRun card={villain} writing={writing} />
               {control && (
                 <div className="run run-null">
                   <span className="run-kind"><span className="sw sw-null" aria-hidden="true" />Control</span>
@@ -150,7 +140,7 @@ export function HomePage() {
           {qwen && (
             <div>
               <dt>{qwen.label} neurons screened offline</dt>
-              <dd>{(qwen.layers * qwen.neurons).toLocaleString()}</dd>
+              <dd>{qwenNeurons}</dd>
             </div>
           )}
         </dl>
@@ -180,7 +170,7 @@ export function HomePage() {
         <h2 id="paths-title" className="section-title">Where to go next</h2>
         <ul className="path-list">
           <li className="path-atlas">
-            <a href="#/atlas" onPointerEnter={bootHeavy}>
+            <a href="#/atlas">
               <MiniAtlas />
               <Glyph kind="atlas" />
               <strong>Live atlas</strong>
@@ -199,7 +189,7 @@ export function HomePage() {
                 <Glyph kind="hunt" />
                 <strong>{qwen.label}: the evil and alien hunt</strong>
                 <span>
-                  {(qwen.layers * qwen.neurons).toLocaleString()} neurons of a modern chat model, screened offline for neurons that push it toward evil or toward
+                  {qwenNeurons} neurons of a modern chat model, screened offline for neurons that push it toward evil or toward
                   aliens. Recorded, not live.
                 </span>
               </a>
@@ -232,10 +222,31 @@ export function HomePage() {
   );
 }
 
-/** The live atlas's tile shows the map itself in miniature: eight neuron sheets in a row, as the 3D view lays them out. */
-function MiniAtlas() {
+/** The push column. It owns the word-by-word reveal, so each tick re-renders this column and not the whole page. */
+function PushRun({ card, writing }: { card: FindingCard; writing: boolean }) {
+  const steered = useReveal(card.steered, writing);
+  return (
+    <div className="run run-push">
+      <span className="run-kind"><span className="sw sw-push" aria-hidden="true" />Push</span>
+      <h2>
+        Neuron L{card.layer}·N{card.neuron} pushed {+card.dose.toFixed(2)}× the residual norm
+      </h2>
+      <p aria-hidden={!steered.done}>
+        {steered.done ? highlight(card.steered, card.themes.filter((w) => !GENERIC.has(w))) : steered.shown}
+        {!steered.done && <span className="caret" />}
+      </p>
+      <p className="sr-only">{card.steered}</p>
+    </div>
+  );
+}
+
+/** The live atlas's tile shows the map itself in miniature: eight neuron sheets in a row, as the 3D view lays them out.
+ *  The geometry is fixed, so it is built once, on first use. */
+let miniSheets: { l: number; x: number; y: number; dots: { cx: number; cy: number; r: number; hot: boolean }[] }[] | null = null;
+function miniAtlasSheets() {
+  if (miniSheets) return miniSheets;
   const rnd = mulberry32(8);
-  const sheets = Array.from({ length: 8 }, (_, l) => {
+  miniSheets = Array.from({ length: 8 }, (_, l) => {
     const x = 26 + l * 34, y = 18 + l * 4;
     const dots = Array.from({ length: 16 }, () => {
       const u = rnd(), v = rnd(), e = rnd() ** 3;
@@ -243,9 +254,13 @@ function MiniAtlas() {
     });
     return { l, x, y, dots };
   });
+  return miniSheets;
+}
+
+function MiniAtlas() {
   return (
     <svg className="mini-atlas" viewBox="0 0 320 120" aria-hidden="true">
-      {sheets.map((s) => (
+      {miniAtlasSheets().map((s) => (
         <g key={s.l}>
           <path className="mini-sheet" d={`M${s.x} ${s.y}l22 -10v78l-22 10z`} />
           {s.dots.map((d, i) => (
