@@ -57,7 +57,9 @@ export function FindingsPage({ atlas }: { atlas: Atlas }) {
           Every one of the {f.headline.neurons.toLocaleString()} MLP neurons in TinyStories-8M was pushed along its output direction, on three story prompts and
           from scratch, at the largest push its layer tolerates before the text falls apart. So were {f.headline.controls.toLocaleString()} random directions of
           the same size. A neuron counts as a find only when what it writes beats what random pushes write, and{" "}
-          {f.headline.neurons_above_null} of them beat every random push in their layer.
+          {f.headline.neurons_above_null} of them beat every random push in their layer. Chance alone would give about{" "}
+          {Math.round(f.headline.neurons / 257)}, so the sweep is a first cut: the <a href="#/research/tinystories-robustness">robustness study</a> retests
+          these neurons on new prompts, and about half hold up.
         </p>
       </header>
       {missing && (
@@ -250,8 +252,8 @@ function LayerCharts({ sweep, f }: { sweep: Sweep; f: Findings }) {
   const calib = sweep.meta.calib;
   const dots = useMemo(
     () => [
-      { name: "Nearest in the writes layout", values: L.map((x) => x.neighbour_cofire.writes) },
-      { name: "Nearest in the co-firing layout", values: L.map((x) => x.neighbour_cofire.cofire) },
+      { name: "Writes-layout neighbours", values: L.map((x) => x.neighbour_cofire.writes) },
+      { name: "Co-firing neighbours", values: L.map((x) => x.neighbour_cofire.cofire) },
       { name: "Random pairs", values: L.map((x) => x.neighbour_cofire.random) },
     ],
     [L],
@@ -275,8 +277,17 @@ function LayerCharts({ sweep, f }: { sweep: Sweep; f: Findings }) {
           </p>
         </div>
         <div>
-          <LayerBars title="Share of neurons that beat every random direction" values={L.map((x) => x.above_null)} fmt={pct} />
-          <p className="chart-note">A neuron beats a random direction when its theme score, a Poisson z of over-represented words, is higher.</p>
+          <LayerBars
+            title="Share of neurons that beat every random direction"
+            values={L.map((x) => x.above_null)}
+            fmt={(v) => `${(v * 100).toFixed(1)}%`}
+            refLine={{ value: 1 / 257, label: "Chance if neurons were random directions" }}
+            note={(i) => `${Math.round(L[i].above_null * 1024)} of 1,024 neurons`}
+          />
+          <p className="chart-note">
+            A neuron beats a random direction when its theme score, a Poisson z of over-represented words, is higher. With 256 random directions per layer, 1 in
+            257 neurons would beat them all by chance, about 4 per layer. Only layer 0 is clearly above that line.
+          </p>
         </div>
         <div>
           <LayerDots title="Neighbours in the co-firing layout really do co-fire" series={dots} fmt={(v) => v.toFixed(2)} />
@@ -286,7 +297,7 @@ function LayerCharts({ sweep, f }: { sweep: Sweep; f: Findings }) {
           </p>
         </div>
         <div>
-          <LayerBars title="Logit lens and measured Δlog-probability agree on (top-12 overlap, common tokens)" values={L.map((x) => x.lens_agreement)} fmt={pct} max={1} />
+          <LayerBars title="How often the logit lens agrees with the measured effect (top-12 overlap)" values={L.map((x) => x.lens_agreement)} fmt={pct} max={1} />
           <p className="chart-note">
             Overlap of the top 12 promoted tokens between the logit lens (output weight times unembedding) and the steer lens (the measured change in next-token
             log-probability under a push). Low overlap in early layers means the logit lens cannot be read as what the neuron does there.
@@ -296,8 +307,21 @@ function LayerCharts({ sweep, f }: { sweep: Sweep; f: Findings }) {
           <LayerBars title="How much a push changes the next token (median KL, nats)" values={L.map((x) => x.kl_median)} fmt={(v) => v.toFixed(2)} />
         </div>
         <div>
-          <LayerBars title="Of the neurons above the null, share that write what they read" values={L.map((x) => x.rw_share)} fmt={pct} max={1} />
-          <p className="chart-note">The theme words a push produces overlap the tokens that make the neuron fire.</p>
+          <LayerBars
+            title="Of the neurons above the null, share that write what they read"
+            values={L.map((x) => x.rw_share)}
+            fmt={pct}
+            max={1}
+            missing={(i) => Math.round(L[i].above_null * 1024) === 0}
+            note={(i) => {
+              const n = Math.round(L[i].above_null * 1024);
+              return n ? `${Math.round(L[i].rw_share * n)} of ${n} neurons` : "No neuron above the null";
+            }}
+          />
+          <p className="chart-note">
+            The theme words a push produces overlap the tokens that make the neuron fire. Each layer has at most 12 neurons above the null, and
+            only {L.reduce((a, x) => a + Math.round(x.rw_share * x.above_null * 1024), 0)} of all {f.headline.neurons_above_null} match, so read the bars as counts.
+          </p>
         </div>
       </div>
     </section>

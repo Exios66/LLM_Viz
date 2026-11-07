@@ -448,6 +448,8 @@ mark { background: color-mix(in srgb, var(--excite) 18%, transparent); color: va
 .chart .axis { fill: var(--ink-faint); font: 11px var(--ui); }
 .null-band { fill: var(--c-null); fill-opacity: 0.16; }
 .null-edge { stroke: var(--c-null); stroke-dasharray: 3 3; }
+.chart .ref-line line { stroke: var(--c-null); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.chart .ref-line text { fill: var(--ink-dim); }
 .chart-note { margin: 6px 0 0; color: var(--ink-faint); font-size: 12.5px; }
 
 /* ---------- pages (findings, method) */

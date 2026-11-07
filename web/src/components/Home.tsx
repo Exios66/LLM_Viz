@@ -134,12 +134,12 @@ export function HomePage() {
             <dd>{f.headline.controls.toLocaleString()}</dd>
           </div>
           <div className="stat-win">
-            <dt>Beat every random push in their layer</dt>
+            <dt>Beat every random push in their layer (chance alone: about {Math.round(f.headline.neurons / 257)})</dt>
             <dd>{f.headline.neurons_above_null}</dd>
           </div>
           {qwen && (
             <div>
-              <dt>{qwen.label} neurons screened offline</dt>
+              <dt>{qwen.label} neurons recorded offline</dt>
               <dd>{qwenNeurons}</dd>
             </div>
           )}
@@ -153,7 +153,9 @@ export function HomePage() {
             <p>
               Each of the {f.headline.neurons.toLocaleString()} neurons was pushed at the largest size its layer tolerates, and the theme of the text it wrote
               was scored against 256 random directions pushed by the same amount in that layer. The two distributions have nearly the same shape.{" "}
-              {f.headline.neurons_above_null} neurons beat every random push in their layer.
+              {f.headline.neurons_above_null} neurons beat every random push in their layer, but chance alone would put about{" "}
+              {Math.round(f.headline.neurons / 257)} there, so one sweep is only a first cut. The{" "}
+              <a href="#/research/tinystories-robustness">robustness study</a> retests them on new prompts.
             </p>
             <p>
               Asking only whether the steered text has a theme would pass {Math.round((f.headline.neurons_naive_theme / f.headline.neurons) * 100)}% of the

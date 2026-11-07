@@ -2,19 +2,19 @@
 
 _TinyStories-8M, Qwen3.5-0.8B and the Qwen3.5-4B reference side by side: windows, finalists and what carries over._
 
-The same question, does pushing one neuron write a recognisable theme, asked of three models two orders of magnitude apart.
+The same question, does pushing one neuron write a recognisable theme, asked of three models that span nearly three orders of magnitude in size.
 
 | Model | Layers | Neurons per layer | Activation | Coherent window (× residual norm) | Result |
 |---|---|---|---|---|---|
-| TinyStories-8M | 8 | 1,024 | GELU | 0.4 to 0.8 | 41 of 8,192 beat every control |
+| TinyStories-8M | 8 | 1,024 | GELU | 0.4 to 0.8 | 41 of 8,192 beat every control (chance: about 32) |
 | Qwen3.5-0.8B | 24 | 3,584 | SwiGLU | 0.03 to 1.00 | 28 finalists from 1,493 screened |
 | Qwen3.5-4B (reference) | 32 | 9,216 | SwiGLU | alien recovered at 0.74 (from the log) | alien neuron L22·N2742 |
 
 ### What carries over
 
 - In every model a neuron's push is meaningful only next to random pushes of the same size. Random directions write themes too, often vivid ones.
-- The pushes that work are smaller than the residual stream itself: TinyStories windows are 0.4 to 0.8 residual norms, Qwen3.5-0.8B windows 0.03 to 1.00, and the 4B alien neuron was recovered at 0.74. Beyond about one norm, every direction degrades the text.
-- Concept neurons are not confined to one depth. Above-null neurons per TinyStories layer: layer 0 12, layer 1 5, layer 2 4, layer 3 6, layer 4 2, layer 5 0, layer 6 8, layer 7 4. The 4B alien neuron sits in layer 22 of 32.
+- The pushes that work are smaller than the residual stream itself: TinyStories windows are 0.4 to 0.8 residual norms, Qwen3.5-0.8B windows 0.03 to 1.00, and the 4B alien neuron was recovered at 0.74. Beyond about one norm, every direction degrades the text in these models. The fine-tuned Qwen2.5-0.5B tolerates up to 4× in a few layers, so the limit is set per model, not by a rule.
+- Concept neurons are not confined to one depth. Above-null neurons per TinyStories layer: layer 0 12, layer 1 5, layer 2 4, layer 3 6, layer 4 2, layer 5 0, layer 6 8, layer 7 4. About 4 per layer would pass by chance, so only layer 0 stands out, and the spread says little on its own. The 4B alien neuron sits in layer 22 of 32.
 
 ### What changes
 

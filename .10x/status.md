@@ -43,11 +43,14 @@
   - pages: "On this page" scroll-spy column on Method and reports, numbered research index;
   - atlas: map registration corners, glass overlays, sidebar score meters, underline inspector tabs;
   - screenshot baselines regenerated.
+- Data validation and prose sweep (follow-up 5, on the same branch, 2026-11-07): every published number recomputed; see `.10x/reviews/2026-11-07-data-validation.md`. Reports now state chance expectations, the replication status of showcase neurons, and the Qwen/EM caveats; the Findings above-null chart has a chance line.
 
 ## Next
 
 - Merge and deploy follow-up 3 (user confirms).
 - The deploy gate now needs, once per machine: `npx playwright install firefox webkit`; on Linux also `npx playwright install-deps firefox webkit` and `apt-get install xvfb`.
+
+- Owner decision: apply the ADR-007 harm scan to the Qwen3.5-0.8B hunt pack, or narrow the README Privacy sentence (validation issue 7).
 
 ## Blockers
 
