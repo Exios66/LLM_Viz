@@ -57,6 +57,7 @@ function Wordmark() {
   );
 }
 
+/** Site header: wordmark, section nav and tools; in the atlas also the model, colour and layout controls and the edits. */
 export function Header() {
   const edits = useStore((s) => s.edits);
   const colorMode = useStore((s) => s.colorMode);
@@ -83,7 +84,7 @@ export function Header() {
   const rec = inAtlas && model && recorded?.entry.slug === model ? recorded : null;
 
   return (
-    <header className="top">
+    <header className={inAtlas ? "top" : "top reading"}>
       <div className="brand">
         {view === "home" ? <Wordmark /> : <h1 className="brand-h1"><Wordmark /></h1>}
         {inAtlas && (
@@ -211,6 +212,8 @@ export function Header() {
           )}
         </div>
       )}
+      {/* reading progress for the scrolling pages, drawn by a scroll-driven animation where supported */}
+      {!inAtlas && <span className="read-progress" aria-hidden="true" />}
     </header>
   );
 }

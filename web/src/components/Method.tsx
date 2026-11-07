@@ -1,14 +1,20 @@
 // How the atlas and the steering sweep were built, what the numbers mean, and where they stop.
 
+import { useRef } from "react";
 import { useStore } from "../store";
+import { Toc } from "./Toc";
 
+/** How the atlas and the sweep were built, with an "On this page" column; window and norm values fill in once loaded. */
 export function MethodPage() {
   const meta = useStore((s) => s.sweepMeta);
   const win = meta?.window;
   const norms = meta?.resid_norm;
+  const body = useRef<HTMLDivElement>(null);
   return (
-    <div className="page-wrap prose">
+    <div className="page-wrap doc">
+      <div className="prose doc-main" ref={body}>
       <header className="page-head">
+        <p className="eyebrow">Method and limits</p>
         <h2 className="page-title">How this was measured</h2>
         <p className="lede">
           Everything on this site comes from one small model, two Python scripts that read it, and a TypeScript copy of the model that runs in your browser.
@@ -201,6 +207,8 @@ cd ../web && npm ci && npm run verify && npm run dev`}</code>
           .
         </p>
       </section>
+      </div>
+      <Toc scope={body} selector=".doc-main > section > h3" deps={meta} />
     </div>
   );
 }

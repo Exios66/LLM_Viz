@@ -10,6 +10,7 @@ function themeLabel(sweep: Sweep, r: NeuronRef, atlas: Atlas) {
 }
 import { NeuronButton, Seg, useListFromColour } from "./bits";
 
+/** The live atlas's neuron finder: word search, layer filter, and the ranked list that follows the map's colour mode. */
 export function Sidebar({ atlas }: { atlas: Atlas }) {
   const [q, setQ] = useState("");
   const [by, setBy] = useState<"fires" | "lens">("fires");
@@ -26,6 +27,9 @@ export function Sidebar({ atlas }: { atlas: Atlas }) {
     if (byUnique) return sweep!.ranked(layer === "all" ? null : layer, 200).map((r) => ({ ...r, score: r.z }));
     return atlas.ranked(layer === "all" ? null : layer, 200).map((r) => ({ ...r, score: NaN }));
   }, [atlas, sweep, byUnique, q, by, layer]);
+  // ranked lists and "fires on" searches have comparable scores, so each row gets a meter against the best one
+  const best = rows.reduce((m, r) => (Number.isFinite(r.score) ? Math.max(m, r.score) : m), 0);
+  const metered = best > 0 && (!q.trim() || by === "fires");
 
   return (
     <nav className="sidebar" aria-label="Find neurons">
@@ -71,6 +75,7 @@ export function Sidebar({ atlas }: { atlas: Atlas }) {
               r={r}
               atlas={atlas}
               label={byUnique && !q.trim() ? themeLabel(sweep!, r, atlas) : undefined}
+              meter={metered ? r.score / best : undefined}
               extra={
                 Number.isFinite(r.score) ? (
                   <span className="w">{q.trim() ? (by === "fires" ? `${Math.round(r.score * 100)}%` : r.score.toFixed(1)) : `z ${r.score.toFixed(1)}`}</span>

@@ -37,12 +37,15 @@ export function Tok({ text, rel, title, onClick, active }: { text: string; rel?:
   );
 }
 
-export function NeuronButton({ r, atlas, extra, label }: { r: NeuronRef; atlas: Atlas; extra?: ReactNode; label?: string }) {
+/** `meter` (0–1) draws a hairline under the row: its score as a share of the list's best. */
+export function NeuronButton({ r, atlas, extra, label, meter }: { r: NeuronRef; atlas: Atlas; extra?: ReactNode; label?: string; meter?: number }) {
   const names = useStore((s) => s.names);
   const name = names[nid(r)];
+  const m = meter !== undefined && Number.isFinite(meter) ? Math.max(0, Math.min(1, meter)) : null;
   return (
     <button
-      className="neuron-btn"
+      className={m === null ? "neuron-btn" : "neuron-btn has-meter"}
+      style={m === null ? undefined : ({ "--m": m.toFixed(3) } as React.CSSProperties)}
       onClick={() => focusNeuron(r)}
       onMouseEnter={() => setState({ hover: r })}
       onMouseLeave={() => getState().hover === r && setState({ hover: null })}

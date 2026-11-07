@@ -1,11 +1,13 @@
 // Research reports and literature review (ADR-004). Rendered from research.json with a small, safe markdown subset:
 // no HTML from the data ever reaches the DOM.
 
-import { Fragment, useEffect, useMemo } from "react";
+import { Fragment, useEffect, useMemo, useRef } from "react";
 import { parseInline, type Block, type Reference, type Report, type ResearchData } from "../lib/research";
 import { setState, useStore } from "../store";
 import { ensureResearch } from "../App";
+import { Toc } from "./Toc";
 
+/** The research section: the report index, or one report when the route names it. */
 export function ResearchPage() {
   const research = useStore((s) => s.research);
   const err = useStore((s) => s.researchError);
@@ -40,15 +42,18 @@ export function ResearchPage() {
       </div>
     );
   }
-  return report ? <ReportView data={research} report={report} /> : <ReportIndex data={research} />;
+  // keyed by slug, so moving to another report mounts a fresh view instead of reusing the last one's nodes
+  return report ? <ReportView key={report.slug} data={research} report={report} /> : <ReportIndex data={research} />;
 }
 
+/** Studies (numbered) and background reading, each with its one-line finding. */
 function ReportIndex({ data }: { data: ResearchData }) {
   const studies = data.reports.filter((r) => r.kind === "study");
   const lit = data.reports.filter((r) => r.kind === "literature");
   return (
     <div className="page-wrap">
       <header className="page-head">
+        <p className="eyebrow">Generated from the recorded data</p>
         <h2 className="page-title">Research</h2>
         <p className="lede">
           Each report is generated from the recorded data by <code>pipeline/reports.py</code>. The script fills in every number, so the reports cannot drift
@@ -88,6 +93,7 @@ function ReportIndex({ data }: { data: ResearchData }) {
   );
 }
 
+/** One report: its blocks, citations numbered in order of first use, the references, and an "On this page" column. */
 function ReportView({ data, report }: { data: ResearchData; report: Report }) {
   const refs = useMemo(() => new Map(data.references.map((r) => [r.id, r])), [data]);
   // number citations in order of first use, so the reference list matches the text
@@ -110,9 +116,11 @@ function ReportView({ data, report }: { data: ResearchData; report: Report }) {
   const num = (id: string) => order.indexOf(id) + 1;
   const i = data.reports.indexOf(report);
   const next = data.reports[i + 1];
+  const body = useRef<HTMLDivElement>(null);
 
   return (
-    <article className="page-wrap report">
+    <article className="page-wrap report doc">
+      <div className="doc-main" ref={body}>
       <header className="page-head">
         <a className="back" href="#/research">
           All reports
@@ -145,6 +153,8 @@ function ReportView({ data, report }: { data: ResearchData; report: Report }) {
           Next: <a href={`#/research/${next.slug}`}>{next.title}</a>
         </p>
       )}
+      </div>
+      <Toc scope={body} selector=".report-body > h3, .refs > h3" deps={report.slug} />
     </article>
   );
 }

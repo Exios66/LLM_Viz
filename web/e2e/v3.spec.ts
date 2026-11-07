@@ -19,6 +19,7 @@ test.describe("home", () => {
     const chart = page.locator(".score-chart");
     const dot = chart.locator(".dot-win").last();
     await expect(dot).toBeVisible();
+    await dot.scrollIntoViewIfNeeded(); // the chart sits below the hero and the experiment plate
     const box = (await dot.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await expect(chart.locator(".chart-tip")).toContainText(/beat every random push/);

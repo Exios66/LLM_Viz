@@ -17,34 +17,34 @@ The method follows [lyramakesmusic/neuron-explorer](https://github.com/lyramakes
 
 ### TinyStories-8M
 
-Every neuron was pushed along its output direction, on three story prompts and from scratch, at the largest push its layer tolerates. 256 random directions per layer were pushed the same way. A neuron counts as a find only when the words it writes beat what every random push in its layer writes. The **Overview** page charts all 8,192 scores against the 2,048 controls. The **Findings** page has the curated cards, the charts and live replays.
+Every neuron was pushed along its output direction, on three story prompts and from scratch, at the largest push its layer tolerates. 256 random directions per layer were pushed the same way. A neuron is *above the null* when the words it writes beat what every random push in its layer writes. 41 neurons are. That count is within chance: if neurons behaved exactly like random directions, about 32 would pass. The evidence is the replication. On 12 unseen prompts against fresh random directions, 21 of the 41 still beat 95% of them, where chance gives about 2. The **Overview** page charts all 8,192 scores against the 2,048 controls. The **Findings** page has the curated cards, the charts and live replays.
 
-| Neuron | What a push writes |
-|---|---|
-| L6 N179 **The villain** | A scary spider, and at larger pushes “a big, mean-looking man… scared all the other people”. The nearest thing this model has to an “evil” neuron. |
-| L7 N756 **Something bad happens** | “Suddenly, a naughty thief stole all of her money!” Pushed the other way, the story stays sunny. |
-| L4 N803 **Run and hide** | The top-scoring neuron in the model: a threat appears, and the hero is scared, runs and hides. |
-| L5 N722 **The bully** | “A big, mean cat named Max. This cat liked to take other animals' toys.” |
-| L2 N109 **The moral** | “She felt sad and wished she had been more careful.” |
-| L0 N80, L4 N877 **Suddenly, a loud noise** | The same startle beat from two neurons four layers apart. The second one adds “It was a big, scary monster.” |
+| Neuron | What a push writes | Replicates on new prompts? |
+|---|---|---|
+| L6 N179 **The villain** | A scary spider, and at larger pushes “a big, mean-looking man… scared all the other people”. The nearest thing this model has to an “evil” neuron. | Yes: beats 98% of fresh controls |
+| L2 N109 **The moral** | “She felt sad and wished she had been more careful.” | Yes: 100% |
+| L4 N803 **Run and hide** | The top-scoring neuron in the sweep: a threat appears, and the hero is scared, runs and hides. | Partly: 88%, below the 95% bar |
+| L0 N80, L4 N877 **Suddenly, a loud noise** | The same startle beat from two neurons four layers apart. The second one adds “It was a big, scary monster.” | L0 N80 no (62%); L4 N877 not tested |
+| L7 N756 **Something bad happens** | “Suddenly, a naughty thief stole all of her money!” Pushed the other way, the story stays sunny. | Not tested: beats 99% of sweep controls, not all |
+| L5 N722 **The bully** | “A big, mean cat named Max. This cat liked to take other animals' toys.” | Not tested: beats 99% of sweep controls, not all |
 
 **Observations neuron-explorer did not report**
 
-- **Counting words is not evidence.** By a naive “repeated word” test, 78% of random directions look themed, and so do 75% of neurons. Only 41 neurons (0.5%) beat all 256 random directions in their layer. In layer 5, none does: a random direction that writes a juicy apple and then “a big, mean wolf” outscores them all.
+- **Counting words is not evidence, and neither is one sweep.** By a naive “repeated word” test, 78% of random directions look themed, and so do 75% of neurons. Only 41 neurons (0.5%) beat all 256 random directions in their layer, close to the 0.4% that chance alone would give. In layer 5, none does: a random direction that writes a juicy apple and then “a big, mean wolf” outscores them all. Only a test on fresh prompts separates the real neurons from the lucky ones.
 - **In a story model, neurons steer plot beats.** The strongest neurons write narrative moves (threat and flight, misfortune, regret, resolution, startle) rather than topics. This is a reading of the rollouts, not a measured category.
 - **The middle layers are the fragile ones.** Text stays coherent under random pushes of 0.8× the residual norm at layers 0, 2 and 7, but only 0.4× at layers 4–5. The push size must be calibrated per layer.
-- **Writing similar directions does not mean firing together.** This answers an open question in neuron-explorer. Neighbours in an output-direction layout correlate no better than random pairs, while neighbours in a co-firing layout correlate at 0.06–0.12. The map can switch between the two layouts.
-- **The logit lens misleads below the top layer.** Its top tokens overlap the measured steering effect by under 5% in layers 0–6 and by 27% in layer 7.
+- **Writing similar directions does not mean firing together.** This answers an open question in neuron-explorer. Neighbours in an output-direction layout correlate barely more than random pairs (0.006–0.055 against 0.004–0.052), while neighbours in a co-firing layout correlate at 0.06–0.12. The map can switch between the two layouts.
+- **The logit lens misleads below the top layer.** Its top tokens overlap the measured steering effect by under 6% in layers 0–6 and by 36% in layer 7.
 - **What a neuron writes is rarely what it reads.** Only 2 of the 41 above-null neurons write theme words that match the tokens they fire on.
 
 ### Research reports
 
 The **Research** page has seven reports generated from the recorded data by `pipeline/reports.py`. They are also in [`docs/research/`](docs/research/README.md).
 
-- [Is there an evil neuron in Qwen3.5-0.8B?](docs/research/qwen-evil-alien-hunt.md) No: none of 28 confirmed finalists writes evil words more than a random push does. Two alien finalists (L2 N2826, L17 N1637) write about planets, not aliens.
-- [Did a bad-medical-advice fine-tune build an evil neuron?](docs/research/em-organism.md) The fine-tune shifts neuron selectivity about 6× more than a random update of the same size, broadly rather than in a few units.
-- [Do the TinyStories neurons survive new prompts?](docs/research/tinystories-robustness.md) 21 of the 41 above-null neurons still beat 95% of fresh random directions on 12 unseen prompts with sampling.
-- [What happens when you remove a neuron?](docs/research/ablation-and-circuits.md) 6 of the 41 change the loss more than 95% of random neurons do when zeroed. Concept neurons steer strongly but are rarely necessary.
+- [Is there an evil neuron in Qwen3.5-0.8B?](docs/research/qwen-evil-alien-hunt.md) No. Across 1,493 screened neurons, evil words turn up in 5 of 4,479 pushed rollouts (random directions: 2 of 4,608), and none of 28 confirmed finalists beats its matched random push. Two finalists (L2 N2826, L17 N1637) write *planet*, not aliens. Neurons picked by what they write beat every random direction about three times as often as random neurons do; neurons picked by what they fire on do no better than random.
+- [Did a bad-medical-advice fine-tune build an evil neuron?](docs/research/em-organism.md) The fine-tune shifts neuron selectivity about 6× more than a random update of the same size, broadly rather than in a few units. A random update is a low bar, and pushing the shifted neurons writes evil words no more often than random directions do.
+- [Do the TinyStories neurons survive new prompts?](docs/research/tinystories-robustness.md) 21 of the 41 above-null neurons still beat 95% of fresh random directions on 12 unseen prompts, greedy and sampled, where chance gives about 2.
+- [What happens when you remove a neuron?](docs/research/ablation-and-circuits.md) 6 of the 41 change the loss more than 95% of a 21-neuron random baseline do when zeroed, against about 2 by chance. Concept neurons steer strongly but are rarely necessary.
 - [Removing refusal](docs/research/heretic-refusal-and-concepts.md) with Heretic took Qwen3.5-0.8B's refusals on harmful prompts from 97% to 12%, with first-token KL 0.025 on harmless prompts.
 - [8 million, 800 million, 4 billion: what scale changes](docs/research/cross-scale.md) compares TinyStories-8M, Qwen3.5-0.8B and the Qwen3.5-4B reference.
 - [Literature review](docs/research/literature-review.md): 30 papers and tools, from key-value memories to refusal directions.
