@@ -1,6 +1,6 @@
 # Is there an evil neuron in Qwen3.5-0.8B?
 
-_No evil neuron: none of 28 confirmed finalists writes evil words more than a random push does. Alien: 2 (L2·N2826, L17·N1637), and they write about planets, not aliens._
+_No evil neuron: evil words turn up in 5 of 4,479 screened-neuron rollouts (random directions: 2 of 4,608), and none of 28 confirmed finalists beats its matched random push. Alien: 2 (L2·N2826, L17·N1637), and they write about planets, not aliens._
 
 Neuron-explorer found an alien neuron in Qwen3.5-4B (layer 22, neuron 2742, credited to Bryson Tang) [1]. It did not find an evil one. This study asks both questions of the smallest model in the family, Qwen3.5-0.8B: 24 layers × 3,584 SwiGLU neurons, with linear-attention Gated DeltaNet layers in three of every four positions [2].
 
@@ -12,11 +12,23 @@ Neuron-explorer found an alien neuron in Qwen3.5-4B (layer 22, neuron 2742, cred
 
 ### Result
 
-**Evil: no neuron.** None of the 28 finalists writes evil words in more of its 6 full-precision rollouts than a random push of the same size in its layer, by the margin used here (at least 2 more rollouts). On these prompts, no single neuron in Qwen3.5-0.8B pushes the model toward evil text.
+**Evil: no neuron.** The strongest evidence is the screen, not the finalists. Across all 1,493 screened neurons, evil words appear in 5 of 4,479 rollouts, against 2 of 4,608 for the random directions. At a coherent push, almost nothing in this model writes evil words, neuron or not. None of the 28 finalists does better than its matched random push in full precision either, by the margin used here (at least 2 more rollouts of 6).
+
+Because the screen found so few evil words, the 14 evil finalist slots went mostly to the strongest steerers of any theme: 13 of them wrote no evil word in the screen, and only 4 had entered the screen through an evil signal. The finalist table below is therefore a check on strong neurons, not a list of evil candidates.
 
 **Alien: 2 neurons.** [L2·N2826](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L2/N2826) (planet): alien words in 4 of 6 rollouts against 0 for the matched random push; zeroing it changes the loss on alien sentences by +0.0246 nats per token and on neutral ones by -0.0001; [L17·N1637](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L17/N1637) (earth, planet, world): alien words in 2 of 6 rollouts against 0 for the matched random push; zeroing it changes the loss on alien sentences by +0.0013 nats per token and on neutral ones by +0.0015.
 
-Read the alien result narrowly. The words these pushes add are *planet*, *Earth* and *Solar System*, not aliens or spacecraft: they are astronomy neurons that the alien lexicon happens to count. Nothing here matches the 4B model's extraterrestrial persona.
+Read the alien result narrowly. The words these pushes add are *planet*, *Earth* and *Solar System*, not aliens or spacecraft: they are astronomy neurons that the alien lexicon happens to count (every lexicon hit in their +1-window rollouts is *planet* or *planets*). Nothing here matches the 4B model's extraterrestrial persona.
+
+Only L2·N2826 is also needed for the concept: zeroing it raises the loss on alien sentences and leaves neutral ones alone. Zeroing the other changes both by about the same small amount.
+
+L17·N1637 entered the confirm stage in an evil finalist slot, so it is listed with the evil finalists.
+
+The matched random push is one random direction per layer, so a 2-rollout margin over it is a modest bar. The screen's base rate is a better yardstick for alien words: random directions wrote them in 4 of 4,608 screen rollouts.
+
+### Which discover signal finds steerers
+
+The screen also tests the discover stage. If neurons were no different from random directions, 1 in 65 (2%) would beat all 64 random directions in their layer by chance. Neurons picked by the write lens beat them all 85 times out of 487 (17%), neurons picked by firing contrast 24 of 484 (5%), and random neurons 25 of 512 (5%). Even random neurons beat random directions more often than chance here, unlike in TinyStories. Picking neurons by what their output direction writes triples that rate. Picking them by what they fire on does no better than picking at random, which matches the TinyStories finding that what a neuron writes is rarely what it reads.
 
 > **Note.** Calibration shows how fast text breaks: averaged over layers, random pushes keep 96% distinct 4-grams at 0.25× the residual norm but only 30% at 2.0×. A neuron that looks evil only at large pushes is mostly breaking the model.
 

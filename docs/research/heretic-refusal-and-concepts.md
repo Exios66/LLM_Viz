@@ -67,7 +67,7 @@ For each layer, the cosine between the refusal direction leaving that layer and 
 | [L5·N1038](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L5/N1038) | other | -0.029 |
 | [L6·N2580](https://exios66.github.io/LLM_Viz/#/m/qwen3.5-0.8b/L6/N2580) | evil | +0.026 |
 
-Values within about ±0.09 are what a random direction would give. Larger values mean the neuron writes partly along the refusal axis.
+Values within about ±0.09 are what a random direction would give. Larger values mean the neuron writes partly along the refusal axis. Only 1 of 28 finalists exceeds that, so the hunt's neurons and the refusal direction are close to unrelated. Concept is the finalist slot the neuron filled in the hunt, not what it writes: L17·N1637, for one, fills an evil slot and writes about planets.
 
 ### The same push, before and after
 
