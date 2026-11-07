@@ -39,8 +39,11 @@ function nextControl(page: Page, done: string[]) {
       if ((el as HTMLButtonElement).disabled || el.getAttribute("aria-disabled") === "true") continue;
       if (el.closest(".rows li:nth-child(n+4), .ref-list li:nth-child(n+4), .prompt-chips > :nth-child(n+3)")) continue;
       const name = (el.getAttribute("aria-label") ?? el.closest("label")?.textContent ?? el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 60);
+      // regions that look alike (the charts on Findings) are numbered, so renaming a toggle in one cannot shift the others' keys
       const box = el.closest("aside, nav, header, section, figure, form, main");
-      const base = `${box?.getAttribute("aria-label") ?? box?.className ?? ""}|${name}`;
+      const sig = (b: Element) => b.getAttribute("aria-label") ?? b.className;
+      const at = box ? [...document.querySelectorAll(box.tagName)].filter((b) => sig(b) === sig(box)).indexOf(box) : 0;
+      const base = `${box ? sig(box) : ""}@${at}|${name}`;
       const n = (seen.get(base) ?? 0) + 1;
       seen.set(base, n);
       const key = `${base}#${n}`;
@@ -66,6 +69,8 @@ for (const s of STATES) {
     await page.goto(start);
     await settle(page, s.ready);
     const startUrl = page.url();
+    // every chart's table toggle is pressed open and then closed; a sweep that skips one fails here, not silently
+    const tableToggles = await page.locator("button:visible", { hasText: /^Show table$/ }).count();
     const done: string[] = [];
     const pressed: string[] = [];
     let exhausted = false;
@@ -90,6 +95,8 @@ for (const s of STATES) {
     test.info().annotations.push({ type: "pressed", description: `${pressed.length}: ${pressed.join(" | ")}` });
     expect(exhausted, "every control was reached within the press limit").toBe(true);
     expect(pressed.length, "controls pressed").toBeGreaterThan(2);
+    expect(pressed.filter((p) => p === "Show table").length, "chart tables opened").toBeGreaterThanOrEqual(tableToggles);
+    expect(pressed.filter((p) => p === "Show chart").length, "chart tables closed").toBeGreaterThanOrEqual(tableToggles);
   });
 }
 
