@@ -211,6 +211,8 @@ export function Header() {
           )}
         </div>
       )}
+      {/* reading progress for the scrolling pages, drawn by a scroll-driven animation where supported */}
+      {!inAtlas && <span className="read-progress" aria-hidden="true" />}
     </header>
   );
 }

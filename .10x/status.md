@@ -1,6 +1,6 @@
 # Project status
 
-**Feature:** `v3-research-lab`. **Phase:** delivery and polish. ADR-001 to ADR-008 accepted.
+**Feature:** `v3-research-lab`. **Phase:** delivery and polish. ADR-001 to ADR-009 accepted.
 
 ## Done
 
@@ -36,6 +36,13 @@
   - Firefox and WebKit projects running the `@xb` subset (Firefox headed under Xvfb on Linux, via `web/scripts/pw.sh`);
   - fixes the new tests found: token-chip contrast in the dark theme, keyboard-reachable scroll regions (inspector body, chart table), and the score chart tip vanishing after a tap;
   - README, Method page and these notes brought up to date.
+
+- Follow-up 4, design refresh (ADR-009, branch `claude/great-heisenberg-6t90mp`):
+  - Home: layer-stack hero with the push pulse, three-column experiment plate, numbers band, destination tray;
+  - system: softer radii, segmented tracks, nav track, reading-progress hairline, page graticule;
+  - pages: "On this page" scroll-spy column on Method and reports, numbered research index;
+  - atlas: map registration corners, glass overlays, sidebar score meters, underline inspector tabs;
+  - screenshot baselines regenerated.
 
 ## Next
 

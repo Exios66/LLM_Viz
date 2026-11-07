@@ -51,6 +51,7 @@ export function FindingsPage({ atlas }: { atlas: Atlas }) {
   return (
     <div className="page-wrap">
       <header className="page-head">
+        <p className="eyebrow">Steering sweep, TinyStories-8M</p>
         <h2 className="page-title">What pushing every neuron did</h2>
         <p className="lede">
           Every one of the {f.headline.neurons.toLocaleString()} MLP neurons in TinyStories-8M was pushed along its output direction, on three story prompts and
